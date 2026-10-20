@@ -12,7 +12,7 @@ allowBuilds:
 # Versões declaradas uma única vez; os pacotes usam "catalog:" em vez de repetir o número.
 catalog:
   # Tipos alinhados ao runtime (Node 24). @types/node mais novo exporia APIs que não existem em produção.
-  '@types/node': ^24.0.0
+  '@types/node': ^26.6.5
   # typescript-eslint/Nest CLI ainda não suportam TypeScript 7; manter na 6.0.x.
   typescript: ~6.0.3
   # Exata de propósito: o pnpm recusa versões muito recentes (minimumReleaseAge), proteção contra
