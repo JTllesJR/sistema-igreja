@@ -2,6 +2,9 @@
 
 Fonte dos requisitos: `PRD_Sistema_Igreja.pdf`. Esta pasta traduz o PRD em decisões e modelos que guiam o código.
 
+Para uma explica??o com desenhos, comece pelo [guia visual de engenharia](diagramas/README.md): arquitetura,
+casos de uso, modelo ER, sequ?ncias, atividades e estados, distinguindo implementa??o e planejamento.
+
 ## Ordem de leitura
 1. [Glossário](glossario.md) — a linguagem comum do domínio.
 2. [Casos de uso do MVP](casos-de-uso-mvp.md) — o que será construído primeiro e as perguntas em aberto para a igreja.
