@@ -1,0 +1,30 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    # Espelha o minimumReleaseAge do pnpm: não propor versões recém-publicadas (proteção contra pacotes comprometidos).
+    cooldown:
+      default-days: 7
+    groups:
+      nest:
+        patterns: ['@nestjs/*']
+      prisma:
+        patterns: ['prisma', '@prisma/*']
+      tooling:
+        patterns:
+          ['turbo', 'prettier', 'oxlint*', 'vitest', '@vitest/*', 'vite']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly

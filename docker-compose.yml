@@ -1,0 +1,27 @@
+# Infraestrutura local de desenvolvimento. A API roda fora do Docker (pnpm dev) para ter hot reload rápido;
+# aqui ficam apenas os serviços de apoio. Novos serviços (storage S3, servidor de e-mail de teste...) entram aqui.
+name: igreja
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-igreja}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env (copie de .env.example)}
+      POSTGRES_DB: ${POSTGRES_DB:-igreja}
+    ports:
+      # 127.0.0.1: o banco aceita conexões só desta máquina, nunca da rede local.
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Scripts executados UMA vez, quando o volume está vazio (ex.: cria o banco de testes).
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db-data:

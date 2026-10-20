@@ -1,0 +1,26 @@
+// Schema do banco. Convenções (ver docs/modelo-dominio.md):
+//  - tabelas e colunas em snake_case no banco, camelCase no código (@@map / @map)
+//  - ids UUID v7 (ordenáveis por tempo: melhor localidade de índice que v4)
+//  - timestamps com fuso (timestamptz)
+//  - toda tabela de negócio carrega organization_id (ADR 0003)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  // O projeto é ESM com moduleResolution nodenext: imports relativos precisam terminar em .js.
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// A igreja/denominação que usa o sistema (tenant). Raiz de todo o isolamento de dados.
+model Organization {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("organization")
+}

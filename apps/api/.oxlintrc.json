@@ -1,0 +1,35 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "env": {
+    "node": true
+  },
+  "ignorePatterns": ["src/generated/**", "dist/**"],
+  "rules": {
+    "typescript/no-floating-promises": "error",
+    "typescript/no-explicit-any": "error"
+  },
+  "overrides": [
+    {
+      "files": ["src/modules/*/domain/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@nestjs/*",
+                  "@prisma/*",
+                  "pg",
+                  "**/generated/**",
+                  "**/platform/**"
+                ],
+                "message": "A camada domain é TypeScript puro: sem framework, banco ou infraestrutura (ADR 0001). Defina uma interface no domain e implemente na infrastructure."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

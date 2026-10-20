@@ -1,0 +1,26 @@
+# dependências e artefatos de build
+node_modules/
+dist/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# código gerado (recriado por `pnpm generate`)
+apps/api/src/generated/
+
+# variáveis de ambiente locais (apenas .env.example vai para o git)
+.env
+.env.*
+!.env.example
+
+# sistema / editor
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ferramentas locais do Claude Code
+.claude/settings.local.json

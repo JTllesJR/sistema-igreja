@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Uma execução nova no mesmo branch cancela a anterior (economiza minutos de CI).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Princípio do menor privilégio: o workflow só lê o repositório.
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Qualidade (formato, lint, tipos, testes unitários, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      # A versão do pnpm vem do campo "packageManager" do package.json (fonte única).
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+  integration:
+    name: Testes de integração (PostgreSQL real)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine # mesma versão do docker-compose.yml
+        env:
+          POSTGRES_USER: igreja
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: igreja_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U igreja -d igreja_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # Banco descartável do job; segredo sem valor real.
+      DATABASE_URL: postgresql://igreja:ci_only_password@localhost:5432/igreja_test
+      TEST_DATABASE_URL: postgresql://igreja:ci_only_password@localhost:5432/igreja_test
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Aplica as migrations versionadas, o mesmo comando que será usado em produção.
+      - run: pnpm --filter @igreja/api db:deploy
+
+      - run: pnpm test:integration

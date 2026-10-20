@@ -1,0 +1,26 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Scripts de instalação (postinstall) ficam bloqueados por padrão no pnpm 11: um pacote malicioso
+# poderia executar código na sua máquina. Liberamos apenas o que é necessário e conhecido.
+allowBuilds:
+  # Baixam o motor de migrations do Prisma (schema-engine), necessário para `prisma migrate`.
+  '@prisma/engines': true
+  prisma: true
+
+# Versões declaradas uma única vez; os pacotes usam "catalog:" em vez de repetir o número.
+catalog:
+  # Tipos alinhados ao runtime (Node 24). @types/node mais novo exporia APIs que não existem em produção.
+  '@types/node': ^24.0.0
+  # typescript-eslint/Nest CLI ainda não suportam TypeScript 7; manter na 6.0.x.
+  typescript: ~6.0.3
+  # Exata de propósito: o pnpm recusa versões muito recentes (minimumReleaseAge), proteção contra
+  # pacotes comprometidos logo após a publicação. Não adicione exceções; suba a versão quando "envelhecer".
+  oxlint: 1.88.0
+  oxlint-tsgolint: 7.0.2004
+  vite: ^8.3.4
+  vitest: ^4.1.12
+  '@vitest/coverage-v8': ^4.1.12
+  prettier: ^3.9.10
+  zod: ^4.6.7

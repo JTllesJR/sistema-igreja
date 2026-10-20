@@ -1,0 +1,28 @@
+{
+  "name": "igreja",
+  "private": true,
+  "description": "Sistema de gestão de igreja",
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:deploy": "pnpm --filter @igreja/api db:deploy",
+    "db:migrate": "pnpm --filter @igreja/api db:migrate"
+  },
+  "devDependencies": {
+    "prettier": "catalog:",
+    "turbo": "^2.11.9",
+    "typescript": "catalog:"
+  }
+}
