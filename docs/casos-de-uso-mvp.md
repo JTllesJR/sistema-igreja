@@ -15,6 +15,7 @@ Escopo do MVP no PRD: **login, permissões, cadastro de membros, finanças bási
 | **Dirigente** (1º/2º) | Acesso total à sua congregação. | Congregação |
 | **Tesoureiro** (1º/2º) | Finanças da sua congregação. | Congregação |
 | **Secretário** (1º/2º) | Cadastro de membros e eventos da sua congregação. | Congregação |
+| **Operador** | Quem instala e mantém o sistema (não é um usuário da igreja). Atua por linha de comando. | Fora do sistema |
 
 ## Casos de uso
 
@@ -29,7 +30,8 @@ Escopo do MVP no PRD: **login, permissões, cadastro de membros, finanças bási
 ### Organização
 | ID | Caso de uso | Ator | Observações |
 |---|---|---|---|
-| UC-05 | Cadastrar e editar congregações | Administrador | Endereço, liderança, horários de culto. |
+| UC-05 | Cadastrar e editar congregações | Administrador | Endereço e horários de culto; inclui desativar, reativar e designar a sede (ADR 0009). Liderança entra junto com `members`. |
+| UC-17 | Criar organização inicial | Operador | Linha de comando; cria a organização e sua sede. Sem endpoint público (ADR 0009). O primeiro administrador é criado por comando equivalente no `identity-access`. |
 
 ### Membros
 | ID | Caso de uso | Ator | Observações |
@@ -60,6 +62,8 @@ Escopo do MVP no PRD: **login, permissões, cadastro de membros, finanças bási
 - **RN-03:** valores monetários em centavos inteiros.
 - **RN-04:** toda alteração de dado de negócio gera registro de auditoria; leitura de dado sensível também.
 - **RN-05:** um usuário pode ter múltiplas atribuições, cada uma com seu escopo.
+- **RN-06:** cada organização tem exatamente uma sede, e ela está ativa. Nome de congregação é único na organização.
+- **RN-07:** congregação não é excluída, apenas desativada.
 
 ## Fora do MVP (já previstos, não construídos)
 Carteirinha e certificados · frequência · agenda · atas · comunicação interna · relatórios avançados e

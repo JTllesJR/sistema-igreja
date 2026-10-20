@@ -113,3 +113,62 @@ Este é um **estado lógico**, calculado pela existência de um estorno; não pr
 Exemplo: uma entrada de R$ 100,00 é armazenada como `10000` centavos com direção `IN`. Seu estorno gera um novo lançamento de `10000` centavos com direção `OUT`, referenciando o original. O efeito líquido no saldo é zero, e os dois registros preservam a história.
 
 Na implementação, validar organização, escopo, unicidade de estorno e vínculo com o original. Duas requisições simultâneas de estorno devem resultar em apenas um estorno persistido.
+
+## 6. Ciclo de vida da congregação, UC-05 — planejado
+
+```mermaid
+stateDiagram-v2
+    [*] --> Ativa: Cadastrar
+    Ativa --> Inativa: Desativar, se não for a sede
+    Inativa --> Ativa: Reativar
+```
+
+Congregação não é excluída: há membros e lançamentos ligados a ela. "Sede" não é um estado, e sim um atributo de uma
+congregação **ativa**, e a sede não pode ser desativada. Para desativá-la, designa-se outra sede antes (fluxo abaixo).
+Este estado é regra de negócio, visível e reversível; não é o soft delete (`deleted_at`) dos demais cadastros.
+Decisão em [ADR 0009](../adr/0009-modulo-organization.md).
+
+## 7. Designar nova sede, UC-05 — planejado
+
+```mermaid
+sequenceDiagram
+    actor Admin as Administrador
+    participant UC as Caso de uso: designar sede
+    participant Org as Organization (domínio)
+    participant Repo as Repositório
+    participant DB as PostgreSQL
+    Admin->>UC: Congregação que será a sede
+    UC->>Repo: Carregar organização do contexto
+    Repo->>DB: SELECT organização e congregações
+    DB-->>Repo: Dados e version
+    Repo-->>UC: Organization
+    UC->>Org: designateHeadquarters(congregação)
+    alt Inexistente, inativa ou já é a sede
+        Org-->>UC: Erro de domínio
+        UC-->>Admin: Rejeitado, nada alterado
+    else Regra satisfeita
+        Org-->>UC: Nova sede definida
+        UC->>Repo: Salvar
+        Repo->>DB: BEGIN
+        Repo->>DB: UPDATE organização WHERE version = n
+        alt Nenhuma linha atualizada: alteração concorrente
+            Repo->>DB: ROLLBACK
+            Repo-->>UC: Conflito de versão
+            UC-->>Admin: Conflito, tentar novamente
+        else Versão confere
+            Repo->>DB: UPDATE sede antiga: is_headquarters = false
+            Repo->>DB: UPDATE nova sede: is_headquarters = true
+            Repo->>DB: COMMIT
+            UC-->>Admin: Sede alterada
+        end
+    end
+```
+
+Dois pontos que o desenho torna visíveis:
+
+- **A ordem dos `UPDATE`s importa.** O índice único parcial "uma sede por organização" é verificado a cada comando e
+  não é adiável. Marcar a nova antes de desmarcar a antiga violaria o índice no meio da transação.
+- **A versão evita sobrescrita silenciosa.** Duas designações simultâneas partem da mesma `version`; só a primeira
+  confirma, a outra recebe conflito.
+
+A gravação da auditoria (RN-04) na mesma transação ainda precisa ser detalhada, como no fluxo do UC-06.

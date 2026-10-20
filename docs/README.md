@@ -2,8 +2,8 @@
 
 Fonte dos requisitos: `PRD_Sistema_Igreja.pdf`. Esta pasta traduz o PRD em decisões e modelos que guiam o código.
 
-Para uma explica??o com desenhos, comece pelo [guia visual de engenharia](diagramas/README.md): arquitetura,
-casos de uso, modelo ER, sequ?ncias, atividades e estados, distinguindo implementa??o e planejamento.
+Para uma explicação com desenhos, comece pelo [guia visual de engenharia](diagramas/README.md): arquitetura,
+casos de uso, modelo ER, sequências, atividades e estados, distinguindo implementação e planejamento.
 
 ## Ordem de leitura
 1. [Glossário](glossario.md) — a linguagem comum do domínio.
@@ -22,6 +22,7 @@ casos de uso, modelo ER, sequ?ncias, atividades e estados, distinguindo implemen
 | [0006](adr/0006-lgpd-dados-sensiveis.md) | LGPD e dados sensíveis | aceita |
 | [0007](adr/0007-hospedagem-adiada.md) | Hospedagem | adiada |
 | [0008](adr/0008-ferramentas-de-desenvolvimento.md) | Ferramentas de desenvolvimento e política de dependências | aceita |
+| [0009](adr/0009-modulo-organization.md) | Módulo `organization`: agregado, ordem de construção e integridade | aceita |
 
 ## Como usar os ADRs
 Toda decisão estrutural nova vira um ADR curto (contexto, decisão, alternativas, consequências). Se uma decisão mudar,
@@ -38,9 +39,11 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
 ## Andamento
 - ✅ **Fase 0 — Fundação conceitual:** glossário, casos de uso, modelo de domínio, ADRs 0001–0007.
 - ✅ **Fase 1 — Esqueleto técnico:** monorepo, Prisma + migration inicial, NestJS com `/health`, lint, testes
-  unitários e de integração, CI. Pendente de validação local: `docker compose` (Docker não instalado na máquina).
+  unitários e de integração, CI. Validada localmente com Docker (PostgreSQL 17) e no CI do GitHub.
+- 🔄 **Fase 2 — Módulos de negócio:** `organization` desenhado ([ADR 0009](adr/0009-modulo-organization.md));
+  implementação ainda não iniciada.
 
 ## Próximos passos
-- **Fase 2 — Identidade e acesso:** primeiro módulo de negócio real (`organization`, depois `identity-access`
-  com RBAC por escopo, ADR 0004), definindo juntos o padrão de camadas.
+- Implementar `organization` (domínio e testes primeiro, depois aplicação e persistência; sem HTTP até existir login).
+- Depois, `identity-access` com RBAC por escopo (ADR 0004) e, só então, a camada HTTP dos dois módulos.
 - Validar com a igreja as perguntas ao final de [casos-de-uso-mvp.md](casos-de-uso-mvp.md).

@@ -47,7 +47,12 @@ presentation ──▶ application ──▶ domain ◀── infrastructure
 - Testes unitários ao lado do código (`*.spec.ts`); integração em `apps/api/test/` (`*.integration-spec.ts`).
 - Contratos que cruzam a fronteira da API (corpo de resposta, DTOs) vivem em `packages/contracts` como schemas Zod.
 - Toda tabela de negócio tem `organization_id` (ADR 0003), e todo repositório filtra por ele.
-- Tabelas em `snake_case` no banco (`@@map`/`@map`), ids UUID v7 gerados pelo Prisma.
+- Tabelas em `snake_case` no banco (`@@map`/`@map`).
+- **A partir do módulo `organization` (ADR 0009):** os ids UUID v7 são gerados pelo domínio, por uma porta
+  `IdGenerator`, e não pelo Prisma; todo caso de uso recebe `execute(contexto, comando)` com
+  `contexto = { organizationId, actorId }`. (A tabela `organization` atual ainda usa o default do Prisma até essa migração.)
+- Restrições que o Prisma não expressa (índices parciais ou funcionais) vão em SQL manual na migration e devem ser
+  preservadas ao alterar a tabela. Referências a tabelas de outros módulos usam FK composta `(organization_id, id)`.
 
 ## Como criar um módulo novo (checklist)
 

@@ -10,6 +10,8 @@ Linguagem comum entre a igreja, o PRD e o código. **Os nomes das entidades no c
 | **Igreja / Organização** | A entidade que usa o sistema (tenant). Hoje há uma; no futuro, várias. | `Organization` |
 | **Sede** | Congregação principal, para onde as demais reportam. | `Congregation` com `isHeadquarters = true` |
 | **Congregação** | Unidade local da igreja, com liderança, endereço e horários de culto próprios. | `Congregation` |
+| **Congregação inativa** | Congregação desativada, mas preservada: seus membros e lançamentos continuam existindo. Não se exclui congregação. A sede nunca fica inativa. | `status = INACTIVE` |
+| **Operador** | Quem instala e mantém o sistema, por linha de comando. Não é um usuário da igreja. | — |
 | **Diretoria** | Grupo gestor com visão consolidada de todas as congregações. Não é um conjunto de dados à parte: é um *papel com escopo global*. | `Role` + `RoleAssignment` (escopo organização) |
 | **Cargo / Função** | Posição eclesiástica ou administrativa de um membro (ex.: diácono, presbítero, tesoureiro). ⚠ lista de cargos | `Position` |
 | **Mandato** | Período em que um membro ocupa um cargo (início e fim). | `Mandate` |

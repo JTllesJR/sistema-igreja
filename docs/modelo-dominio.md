@@ -34,8 +34,8 @@ erDiagram
     FINANCE_CATEGORY ||--o{ FINANCIAL_ENTRY : classifies
     FINANCIAL_ENTRY |o--o| FINANCIAL_ENTRY : "reverses"
 
-    ORGANIZATION { uuid id string name }
-    CONGREGATION { uuid id string name bool is_headquarters json address json service_times }
+    ORGANIZATION { uuid id string name int version }
+    CONGREGATION { uuid id string name bool is_headquarters string status json address json service_times }
     USER { uuid id string email string password_hash bool active }
     ROLE { uuid id string name bool is_system }
     ROLE_PERMISSION { uuid role_id string permission }
@@ -62,6 +62,7 @@ erDiagram
 7. **`MEMBER.congregation_id`** guarda a congregação atual; transferências deixam rastro em `MEMBER_HISTORY_EVENT`.
 8. **`AUDIT_LOG` não pertence a nenhum módulo de negócio**: é escrito por um interceptor transversal e é somente-anexação.
 9. `MEMBER_HISTORY_EVENT.type` e `MEMBER.status` são enumerações; os valores finais dependem da validação com a igreja (ver casos de uso, perguntas 1 a 6).
+10. **`Organization` é a raiz do agregado que contém as `Congregation`**, para que o domínio garanta "uma sede por organização". Congregação tem `status` (`ACTIVE`/`INACTIVE`) em vez de `deleted_at` e nunca é excluída; `organization.version` dá o travamento otimista. Detalhes, restrições de banco e alternativas no [ADR 0009](adr/0009-modulo-organization.md).
 
 ## Mapeamento módulo → tabelas
 
