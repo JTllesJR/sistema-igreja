@@ -23,9 +23,11 @@ O requisito original é o PRD em PDF; as decisões e modelos estão em `docs/` (
 - Dinheiro em centavos inteiros; lançamentos financeiros imutáveis, correção por estorno (ADR 0005).
 - Dados de membros são sensíveis (LGPD, ADR 0006).
 - Dependências: nunca contornar o `minimumReleaseAge` do pnpm nem liberar `allowBuilds` sem justificar (ADR 0008).
-- TypeScript fica em 6.0.x enquanto o toolchain não suportar o 7.
+- TypeScript fica em 6.0.x: o Nest CLI não funciona com o 7.0 (confirmado no CI). Reavaliar no 7.1.
+- Dependabot: PRs de versão maior de `typescript`, `@types/node` e `postgres` são ignorados por decisão (ADR 0008).
 
 ## Ambiente
 
-- Windows 11; Docker pode não estar instalado. Sem Docker, o PGlite (Postgres em WASM) serve para verificação rápida
-  de migrations e testes de integração, mas a referência é o PostgreSQL 17 do `docker-compose.yml` e do CI.
+- Windows 11 com Docker Desktop (WSL 2). O banco local é o PostgreSQL 17 do `docker-compose.yml` (`pnpm db:up`).
+- `pnpm test:integration` aplica as migrations no banco `igreja_test` sozinho (setup global do Vitest).
+- O repositório remoto é privado: `JTllesJR/sistema-igreja`. O CI roda em push e em PR.

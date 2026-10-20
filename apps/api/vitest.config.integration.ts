@@ -23,6 +23,8 @@ if (!databaseName.endsWith('_test')) {
 export default defineConfig({
   test: {
     include: ['test/**/*.integration-spec.ts'],
+    // Aplica as migrations no banco de testes antes de tudo.
+    globalSetup: ['./test/global-setup.ts'],
     // Um único banco compartilhado: arquivos de teste executam em sequência.
     fileParallelism: false,
     testTimeout: 15_000,

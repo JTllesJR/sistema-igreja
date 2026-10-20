@@ -14,7 +14,7 @@ e a cadeia de dependências npm é um vetor real de ataque. As escolhas abaixo f
 |---|---|---|
 | Gerenciador | **pnpm 11** + workspaces + **catalogs** | Instalação rápida e estrita; versões compartilhadas declaradas uma vez em `pnpm-workspace.yaml`. |
 | Orquestração | **Turborepo** | Grafo de tarefas (`build` antes de `test`), cache local e execução paralela. |
-| TypeScript | **6.0.x** (não 7) | `typescript-eslint` suporta `<6.1` e o Nest CLI 12 usa `~6.0`. Reavaliar quando o toolchain suportar o 7. |
+| TypeScript | **6.0.x** (não 7) | O Nest CLI 12 exige a API programática do compilador, que o TypeScript 7.0 não expõe (prevista para o 7.1). **Confirmado no CI:** o PR do Dependabot para 7.0.2 quebrou o `nest build`. Reavaliar no 7.1. |
 | Linter | **oxlint** (type-aware) | É o padrão do Nest 12; muito mais rápido que ESLint. Cobre a regra de pureza do `domain`. |
 | Formatação | **Prettier** | Padrão de fato; checado no CI. |
 | Testes | **Vitest** (unitários e integração) | Padrão do Nest 12; ESM nativo. Suporta os decorators/metadados do Nest sem plugin extra. |

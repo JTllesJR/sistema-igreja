@@ -58,7 +58,6 @@ jobs:
           --health-retries 10
     env:
       # Banco descartável do job; segredo sem valor real.
-      DATABASE_URL: postgresql://igreja:ci_only_password@localhost:5432/igreja_test
       TEST_DATABASE_URL: postgresql://igreja:ci_only_password@localhost:5432/igreja_test
     steps:
       - uses: actions/checkout@v7
@@ -70,7 +69,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Aplica as migrations versionadas, o mesmo comando que será usado em produção.
-      - run: pnpm --filter @igreja/api db:deploy
-
+      # O setup global do Vitest aplica as migrations (`prisma migrate deploy`, o mesmo comando de produção)
+      # antes dos testes; local e CI percorrem exatamente o mesmo caminho.
       - run: pnpm test:integration

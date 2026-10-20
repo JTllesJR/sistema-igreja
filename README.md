@@ -29,14 +29,14 @@ Conferindo: `curl http://localhost:3000/health` deve responder `{"status":"ok","
 | `pnpm lint`             | oxlint (com checagem de tipos) em todos os pacotes                     |
 | `pnpm typecheck`        | `tsc --noEmit` em todos os pacotes                                     |
 | `pnpm test`             | Testes unitários (rápidos, sem banco)                                  |
-| `pnpm test:integration` | Testes de integração contra o banco `igreja_test`                      |
+| `pnpm test:integration` | Testes contra o banco `igreja_test` (aplica as migrations sozinho)     |
 | `pnpm build`            | Compila tudo, respeitando a ordem de dependência                       |
 | `pnpm format`           | Prettier em todo o repositório                                         |
 | `pnpm db:migrate`       | Cria/aplica migration em desenvolvimento (após editar o schema Prisma) |
 | `pnpm db:down`          | Para o PostgreSQL local (dados preservados no volume)                  |
 
 O CI (`.github/workflows/ci.yml`) executa: `format:check`, `lint`, `typecheck`, `test`, `build` e, em job
-separado com PostgreSQL real, `db:deploy` + `test:integration`. **Rode o mesmo antes de abrir um PR.**
+separado com PostgreSQL real, `test:integration`. **Rode o mesmo antes de abrir um PR.**
 
 ## Estrutura
 

@@ -8,6 +8,14 @@ updates:
     # Espelha o minimumReleaseAge do pnpm: não propor versões recém-publicadas (proteção contra pacotes comprometidos).
     cooldown:
       default-days: 7
+    # Saltos de versão maior que quebram nossas decisões (ADR 0008) só entram por decisão manual.
+    ignore:
+      # TypeScript 7.0 não expõe a API de compilador que o Nest CLI usa (prevista para o 7.1). O PR de teste quebrou o build.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      # @types/node acompanha o runtime (Node 24), não a versão mais nova.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     groups:
       nest:
         patterns: ['@nestjs/*']
@@ -28,3 +36,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Trocar de versão maior do PostgreSQL é uma migração de dados planejada, não um bump automático.
+    # (Ex.: o 18 mudou o diretório de dados da imagem.) Fica no 17 até decidirmos.
+    ignore:
+      - dependency-name: postgres
+        update-types: ['version-update:semver-major']
