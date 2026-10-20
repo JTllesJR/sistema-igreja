@@ -14,7 +14,7 @@ catalog:
   # Tipos alinhados ao runtime (Node 24). @types/node mais novo exporia APIs que não existem em produção.
   '@types/node': ^24.0.0
   # typescript-eslint/Nest CLI ainda não suportam TypeScript 7; manter na 6.0.x.
-  typescript: ~6.0.3
+  typescript: ~7.0.2
   # Exata de propósito: o pnpm recusa versões muito recentes (minimumReleaseAge), proteção contra
   # pacotes comprometidos logo após a publicação. Não adicione exceções; suba a versão quando "envelhecer".
   oxlint: 1.88.0
