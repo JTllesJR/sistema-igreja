@@ -34,6 +34,8 @@ presentation ──▶ application ──▶ domain ◀── infrastructure
    `platform` dentro de `src/modules/*/domain/` quebra o `pnpm lint`.
 2. `application` depende de **interfaces** do `domain` (ex.: `MemberRepository`). Quem as implementa é a
    `infrastructure`, ligada pelo container de injeção do Nest. É a inversão de dependência na prática.
+   Casos de uso são classes comuns, **sem decorators do Nest**: o `.module.ts` faz a ligação (`useFactory`).
+   **Verificado pelo linter**, assim como no `domain` (ADR 0009).
 3. **Um módulo não acessa as tabelas de outro.** Para dados de outro módulo, chame o que ele exporta em
    `index.ts`, ou reaja a um evento de domínio. Referências cruzadas no banco são só IDs.
 4. **Nunca importe de dentro de outro módulo** (`../members/domain/...`). Importe do `index.ts` dele.

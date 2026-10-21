@@ -22,9 +22,36 @@
                   "@prisma/*",
                   "pg",
                   "**/generated/**",
-                  "**/platform/**"
+                  "**/platform/**",
+                  "**/application/**",
+                  "**/infrastructure/**",
+                  "**/presentation/**"
                 ],
-                "message": "A camada domain é TypeScript puro: sem framework, banco ou infraestrutura (ADR 0001). Defina uma interface no domain e implemente na infrastructure."
+                "message": "A camada domain é TypeScript puro e não depende de ninguém: sem framework, banco, infraestrutura nem camadas externas (ADR 0001). Defina uma interface no domain e implemente na infrastructure."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/modules/*/application/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@nestjs/*",
+                  "@prisma/*",
+                  "pg",
+                  "**/generated/**",
+                  "**/platform/**",
+                  "**/infrastructure/**",
+                  "**/presentation/**"
+                ],
+                "message": "A camada application só conhece o domain e portas (interfaces). Sem framework, banco ou camadas externas: a ligação com a implementação é feita no módulo Nest (ADR 0001, ADR 0009)."
               }
             ]
           }

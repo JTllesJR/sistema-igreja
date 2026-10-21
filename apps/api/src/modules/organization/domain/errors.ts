@@ -58,6 +58,18 @@ export class CongregationAlreadyHeadquartersError extends DomainError {
   }
 }
 
+export class OrganizationNotFoundError extends DomainError {
+  constructor(id: string) {
+    super('organization.not_found', `Organização ${id} não encontrada.`);
+  }
+}
+
+export class OrganizationAlreadyExistsError extends DomainError {
+  constructor(id: string) {
+    super('organization.already_exists', `A organização ${id} já existe.`);
+  }
+}
+
 /** Os dados lidos do banco violam uma invariante: indica corrupção ou escrita fora do domínio. */
 export class OrganizationStateCorruptedError extends DomainError {
   constructor(reason: string) {

@@ -41,10 +41,12 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
 - ✅ **Fase 1 — Esqueleto técnico:** monorepo, Prisma + migration inicial, NestJS com `/health`, lint, testes
   unitários e de integração, CI. Validada localmente com Docker (PostgreSQL 17) e no CI do GitHub.
 - 🔄 **Fase 2 — Módulos de negócio:** `organization` desenhado ([ADR 0009](adr/0009-modulo-organization.md)).
-  **Camada `domain` implementada e testada** (value objects, `Congregation`, agregado `Organization`).
-  Faltam `application`, `infrastructure` (migration e repositório) e, depois do login, `presentation`.
+  **Camadas `domain` e `application` implementadas e testadas** (agregado, 8 casos de uso, porta do repositório,
+  repositório em memória e teste de contrato). Faltam `infrastructure` (migration e repositório Prisma) e, depois do
+  login, `presentation`.
 
 ## Próximos passos
-- Continuar `organization`: casos de uso (`application`) e persistência (`infrastructure`), sem HTTP até existir login.
+- Continuar `organization`: persistência (`infrastructure`: migration com os índices, repositório Prisma, gerador de
+  UUID v7 e ligação no módulo Nest), rodando o mesmo teste de contrato contra o PostgreSQL. Sem HTTP até existir login.
 - Depois, `identity-access` com RBAC por escopo (ADR 0004) e, só então, a camada HTTP dos dois módulos.
 - Validar com a igreja as perguntas ao final de [casos-de-uso-mvp.md](casos-de-uso-mvp.md).

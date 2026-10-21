@@ -53,6 +53,11 @@ de ser usado nas tabelas do módulo e a convenção em `arquitetura-do-codigo.md
 `execute(contexto, comando)`, com `contexto = { organizationId, actorId }`. Quando a autenticação chegar, as
 assinaturas não mudam. Vale para todos os módulos.
 
+**Única exceção:** UC-17 (criar a organização), porque o tenant ainda não existe, é ele que está sendo criado.
+`OrganizationId` e `ActorId` moram no kernel compartilhado (`shared/domain/identifiers.ts`), pois todo módulo os usa.
+Como nenhum caso de uso aceita outro id de organização além do `contexto`, **não existe caminho de código** para
+tocar os dados de outra igreja; isso é verificado por testes (`tenant-isolation.use-case.spec.ts`).
+
 ### 5. Persistência
 
 - **Timestamps** (`created_at`, `updated_at`) são só da persistência; o domínio não os conhece.
@@ -113,6 +118,21 @@ O `index.ts` expõe só **consultas somente-leitura**, por exemplo `congregation
 e `listCongregationIds(organizationId)`, usadas por `identity-access` para validar o escopo de uma atribuição e por
 `members`/`finance` para validar a congregação de destino. Entidades e repositório não são exportados. Eventos de
 domínio (ex.: congregação desativada) entram quando houver um consumidor.
+
+### 9. `application` sem framework; contrato do repositório
+
+- Casos de uso são **classes comuns** (sem `@Injectable`, sem import do Nest): dependem de interfaces
+  (`OrganizationRepository`, `IdGenerator`) e são testados com `new` e fakes. A ligação interface → implementação
+  fica no `organization.module.ts`. O **linter impõe** isso (`.oxlintrc.json`): `application` não importa
+  `@nestjs/*`, `@prisma/*`, `pg`, `generated`, `platform`, `infrastructure` nem `presentation`; `domain` não importa
+  nenhuma das camadas externas. Custo: um pouco mais de código de ligação no módulo.
+- `OrganizationRepository` (porta, no `domain`) tem `findById`, `add` (insere; falha se o id existe) e `save`
+  (grava o agregado inteiro em uma operação atômica, com travamento otimista por `version`).
+- Os casos de uso devolvem **visões** simples (`OrganizationView`, `CongregationView`), não objetos de domínio.
+- **Teste de contrato** (`describeOrganizationRepositoryContract`): uma bateria que descreve o comportamento exigido
+  de qualquer repositório (cópias independentes, conflito de versão, troca de sede). Roda hoje contra o repositório em
+  memória e, quando existir, contra o Prisma/PostgreSQL: a mesma bateria nas duas garante que o fake dos testes se
+  comporta como o real.
 
 ## Consequências
 
