@@ -14,7 +14,9 @@ O requisito original é o PRD em PDF; as decisões e modelos estão em `docs/` (
 
 - `pnpm dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm test:integration` · `pnpm build` · `pnpm format`
 - Banco local: `pnpm db:up` / `pnpm db:deploy` / `pnpm db:down` (exige Docker). Migration nova: `pnpm db:migrate`.
-- Comando do operador (UC-17): `pnpm cli create-organization --name "..."` (compila e executa; sem HTTP).
+- Comandos do operador (compilam e executam; sem HTTP): `pnpm cli create-organization --name "..."` (UC-17) e
+  `pnpm cli create-administrator --organization <id> --email <e-mail>` (senha por prompt oculto ou `--password-stdin`;
+  **nunca** por argumento).
 - Antes de concluir qualquer mudança: `format:check`, `lint`, `typecheck`, `test`, `build` devem passar (é o que o CI roda).
 
 ## Commits e GitHub

@@ -1,12 +1,7 @@
 import { parseArgs } from 'node:util';
 import { DomainError } from '../../../../shared/domain/domain-error.js';
+import type { CliIo } from '../../../../shared/presentation/cli-io.js';
 import type { CreateOrganizationUseCase } from '../../application/create-organization.use-case.js';
-
-/** Saída do comando; separada do `console` para poder ser testada. */
-export interface CliIo {
-  out(line: string): void;
-  err(line: string): void;
-}
 
 const DEFAULT_HEADQUARTERS_NAME = 'Sede';
 

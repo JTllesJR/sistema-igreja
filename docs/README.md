@@ -50,14 +50,15 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
 - 🔄 **`identity-access` mínimo** ([ADR 0010](adr/0010-identity-access-minimo.md)): **camadas `domain`, `application`
   e `infrastructure` implementadas e testadas**: login, renovação com rotação e detecção de reuso, logout, usuário
   atual, política de acesso, trocar senha e criar administrador, com argon2id embutido, JWT (`jose`), 5 tabelas no
-  PostgreSQL e os mesmos testes de contrato dos fakes passando no banco real. Falta o comando do operador (criar o
-  primeiro administrador) e a camada HTTP.
+  PostgreSQL e os mesmos testes de contrato dos fakes passando no banco real. O **comando do operador**
+  (`pnpm cli create-administrator`, senha por prompt oculto ou `--password-stdin`) também está pronto. Falta a camada HTTP.
 
 ## Próximos passos
 Em fatias verticais, para que o primeiro resultado visual chegue cedo (cada módulo novo entrega backend e tela):
-1. Comando do operador para criar o primeiro administrador (senha por prompt oculto), reutilizando o caso de uso pronto.
-2. Camada HTTP de login e do `organization`, com validação Zod, tradução de erros de domínio e OpenAPI (Swagger UI).
-3. Web (React + Vite): login e tela de congregações, o primeiro resultado visual.
-4. RBAC completo com escopo (ADR 0004), depois `members` e `finance`, cada um já com tela.
-- Depois, `identity-access` com RBAC por escopo (ADR 0004) e, só então, a camada HTTP dos dois módulos.
+1. Camada HTTP do login e do `organization`: controllers, guard que usa a política de acesso, validação Zod, tradução
+   de erros de domínio em status HTTP e OpenAPI (Swagger UI).
+2. Web (React + Vite): login e tela de congregações, o primeiro resultado visual.
+3. RBAC completo com escopo (ADR 0004), depois `members` e `finance`, cada um já com tela.
+
+Em paralelo:
 - Validar com a igreja as perguntas ao final de [casos-de-uso-mvp.md](casos-de-uso-mvp.md).

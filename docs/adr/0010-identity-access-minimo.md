@@ -94,6 +94,22 @@ O primeiro administrador nasce por comando de linha, como a primeira igreja (ADR
 oculto** (e por `--password-stdin` para automação), nunca como argumento, para não ir ao histórico do shell nem à lista
 de processos. A **troca da própria senha** entra nesta fatia e revoga as outras sessões.
 
+**Implementado:** `pnpm cli create-administrator --organization <id> --email <e-mail> [--password-stdin]`.
+
+- `--password` e `--password=valor` são **recusadas antes de qualquer outra coisa**, com mensagem dedicada que não
+  repete o valor. Verificado na prática: o `pnpm` chega a ecoar a linha de comando digitada, o que ilustra por que
+  argumentos não são lugar de segredo.
+- **Prompt oculto** (`readHiddenLine`): modo raw do terminal, sem eco; só o rótulo e a quebra de linha vão para a
+  tela. Trata Enter, Backspace (por caractere, inclusive emoji), setas/Delete (ignoradas) e Ctrl+C/Ctrl+D (cancelam,
+  código de saída 130). Pede a senha duas vezes e compara.
+- **`--password-stdin`** (`readAllText`): remove uma quebra de linha final, preserva espaços, limita o tamanho e
+  decodifica UTF-8 mesmo partido entre pedaços. Tem prioridade sobre o prompt.
+- Sem terminal interativo e sem `--password-stdin`, o comando recusa e explica a saída (nunca trava esperando digitação).
+- Códigos de saída: 0 sucesso, 1 regra do sistema recusou (senha fora da política, e-mail repetido, igreja
+  inexistente), 2 uso incorreto, 130 cancelado. Nenhuma mensagem repete a senha.
+- **Limite conhecido:** o prompt oculto foi verificado com um terminal falso (fluxo marcado como TTY), não com um
+  teclado real; vale uma tentativa manual em um terminal interativo.
+
 ### 9. Convenções que este módulo introduz
 
 - `IdGenerator` sobe para `shared/application` (dois módulos o usam). `CongregationId` sobe para o kernel

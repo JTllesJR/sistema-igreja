@@ -35,6 +35,23 @@ pnpm cli create-organization --help
 Ele compila a API, cria a igreja já com sua sede e imprime os identificadores. `--headquarters` é opcional (padrão
 "Sede"). Para ver o resultado: `pnpm --filter @igreja/api db:studio` (abre as tabelas no navegador).
 
+## Criar o primeiro administrador (UC-03, parte do operador)
+
+Com o `organizationId` impresso acima:
+
+```bash
+pnpm cli create-administrator --organization <organizationId> --email admin@suaigreja.com
+pnpm cli create-administrator --help
+```
+
+O comando **pede a senha duas vezes, sem eco**, e a pede num terminal interativo (PowerShell, cmd ou Windows
+Terminal; o Git Bash/mintty não é reconhecido como terminal interativo). Para automação:
+`printf '%s' "$SENHA" | pnpm cli create-administrator --organization <id> --email <e-mail> --password-stdin`.
+
+A senha **nunca** é aceita como argumento (`--password` é recusada): argumentos ficam no histórico do shell e na lista de
+processos, e qualquer ferramenta no caminho (inclusive o `pnpm`) pode registrá-los. A senha tem de ter de 10 a 128
+caracteres. O administrador recebe o papel "Administrador" (acesso total) para a igreja toda.
+
 ## Comandos do dia a dia
 
 | Comando                 | O que faz                                                              |
