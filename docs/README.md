@@ -25,6 +25,7 @@ casos de uso, modelo ER, sequências, atividades e estados, distinguindo impleme
 | [0009](adr/0009-modulo-organization.md) | Módulo `organization`: agregado, ordem de construção e integridade | aceita |
 | [0010](adr/0010-identity-access-minimo.md) | `identity-access` mínimo: usuários, senha, sessões e papéis | aceita |
 | [0011](adr/0011-camada-http.md) | Camada HTTP: validação, autenticação, erros e endurecimento | aceita |
+| [0012](adr/0012-web-react-vite-tailwind.md) | Web: React, Vite e Tailwind | aceita |
 
 ## Como usar os ADRs
 Toda decisão estrutural nova vira um ADR curto (contexto, decisão, alternativas, consequências). Se uma decisão mudar,
@@ -60,11 +61,15 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
   de origens, limite do corpo, limite de taxa por IP e `X-Request-Id`. Faltam **(b)** autenticação e guards,
   **(c)** endpoints de congregações e **(d)** OpenAPI.
 
+- ✅ **Web inicial** ([ADR 0012](adr/0012-web-react-vite-tailwind.md)): `apps/web` (React + Vite + Tailwind) com a
+  página **Andamento do sistema**: saúde da API e do banco ao vivo (contrato compartilhado) e o estado dos 18 casos de
+  uso. Sobe com `pnpm dev` em `http://localhost:5173`.
+
 ## Próximos passos
 Em fatias verticais, para que o primeiro resultado visual chegue cedo (cada módulo novo entrega backend e tela):
 1. Camada HTTP do login e do `organization` (ADR 0011): passo (a) feito; seguem (b) login, refresh em cookie e guards
    que usam a política de acesso, (c) congregações e (d) OpenAPI (Swagger UI).
-2. Web (React + Vite): login e tela de congregações, o primeiro resultado visual.
+2. Web: tela de login e de congregações sobre a base já criada (com roteador e TanStack Query).
 3. RBAC completo com escopo (ADR 0004), depois `members` e `finance`, cada um já com tela.
 
 Em paralelo:
