@@ -1,4 +1,4 @@
-import { Address, type AddressInput } from '../domain/address.js';
+import { Address, type AddressInput } from '../../../shared/domain/address.js';
 import { ServiceTime } from '../domain/service-time.js';
 
 /** Horário de culto como chega de fora (texto); vira `ServiceTime` (validado) dentro do caso de uso. */

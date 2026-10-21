@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ValidationError } from '../../../shared/domain/domain-error.js';
-import { thrownBy } from '../../../shared/testing/thrown-by.js';
+import { ValidationError } from './domain-error.js';
+import { thrownBy } from '../testing/thrown-by.js';
 import { Address } from './address.js';
 
 const minimal = { street: 'Rua das Flores', city: 'Campinas', state: 'SP' };

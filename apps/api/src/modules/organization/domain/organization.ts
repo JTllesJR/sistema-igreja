@@ -1,5 +1,5 @@
 import { ValidationError } from '../../../shared/domain/domain-error.js';
-import type { Address } from './address.js';
+import type { Address } from '../../../shared/domain/address.js';
 import { Congregation } from './congregation.js';
 import type { CongregationName } from './congregation-name.js';
 import {

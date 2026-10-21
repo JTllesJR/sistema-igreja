@@ -1,4 +1,4 @@
-import type { AddressInput } from '../domain/address.js';
+import type { AddressInput } from '../../../shared/domain/address.js';
 import { CongregationName } from '../domain/congregation-name.js';
 import { CongregationId, OrganizationId } from '../domain/ids.js';
 import { Organization } from '../domain/organization.js';

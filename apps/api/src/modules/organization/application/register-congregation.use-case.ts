@@ -1,5 +1,5 @@
 import type { RequestContext } from '../../../shared/application/request-context.js';
-import type { AddressInput } from '../domain/address.js';
+import type { AddressInput } from '../../../shared/domain/address.js';
 import { CongregationName } from '../domain/congregation-name.js';
 import { CongregationId } from '../domain/ids.js';
 import type { OrganizationRepository } from '../domain/organization.repository.js';

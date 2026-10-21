@@ -5,6 +5,10 @@ import type { PrismaService } from '../../src/platform/database/prisma.service.j
  * Só é seguro porque o vitest.config.integration.ts exige que o banco de testes termine em "_test".
  */
 export async function cleanDatabase(prisma: PrismaService): Promise<void> {
+  // `audit_log` é somente-anexação (gatilho recusa DELETE); só TRUNCATE a esvazia, e só um banco de testes permite isto.
+  await prisma.$executeRawUnsafe('TRUNCATE TABLE "audit_log"');
+  await prisma.memberHistoryEvent.deleteMany();
+  await prisma.member.deleteMany();
   await prisma.session.deleteMany();
   await prisma.userRoleAssignment.deleteMany();
   await prisma.rolePermission.deleteMany();

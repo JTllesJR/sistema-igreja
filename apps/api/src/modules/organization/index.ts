@@ -7,7 +7,10 @@
  * - `ORGANIZATION_QUERIES` e `OrganizationQueries`: consultas somente-leitura para OUTROS módulos (ADR 0009, seção 8).
  *   Hoje só `organizationExists`, usada pelo `identity-access`; o resto entra com os próximos consumidores.
  */
-export type { OrganizationQueries } from './application/organization-queries.js';
+export type {
+  CongregationSummary,
+  OrganizationQueries,
+} from './application/organization-queries.js';
 export { CreateOrganizationUseCase } from './application/create-organization.use-case.js';
 export { ORGANIZATION_QUERIES } from './organization.tokens.js';
 export { OrganizationModule } from './organization.module.js';

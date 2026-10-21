@@ -38,6 +38,7 @@ model Organization {
   congregations Congregation[]
   users         UserAccount[]
   roles         Role[]
+  members       Member[]
 
   @@map("organization")
 }
@@ -58,6 +59,9 @@ model Congregation {
 
   organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   assignments  UserRoleAssignment[]
+  members      Member[]
+  eventsFrom   MemberHistoryEvent[] @relation("EventFromCongregation")
+  eventsTo     MemberHistoryEvent[] @relation("EventToCongregation")
 
   // Permite que outras tabelas usem FK composta (organization_id, congregation_id), impedindo que um
   // registro aponte para uma congregação de outra organização (ver docs/diagramas/modelo-er.md).
@@ -167,4 +171,109 @@ model Session {
   @@index([familyId])
   @@index([userId])
   @@map("session")
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// members (ADR 0013). Regras que o Prisma não expressa estão em SQL manual na migration `*_members_audit`
+// (limites de tamanho por CHECK e o gatilho que torna `audit_log` somente-anexação). Preserve-as ao alterar.
+// Dados de membros são SENSÍVEIS (convicção religiosa, LGPD art. 5º, II; ADR 0006).
+// ---------------------------------------------------------------------------------------------------------------
+
+/// Situação do membro na igreja. Valores provisórios, a validar com a igreja (casos de uso, pergunta 1).
+enum MemberStatus {
+  ACTIVE
+  AWAY
+  TRANSFERRED_OUT
+  DECEASED
+
+  @@map("member_status")
+}
+
+enum MemberEventType {
+  REGISTERED
+  BAPTISM
+  RECEPTION
+  TRANSFER
+  STATUS_CHANGE
+  ANONYMIZED
+
+  @@map("member_event_type")
+}
+
+/// Pessoa cadastrada em UMA congregação. Nunca é excluída: é anonimizada (dados pessoais apagados, linha mantida).
+model Member {
+  id             String       @id @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  congregationId String       @map("congregation_id") @db.Uuid
+  fullName       String       @map("full_name")
+  /// Nome sem acentos, em minúsculas: SÓ para a busca (derivado de full_name pelo domínio).
+  nameKey        String       @map("name_key")
+  birthDate      DateTime?    @map("birth_date") @db.Date
+  /// Só dígitos (DDD + número).
+  phone          String?
+  email          String?
+  /// JSON validado pela aplicação (value object Address). Nulo = sem endereço.
+  address        Json?
+  status         MemberStatus @default(ACTIVE)
+  /// Preenchido quando os dados pessoais foram apagados (pedido do titular). Irreversível.
+  anonymizedAt   DateTime?    @map("anonymized_at") @db.Timestamptz(3)
+  /// Travamento otimista.
+  version        Int          @default(0)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  congregation Congregation         @relation(fields: [organizationId, congregationId], references: [organizationId, id], onDelete: Restrict)
+  history      MemberHistoryEvent[]
+
+  @@unique([organizationId, id])
+  @@index([organizationId, congregationId])
+  @@index([organizationId, nameKey])
+  @@map("member")
+}
+
+/// Histórico do membro: SOMENTE-ANEXAÇÃO (o domínio nunca edita nem apaga um evento; a anonimização só limpa as notas).
+model MemberHistoryEvent {
+  id                 String          @id @db.Uuid
+  organizationId     String          @map("organization_id") @db.Uuid
+  memberId           String          @map("member_id") @db.Uuid
+  type               MemberEventType
+  /// Quando o fato aconteceu (ex.: a data do batismo). `recorded_at` é quando foi registrado.
+  occurredOn         DateTime        @map("occurred_on") @db.Date
+  notes              String?
+  fromCongregationId String?         @map("from_congregation_id") @db.Uuid
+  toCongregationId   String?         @map("to_congregation_id") @db.Uuid
+  fromStatus         MemberStatus?   @map("from_status")
+  toStatus           MemberStatus?   @map("to_status")
+  recordedAt         DateTime        @map("recorded_at") @db.Timestamptz(3)
+
+  member           Member        @relation(fields: [organizationId, memberId], references: [organizationId, id], onDelete: Restrict)
+  fromCongregation Congregation? @relation("EventFromCongregation", fields: [organizationId, fromCongregationId], references: [organizationId, id], onDelete: Restrict)
+  toCongregation   Congregation? @relation("EventToCongregation", fields: [organizationId, toCongregationId], references: [organizationId, id], onDelete: Restrict)
+
+  @@index([organizationId, memberId, recordedAt])
+  @@map("member_history_event")
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// audit (ADR 0013). Trilha SOMENTE-ANEXAÇÃO: um gatilho (SQL manual na migration) recusa UPDATE e DELETE. Sem chave
+// estrangeira de propósito: a trilha precisa sobreviver a qualquer outra tabela. NUNCA guarde dado pessoal aqui.
+// ---------------------------------------------------------------------------------------------------------------
+
+model AuditLog {
+  id             String   @id @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  actorId        String   @map("actor_id") @db.Uuid
+  /// Verbo no passado com o módulo na frente: member.viewed
+  action         String
+  entity         String
+  entityId       String?  @map("entity_id") @db.Uuid
+  /// Contexto técnico (contagens, nomes de campos). Nunca dado pessoal.
+  metadata       Json?
+  /// Instante do BANCO (default now()), não de quem registra.
+  occurredAt     DateTime @default(now()) @map("occurred_at") @db.Timestamptz(3)
+
+  @@index([organizationId, occurredAt])
+  @@index([organizationId, entity, entityId])
+  @@map("audit_log")
 }

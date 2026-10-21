@@ -1,8 +1,5 @@
-import { ValidationError } from '../../../shared/domain/domain-error.js';
-import {
-  collapseWhitespace,
-  optionalText,
-} from '../../../shared/domain/text.js';
+import { ValidationError } from './domain-error.js';
+import { collapseWhitespace, optionalText } from './text.js';
 
 const STATES = new Set([
   'AC',

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Address } from '../domain/address.js';
+import { Address } from '../../../shared/domain/address.js';
 import { OrganizationStateCorruptedError } from '../domain/errors.js';
 import { ServiceTime } from '../domain/service-time.js';
 

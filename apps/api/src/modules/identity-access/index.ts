@@ -17,3 +17,4 @@ export {
 } from './presentation/cli/create-administrator.command.js';
 export { AccessPolicy } from './domain/access-policy.js';
 export { CurrentPolicy } from './presentation/http/authenticated-request.js';
+export { Permission } from './domain/permission.js';

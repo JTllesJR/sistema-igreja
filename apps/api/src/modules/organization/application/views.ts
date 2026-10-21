@@ -1,4 +1,4 @@
-import type { AddressPrimitives } from '../domain/address.js';
+import type { AddressPrimitives } from '../../../shared/domain/address.js';
 import type {
   Congregation,
   CongregationStatus,

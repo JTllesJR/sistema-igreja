@@ -43,6 +43,25 @@ describe('OrganizationQueries (API pública do módulo organization para os outr
     ).resolves.toBe(true);
   });
 
+  it('acha a congregação da PRÓPRIA igreja e não acha a de outra', async () => {
+    const create = moduleRef.get(CreateOrganizationUseCase, { strict: false });
+    const mine = await create.execute({
+      name: 'Igreja Central',
+      headquarters: { name: 'Sede' },
+    });
+    const other = await create.execute({
+      name: 'Igreja B',
+      headquarters: { name: 'Sede B' },
+    });
+
+    await expect(
+      queries().findCongregation(mine.organizationId, mine.headquartersId),
+    ).resolves.toEqual({ id: mine.headquartersId, status: 'ACTIVE' });
+    await expect(
+      queries().findCongregation(mine.organizationId, other.headquartersId),
+    ).resolves.toBeNull();
+  });
+
   it('informa que uma igreja inexistente não existe', async () => {
     await expect(
       queries().organizationExists(OrganizationId.of(uuidFor(404))),

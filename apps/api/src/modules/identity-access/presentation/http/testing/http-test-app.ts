@@ -49,8 +49,13 @@ export const TEST_PASSWORD = 'senha-super-segura-1';
 export interface HttpTestAppOptions {
   /** Controllers extras (rotas só de teste). */
   controllers?: Type<unknown>[];
-  /** Troca de provedores (ex.: o repositório de outro módulo por um em memória). */
-  overrides?: (builder: TestingModuleBuilder) => TestingModuleBuilder;
+  /** Módulos extras a incluir (ex.: o módulo que está sendo testado). */
+  imports?: Type<unknown>[];
+  /** Troca de provedores (ex.: o repositório de outro módulo por um em memória). Recebe o relógio de teste. */
+  overrides?: (
+    builder: TestingModuleBuilder,
+    context: { clock: FixedClock },
+  ) => TestingModuleBuilder;
 }
 
 /**
@@ -66,7 +71,12 @@ export async function startHttpTestApp(options: HttpTestAppOptions = {}) {
   const roles = new InMemoryRoleRepository();
 
   let builder = Test.createTestingModule({
-    imports: [ConfigModule, HttpPlatformModule, IdentityAccessModule],
+    imports: [
+      ConfigModule,
+      HttpPlatformModule,
+      IdentityAccessModule,
+      ...(options.imports ?? []),
+    ],
     controllers: options.controllers ?? [],
   })
     .overrideProvider(ENV)
@@ -88,7 +98,7 @@ export async function startHttpTestApp(options: HttpTestAppOptions = {}) {
     .useValue(directory)
     .overrideProvider(CLOCK)
     .useValue(clock);
-  builder = options.overrides ? options.overrides(builder) : builder;
+  builder = options.overrides ? options.overrides(builder, { clock }) : builder;
 
   const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>();

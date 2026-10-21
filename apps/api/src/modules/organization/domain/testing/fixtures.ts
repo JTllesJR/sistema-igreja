@@ -1,4 +1,4 @@
-import { Address } from '../address.js';
+import { Address } from '../../../../shared/domain/address.js';
 import { CongregationName } from '../congregation-name.js';
 import { CongregationId, OrganizationId } from '../ids.js';
 import { ServiceTime } from '../service-time.js';
