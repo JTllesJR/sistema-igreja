@@ -43,11 +43,14 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
 - 🔄 **Fase 2 — Módulos de negócio:** `organization` desenhado ([ADR 0009](adr/0009-modulo-organization.md)).
   **Camadas `domain`, `application` e `infrastructure` implementadas e testadas** (agregado, 8 casos de uso,
   migration com os índices, repositório Prisma validado pelo mesmo teste de contrato do repositório em memória,
-  gerador UUID v7 e módulo Nest). Falta apenas a `presentation`, que espera o login. Falta também o comando de
-  linha do UC-17.
+  gerador UUID v7 e módulo Nest) e o **comando de linha do UC-17** (`pnpm cli create-organization`). Falta apenas
+  a `presentation` HTTP, que espera o login.
 
 ## Próximos passos
-- Comando de linha para criar a organização inicial (UC-17), que reutiliza o caso de uso já pronto.
-- `identity-access` (usuários, RBAC com escopo, ADR 0004) e, só então, a camada HTTP do `organization`.
+Em fatias verticais, para que o primeiro resultado visual chegue cedo (cada módulo novo entrega backend e tela):
+1. `identity-access` mínimo: usuário, senha (argon2), login e um papel "Administrador" com acesso total.
+2. Camada HTTP de login e do `organization`, com validação Zod, tradução de erros de domínio e OpenAPI (Swagger UI).
+3. Web (React + Vite): login e tela de congregações, o primeiro resultado visual.
+4. RBAC completo com escopo (ADR 0004), depois `members` e `finance`, cada um já com tela.
 - Depois, `identity-access` com RBAC por escopo (ADR 0004) e, só então, a camada HTTP dos dois módulos.
 - Validar com a igreja as perguntas ao final de [casos-de-uso-mvp.md](casos-de-uso-mvp.md).

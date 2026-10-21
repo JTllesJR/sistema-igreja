@@ -38,7 +38,9 @@ Primeiro `domain`, `application` e `infrastructure`, testados sem HTTP. A `prese
 `identity-access`, porque a organização vem do usuário autenticado e nunca de parâmetro do cliente (ADR 0003).
 Nenhum endpoint de dados de uma igreja fica aberto, nem provisoriamente.
 
-A primeira organização nasce por **comando de linha** (UC-17), que chama o mesmo caso de uso. Não há endpoint público
+A primeira organização nasce por **comando de linha** (UC-17), que chama o mesmo caso de uso
+(**implementado**: `pnpm cli create-organization`, adaptador de entrada em `presentation/cli`, ponto de entrada
+`src/cli.ts`, códigos de saída 0, 1 e 2). Não há endpoint público
 de criação de igrejas (self-service está fora de escopo, ADR 0003). O primeiro administrador será criado por comando
 equivalente no `identity-access`.
 

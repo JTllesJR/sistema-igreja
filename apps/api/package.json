@@ -9,6 +9,7 @@
     "build": "nest build",
     "dev": "nest start --watch --env-file ../../.env",
     "start": "node --env-file-if-exists=../../.env dist/main.js",
+    "cli": "nest build && node --env-file-if-exists=../../.env dist/cli.js",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint --type-aware src test",
     "test": "vitest run",

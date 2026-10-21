@@ -14,7 +14,14 @@ O requisito original é o PRD em PDF; as decisões e modelos estão em `docs/` (
 
 - `pnpm dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm test:integration` · `pnpm build` · `pnpm format`
 - Banco local: `pnpm db:up` / `pnpm db:deploy` / `pnpm db:down` (exige Docker). Migration nova: `pnpm db:migrate`.
+- Comando do operador (UC-17): `pnpm cli create-organization --name "..."` (compila e executa; sem HTTP).
 - Antes de concluir qualquer mudança: `format:check`, `lint`, `typecheck`, `test`, `build` devem passar (é o que o CI roda).
+
+## Commits e GitHub
+
+- Só commitar quando o usuário pedir. Commits em **Conventional Commits, em português**, **sem** a linha
+  `Co-Authored-By` nem qualquer atribuição ao Claude (o usuário pediu: o commit deve ficar só no nome dele).
+- `git push` só quando o usuário pedir explicitamente. O remoto é privado e o CI roda em push e PR.
 
 ## Regras que não se negociam
 

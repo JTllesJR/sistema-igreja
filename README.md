@@ -21,6 +21,18 @@ pnpm dev                  # API em http://localhost:3000
 
 Conferindo: `curl http://localhost:3000/health` deve responder `{"status":"ok","checks":{"database":"up"}}`.
 
+## Criar a primeira igreja (UC-17)
+
+Não há endpoint público para criar igrejas (ADR 0009); quem instala o sistema usa o comando de linha:
+
+```bash
+pnpm cli create-organization --name "Igreja Central" --headquarters "Sede"
+pnpm cli create-organization --help
+```
+
+Ele compila a API, cria a igreja já com sua sede e imprime os identificadores. `--headquarters` é opcional (padrão
+"Sede"). Para ver o resultado: `pnpm --filter @igreja/api db:studio` (abre as tabelas no navegador).
+
 ## Comandos do dia a dia
 
 | Comando                 | O que faz                                                              |

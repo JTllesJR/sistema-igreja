@@ -53,6 +53,9 @@ presentation ──▶ application ──▶ domain ◀── infrastructure
 - **A partir do módulo `organization` (ADR 0009):** os ids UUID v7 são gerados pelo domínio, por uma porta
   `IdGenerator`, e não pelo Prisma; todo caso de uso recebe `execute(contexto, comando)` com
   `contexto = { organizationId, actorId }`. O banco não tem default de id; o gerador é `UuidV7IdGenerator`.
+- **`presentation` é todo adaptador de entrada**, não só HTTP: o comando de linha do operador
+  (`presentation/cli` + `src/cli.ts`) é função comum que devolve código de saída; o `src/cli.ts` só sobe o contexto
+  do Nest (sem servidor) e a chama. Assim o comando é testável sem processo.
 - **Raiz de composição:** o `<modulo>.module.ts` liga cada porta à sua implementação (`useFactory`) e cria os casos de
   uso. É o único lugar que conhece `application` e `infrastructure` ao mesmo tempo.
 - **Repositórios cumprem um teste de contrato** (`describe<...>RepositoryContract`) e rodam contra o fake em memória
