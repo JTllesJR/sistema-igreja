@@ -44,8 +44,8 @@ export function Painel() {
           <Numero rotulo="Planejados" valor={resumo.planejados} />
         </dl>
         <p className="mt-3 text-sm text-slate-500">
-          “Backend pronto” significa regra de negócio e banco testados; falta
-          expor por HTTP e criar a tela.
+          “Backend pronto” significa regra de negócio e banco testados; falta a
+          tela e, em alguns casos, expor por HTTP.
         </p>
       </section>
 

@@ -105,6 +105,40 @@ O Zod 4 gera JSON Schema nativamente (`z.toJSONSchema`, verificado), então a do
 contrato, sem duplicar. `@nestjs/swagger` (compatível com o Nest 12) serve a interface. Fica por último para não
 atrasar o login.
 
+### 11. Como o passo (b), autenticação, ficou (implementado)
+
+Endpoints: `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me` e `POST /auth/change-password`.
+Contratos Zod em `packages/contracts` (`auth.ts`).
+
+- **O token de renovação nunca está no corpo**, nem de entrada nem de saída: só no cookie. O corpo do login devolve o
+  token de acesso, a validade e o usuário; o da renovação devolve só o token de acesso e a validade. Respostas com token
+  levam `Cache-Control: no-store`.
+- **Cookie `refresh_token`:** `HttpOnly`, `SameSite=Strict`, `Path=/auth` e `Expires` igual ao da sessão. O atributo
+  `Secure` fica ligado em todo ambiente **menos `NODE_ENV=development`**: o Safari não grava cookie `Secure` em
+  `http://localhost`. Sem HTTPS em produção o navegador simplesmente não guardaria o cookie, então o erro seria visível.
+  Quando a renovação falha por sessão inválida ou por **reuso**, o cookie é apagado na própria resposta.
+- **Sem `cookie-parser`:** ler um único cookie dispensa uma dependência (e uma superfície de ataque); são 15 linhas, com
+  teste, em `refresh-cookie.ts`, o único arquivo que toca em cookie.
+- **Guard global (`AuthGuard`, no `identity-access`)** é registrado como `APP_GUARD` e vale para todos os módulos. Fluxo:
+  rota `@Public()`? libera. Senão, confere o JWT (só HS256; recusa `none`, outro algoritmo, token sem `exp` e id
+  malformado), monta o `RequestContext` **a partir do token**, carrega a política de acesso e confere
+  `@RequirePermission`. Os marcadores (`@Public`, `@RequirePermission`, `@CurrentContext`) ficam em
+  `platform/http/access-control.ts` para qualquer módulo usá-los sem depender do `identity-access`.
+- **Token válido de conta que não existe mais, foi desativada ou é de outra igreja → 401**, não 404: o motivo não vaza.
+- **Sem permissão → 403** (`identity.permission_denied`, novo código na tabela).
+- **`GET /health` e `POST /auth/login|refresh|logout` são `@Public()`.** O logout é público porque quem sai pode estar com
+  o token de acesso vencido; a prova de quem é está no cookie. É idempotente: 204 mesmo sem cookie.
+- **Limites por IP e por rota,** mais apertados que o global de 100 por minuto: login 10, renovação 30 e troca de senha
+  10 por minuto. Somam-se ao bloqueio por conta (ADR 0010), que não depende de IP.
+- **A verificação do token é uma porta** (`AccessTokenVerifier`, na `application`), implementada pela mesma classe `jose`
+  que assina, com a mesma chave.
+- **Como foi testado:** a aplicação HTTP inteira (guard, filtro de erros, limite de taxa, cookies) sobe com
+  repositórios **em memória** (`auth.http.spec.ts`), sem precisar de banco; o PostgreSQL já é coberto pelos testes de
+  contrato dos repositórios. Fez-se também a mutação manual em 19 pontos que os testes pegaram (guard, atributos do cookie, limites,
+  verificação do JWT); um mutante era equivalente e não conta (o brand do id já recusa `sid` ausente).
+- **Limite conhecido:** não há ainda um teste ponta a ponta HTTP contra o PostgreSQL real; o `pnpm test:integration`
+  existente continua sendo o que roda com banco.
+
 ## Consequências
 
 - Todo cliente recebe erros num formato único e previsível; a web mostra `detail` e reage a `code`.
