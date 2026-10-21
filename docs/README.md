@@ -23,6 +23,7 @@ casos de uso, modelo ER, sequências, atividades e estados, distinguindo impleme
 | [0007](adr/0007-hospedagem-adiada.md) | Hospedagem | adiada |
 | [0008](adr/0008-ferramentas-de-desenvolvimento.md) | Ferramentas de desenvolvimento e política de dependências | aceita |
 | [0009](adr/0009-modulo-organization.md) | Módulo `organization`: agregado, ordem de construção e integridade | aceita |
+| [0010](adr/0010-identity-access-minimo.md) | `identity-access` mínimo: usuários, senha, sessões e papéis | aceita |
 
 ## Como usar os ADRs
 Toda decisão estrutural nova vira um ADR curto (contexto, decisão, alternativas, consequências). Se uma decisão mudar,
@@ -46,9 +47,14 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
   gerador UUID v7 e módulo Nest) e o **comando de linha do UC-17** (`pnpm cli create-organization`). Falta apenas
   a `presentation` HTTP, que espera o login.
 
+- 🔄 **`identity-access` mínimo** ([ADR 0010](adr/0010-identity-access-minimo.md)): **camada `domain` implementada e
+  testada** (e-mail, senha, hash, permissão, papel, usuário com bloqueio, sessão com rotação, política de acesso).
+  Faltam `application` (login, renovação, logout, trocar senha, criar administrador), `infrastructure` (argon2,
+  JWT, migration, repositórios) e o comando do operador.
+
 ## Próximos passos
 Em fatias verticais, para que o primeiro resultado visual chegue cedo (cada módulo novo entrega backend e tela):
-1. `identity-access` mínimo: usuário, senha (argon2), login e um papel "Administrador" com acesso total.
+1. Concluir o `identity-access` mínimo: `application`, `infrastructure` e comando do operador.
 2. Camada HTTP de login e do `organization`, com validação Zod, tradução de erros de domínio e OpenAPI (Swagger UI).
 3. Web (React + Vite): login e tela de congregações, o primeiro resultado visual.
 4. RBAC completo com escopo (ADR 0004), depois `members` e `finance`, cada um já com tela.

@@ -3,7 +3,7 @@ import type { AddressInput } from '../domain/address.js';
 import { CongregationName } from '../domain/congregation-name.js';
 import { CongregationId } from '../domain/ids.js';
 import type { OrganizationRepository } from '../domain/organization.repository.js';
-import type { IdGenerator } from './id-generator.js';
+import type { IdGenerator } from '../../../shared/application/id-generator.js';
 import { type ServiceTimeInput, toAddress, toServiceTimes } from './inputs.js';
 import { loadOrganization } from './load-organization.js';
 import { type CongregationView, toCongregationView } from './views.js';

@@ -4,7 +4,7 @@ import { CongregationId, OrganizationId } from '../domain/ids.js';
 import { Organization } from '../domain/organization.js';
 import { OrganizationName } from '../domain/organization-name.js';
 import type { OrganizationRepository } from '../domain/organization.repository.js';
-import type { IdGenerator } from './id-generator.js';
+import type { IdGenerator } from '../../../shared/application/id-generator.js';
 import { type ServiceTimeInput, toAddress, toServiceTimes } from './inputs.js';
 
 export interface CreateOrganizationCommand {

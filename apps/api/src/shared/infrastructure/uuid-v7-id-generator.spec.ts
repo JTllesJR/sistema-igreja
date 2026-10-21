@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CongregationId } from '../domain/ids.js';
+import { CongregationId } from '../domain/identifiers.js';
 import { UuidV7IdGenerator } from './uuid-v7-id-generator.js';
 
 const UUID_V7 =

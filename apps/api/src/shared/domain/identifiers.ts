@@ -25,3 +25,10 @@ export type ActorId = Brand<string, 'ActorId'>;
 export const ActorId = {
   of: (value: string): ActorId => parseIdentifier<'ActorId'>(value),
 };
+
+/** Congregação: vários módulos (membros, finanças, papéis com escopo) a referenciam por id, então o tipo é compartilhado. */
+export type CongregationId = Brand<string, 'CongregationId'>;
+export const CongregationId = {
+  of: (value: string): CongregationId =>
+    parseIdentifier<'CongregationId'>(value),
+};

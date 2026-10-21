@@ -5,7 +5,7 @@ import { CreateOrganizationUseCase } from './application/create-organization.use
 import { DeactivateCongregationUseCase } from './application/deactivate-congregation.use-case.js';
 import { DesignateHeadquartersUseCase } from './application/designate-headquarters.use-case.js';
 import { GetOrganizationUseCase } from './application/get-organization.use-case.js';
-import type { IdGenerator } from './application/id-generator.js';
+import type { IdGenerator } from '../../shared/application/id-generator.js';
 import { ListCongregationsUseCase } from './application/list-congregations.use-case.js';
 import { ReactivateCongregationUseCase } from './application/reactivate-congregation.use-case.js';
 import { RegisterCongregationUseCase } from './application/register-congregation.use-case.js';
@@ -13,7 +13,7 @@ import { RenameOrganizationUseCase } from './application/rename-organization.use
 import { UpdateCongregationUseCase } from './application/update-congregation.use-case.js';
 import type { OrganizationRepository } from './domain/organization.repository.js';
 import { PrismaOrganizationRepository } from './infrastructure/prisma-organization.repository.js';
-import { UuidV7IdGenerator } from './infrastructure/uuid-v7-id-generator.js';
+import { UuidV7IdGenerator } from '../../shared/infrastructure/uuid-v7-id-generator.js';
 import {
   ID_GENERATOR,
   ORGANIZATION_REPOSITORY,

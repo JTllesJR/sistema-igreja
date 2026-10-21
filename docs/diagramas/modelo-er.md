@@ -51,12 +51,13 @@ Estas são as duas tabelas do [schema Prisma atual](../../apps/api/prisma/schema
 ```mermaid
 erDiagram
     ORGANIZATION ||--o{ CONGREGATION : possui
-    ORGANIZATION ||--o{ USER : possui
+    ORGANIZATION ||--o{ USER_ACCOUNT : possui
     ORGANIZATION ||--o{ ROLE : define
-    USER ||--o{ ROLE_ASSIGNMENT : recebe
-    ROLE ||--o{ ROLE_ASSIGNMENT : concede
+    USER_ACCOUNT ||--o{ USER_ROLE_ASSIGNMENT : recebe
+    ROLE ||--o{ USER_ROLE_ASSIGNMENT : concede
     ROLE ||--o{ ROLE_PERMISSION : contem
-    CONGREGATION |o--o{ ROLE_ASSIGNMENT : limita
+    CONGREGATION |o--o{ USER_ROLE_ASSIGNMENT : limita
+    USER_ACCOUNT ||--o{ SESSION : abre
 
     ORGANIZATION {
         uuid id PK
@@ -72,33 +73,50 @@ erDiagram
         json address
         json service_times
     }
-    USER {
+    USER_ACCOUNT {
         uuid id PK
         uuid organization_id FK
-        string email
+        string email UK "único no sistema, sem diferenciar caixa"
         string password_hash
-        boolean active
+        string status
+        int failed_login_attempts
+        timestamptz locked_until
+        timestamptz last_login_at
+        int version
     }
     ROLE {
         uuid id PK
         uuid organization_id FK
         string name
+        boolean is_system
     }
     ROLE_PERMISSION {
-        uuid organization_id FK
         uuid role_id FK
         string permission
     }
-    ROLE_ASSIGNMENT {
+    USER_ROLE_ASSIGNMENT {
         uuid id PK
         uuid organization_id FK
         uuid user_id FK
         uuid role_id FK
-        uuid congregation_id FK
+        uuid congregation_id FK "nulo = igreja toda"
+    }
+    SESSION {
+        uuid id PK
+        uuid organization_id FK
+        uuid user_id FK
+        uuid family_id
+        string token_hash UK
+        timestamptz family_started_at
+        timestamptz expires_at
+        timestamptz rotated_at
+        timestamptz revoked_at
     }
 ```
 
-Uma atribuição com `congregation_id` nulo vale para a organização inteira. Um usuário pode receber vários papéis em congregações diferentes. A sede é uma congregação marcada com `is_headquarters`, não outra entidade.
+**Estágio:** o domínio destas entidades está implementado e testado ([ADR 0010](../adr/0010-identity-access-minimo.md)); as tabelas e a migration ainda não existem. A tabela de usuários se chama `user_account` porque `user` é palavra reservada no PostgreSQL.
+
+Uma atribuição com `congregation_id` nulo vale para a organização inteira. Um usuário pode receber vários papéis em congregações diferentes. O **Administrador** é um papel de sistema (`is_system`) com uma única permissão, `*` ("tudo"), criado por igreja. O token de renovação nunca é gravado: só seu hash (`token_hash`); as sessões de um mesmo login compartilham `family_id`. A sede é uma congregação marcada com `is_headquarters`, não outra entidade.
 
 `status` da congregação é `ACTIVE` ou `INACTIVE`; congregação não é excluída. `version` da organização é o contador do travamento otimista. `address` e `service_times` são JSON validado na aplicação. Os atributos de `organization` e `congregation` seguem o [ADR 0009](../adr/0009-modulo-organization.md); as duas tabelas já existem no banco (ver "Banco atual").
 

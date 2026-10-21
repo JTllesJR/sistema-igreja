@@ -2,7 +2,7 @@ import type { RequestContext } from '../../../../shared/application/request-cont
 import { ActorId } from '../../../../shared/domain/identifiers.js';
 import { InMemoryOrganizationRepository } from '../../domain/testing/in-memory-organization.repository.js';
 import { CreateOrganizationUseCase } from '../create-organization.use-case.js';
-import type { IdGenerator } from '../id-generator.js';
+import type { IdGenerator } from '../../../../shared/application/id-generator.js';
 
 /** Gera ids previsíveis (1, 2, 3...), o que torna os testes legíveis e determinísticos. */
 export class SequentialIdGenerator implements IdGenerator {

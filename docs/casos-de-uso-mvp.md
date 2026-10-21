@@ -25,6 +25,7 @@ Escopo do MVP no PRD: **login, permissões, cadastro de membros, finanças bási
 | UC-01 | Entrar e sair do sistema | Todos | Sessão com token curto + refresh; bloqueio após tentativas falhas. |
 | UC-02 | Gerenciar papéis e permissões | Administrador | Papéis semente + personalizados. |
 | UC-03 | Convidar usuário e atribuir papel com escopo | Administrador | Escopo = organização ou congregação. |
+| UC-18 | Trocar a própria senha | Todos | Exige a senha atual; revoga as outras sessões (ADR 0010). |
 | UC-04 | Consultar trilha de auditoria | Administrador, Diretoria | Quem fez o quê, quando; filtros por entidade e usuário. |
 
 ### Organização
@@ -64,6 +65,9 @@ Escopo do MVP no PRD: **login, permissões, cadastro de membros, finanças bási
 - **RN-05:** um usuário pode ter múltiplas atribuições, cada uma com seu escopo.
 - **RN-06:** cada organização tem exatamente uma sede, e ela está ativa. Nome de congregação é único na organização.
 - **RN-07:** congregação não é excluída, apenas desativada.
+- **RN-08:** e-mail único no sistema; cada usuário pertence a uma igreja. Senha de 10 a 128 caracteres, guardada só como hash.
+- **RN-09:** 5 falhas seguidas de login bloqueiam a conta por 15 minutos; o erro de login não revela se o e-mail existe.
+- **RN-10:** reapresentar um token de renovação já trocado é tratado como roubo e revoga todas as sessões daquele login.
 
 ## Fora do MVP (já previstos, não construídos)
 Carteirinha e certificados · frequência · agenda · atas · comunicação interna · relatórios avançados e
