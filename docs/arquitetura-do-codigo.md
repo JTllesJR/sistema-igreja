@@ -11,6 +11,8 @@ apps/api/src/
   platform/               infraestrutura transversal (NÃO é negócio)
     config/               variáveis de ambiente validadas (Zod), token ENV
     database/             PrismaService + DatabaseModule
+    http/                 o que vale para toda rota: filtro de erros (problem+json), ZodValidationPipe, helmet/CORS,
+                          limite de taxa, X-Request-Id (ADR 0011)
   modules/                um diretório por módulo de negócio
     health/               (exemplo mínimo: controller + service)
     <modulo>/

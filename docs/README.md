@@ -24,6 +24,7 @@ casos de uso, modelo ER, sequências, atividades e estados, distinguindo impleme
 | [0008](adr/0008-ferramentas-de-desenvolvimento.md) | Ferramentas de desenvolvimento e política de dependências | aceita |
 | [0009](adr/0009-modulo-organization.md) | Módulo `organization`: agregado, ordem de construção e integridade | aceita |
 | [0010](adr/0010-identity-access-minimo.md) | `identity-access` mínimo: usuários, senha, sessões e papéis | aceita |
+| [0011](adr/0011-camada-http.md) | Camada HTTP: validação, autenticação, erros e endurecimento | aceita |
 
 ## Como usar os ADRs
 Toda decisão estrutural nova vira um ADR curto (contexto, decisão, alternativas, consequências). Se uma decisão mudar,
@@ -51,12 +52,18 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
   e `infrastructure` implementadas e testadas**: login, renovação com rotação e detecção de reuso, logout, usuário
   atual, política de acesso, trocar senha e criar administrador, com argon2id embutido, JWT (`jose`), 5 tabelas no
   PostgreSQL e os mesmos testes de contrato dos fakes passando no banco real. O **comando do operador**
-  (`pnpm cli create-administrator`, senha por prompt oculto ou `--password-stdin`) também está pronto. Falta a camada HTTP.
+  (`pnpm cli create-administrator`, senha por prompt oculto ou `--password-stdin`) também está pronto. Falta a camada HTTP
+  dos endpoints.
+
+- 🔄 **Camada HTTP** ([ADR 0011](adr/0011-camada-http.md)), em quatro passos. **(a) Base pronta:** erros em
+  `application/problem+json` com tabela código→status auditada por teste, `ZodValidationPipe`, `helmet`, CORS com lista
+  de origens, limite do corpo, limite de taxa por IP e `X-Request-Id`. Faltam **(b)** autenticação e guards,
+  **(c)** endpoints de congregações e **(d)** OpenAPI.
 
 ## Próximos passos
 Em fatias verticais, para que o primeiro resultado visual chegue cedo (cada módulo novo entrega backend e tela):
-1. Camada HTTP do login e do `organization`: controllers, guard que usa a política de acesso, validação Zod, tradução
-   de erros de domínio em status HTTP e OpenAPI (Swagger UI).
+1. Camada HTTP do login e do `organization` (ADR 0011): passo (a) feito; seguem (b) login, refresh em cookie e guards
+   que usam a política de acesso, (c) congregações e (d) OpenAPI (Swagger UI).
 2. Web (React + Vite): login e tela de congregações, o primeiro resultado visual.
 3. RBAC completo com escopo (ADR 0004), depois `members` e `finance`, cada um já com tela.
 

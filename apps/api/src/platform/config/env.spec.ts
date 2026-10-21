@@ -20,6 +20,9 @@ describe('parseEnv', () => {
       JWT_SECRET: SECRET,
       ACCESS_TOKEN_TTL_SECONDS: 900,
       REFRESH_TOKEN_TTL_DAYS: 30,
+      CORS_ORIGINS: [],
+      THROTTLE_LIMIT: 100,
+      THROTTLE_TTL_SECONDS: 60,
     });
   });
 
@@ -69,6 +72,69 @@ describe('parseEnv', () => {
       expect(error).toBeInstanceOf(Error);
       expect((error as Error).message).not.toContain(weak);
     });
+  });
+
+  describe('CORS_ORIGINS (origens do navegador autorizadas a chamar a API)', () => {
+    it('é uma lista separada por vírgulas; espaços ao redor são ignorados', () => {
+      const env = parseEnv({
+        ...validSource,
+        CORS_ORIGINS: 'http://localhost:5173, https://app.igreja.com.br ',
+      });
+
+      expect(env.CORS_ORIGINS).toEqual([
+        'http://localhost:5173',
+        'https://app.igreja.com.br',
+      ]);
+    });
+
+    it('vazia ou ausente significa nenhuma origem (só o mesmo site)', () => {
+      expect(
+        parseEnv({ ...validSource, CORS_ORIGINS: '' }).CORS_ORIGINS,
+      ).toEqual([]);
+    });
+
+    it.each([
+      ['*', 'curinga'],
+      ['http://localhost:5173/', 'barra final'],
+      ['http://localhost:5173/app', 'caminho'],
+      ['app.igreja.com.br', 'sem protocolo'],
+      ['ftp://igreja.com.br', 'protocolo que não é http(s)'],
+    ])('rejeita %s (%s): origem é protocolo://host[:porta]', (value) => {
+      expect(() => parseEnv({ ...validSource, CORS_ORIGINS: value })).toThrow(
+        /CORS_ORIGINS/,
+      );
+    });
+  });
+
+  describe('limite de taxa', () => {
+    it('converte textos em números', () => {
+      const env = parseEnv({
+        ...validSource,
+        THROTTLE_LIMIT: '5',
+        THROTTLE_TTL_SECONDS: '10',
+      });
+
+      expect(env.THROTTLE_LIMIT).toBe(5);
+      expect(env.THROTTLE_TTL_SECONDS).toBe(10);
+    });
+
+    it.each(['0', '-1', '1.5', 'abc'])(
+      'rejeita THROTTLE_LIMIT=%s (inteiro positivo)',
+      (value) => {
+        expect(() =>
+          parseEnv({ ...validSource, THROTTLE_LIMIT: value }),
+        ).toThrow(/THROTTLE_LIMIT/);
+      },
+    );
+
+    it.each(['0', '-1', '1.5', 'abc'])(
+      'rejeita THROTTLE_TTL_SECONDS=%s (inteiro positivo)',
+      (value) => {
+        expect(() =>
+          parseEnv({ ...validSource, THROTTLE_TTL_SECONDS: value }),
+        ).toThrow(/THROTTLE_TTL_SECONDS/);
+      },
+    );
   });
 
   describe('prazos dos tokens', () => {

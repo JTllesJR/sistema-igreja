@@ -1,4 +1,3 @@
-import { ServiceUnavailableException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { HealthController } from './health.controller.js';
@@ -14,30 +13,42 @@ async function createController(check: HealthService['check']) {
   return moduleRef.get(HealthController);
 }
 
+/** Resposta falsa: só registra o status definido. */
+function fakeResponse() {
+  const response = {
+    statusCode: undefined as number | undefined,
+    status(code: number) {
+      response.statusCode = code;
+      return response;
+    },
+  };
+  return response;
+}
+
 describe('HealthController', () => {
-  it('devolve o resultado quando tudo está ok', async () => {
+  it('devolve o resultado, sem alterar o status, quando tudo está ok', async () => {
     const controller = await createController(() =>
       Promise.resolve({ status: 'ok', checks: { database: 'up' } }),
     );
+    const response = fakeResponse();
 
-    await expect(controller.check()).resolves.toEqual({
+    await expect(controller.check(response as never)).resolves.toEqual({
       status: 'ok',
       checks: { database: 'up' },
     });
+    expect(response.statusCode).toBeUndefined();
   });
 
-  it('lança 503 com o corpo do contrato quando está degradado', async () => {
+  it('define o status 503 e devolve o corpo do contrato quando está degradado', async () => {
     const controller = await createController(() =>
       Promise.resolve({ status: 'degraded', checks: { database: 'down' } }),
     );
+    const response = fakeResponse();
 
-    const error = await controller.check().catch((e: unknown) => e);
-
-    expect(error).toBeInstanceOf(ServiceUnavailableException);
-    expect((error as ServiceUnavailableException).getStatus()).toBe(503);
-    expect((error as ServiceUnavailableException).getResponse()).toEqual({
+    await expect(controller.check(response as never)).resolves.toEqual({
       status: 'degraded',
       checks: { database: 'down' },
     });
+    expect(response.statusCode).toBe(503);
   });
 });

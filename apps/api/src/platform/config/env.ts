@@ -24,7 +24,46 @@ export const envSchema = z.object({
     .default(900),
   // O teto de 90 dias é o limite absoluto de uma sessão (ADR 0010): um prazo ocioso maior não faria sentido.
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
+
+  // Origens de navegador autorizadas a chamar a API (CORS, ADR 0011), separadas por vírgula. Vazia = nenhuma origem
+  // cruzada. Sem curinga: como o cookie de renovação exige credenciais, "*" não funcionaria e seria perigoso.
+  CORS_ORIGINS: z
+    .string()
+    .default('')
+    .transform((raw) =>
+      raw
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter((origin) => origin !== ''),
+    )
+    .pipe(
+      z.array(
+        z
+          .string()
+          .refine(
+            isHttpOrigin,
+            'deve ser protocolo://host[:porta], sem barra final nem caminho',
+          ),
+      ),
+    ),
+
+  // Limite de taxa por IP (ADR 0011): no máximo THROTTLE_LIMIT requisições a cada THROTTLE_TTL_SECONDS.
+  THROTTLE_LIMIT: z.coerce.number().int().positive().default(100),
+  THROTTLE_TTL_SECONDS: z.coerce.number().int().positive().default(60),
 });
+
+/** `https://app.exemplo.com` ou `http://localhost:5173`: exatamente o que o navegador envia em `Origin`. */
+function isHttpOrigin(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      (url.protocol === 'http:' || url.protocol === 'https:') &&
+      url.origin === value
+    );
+  } catch {
+    return false;
+  }
+}
 
 export type Env = z.infer<typeof envSchema>;
 
