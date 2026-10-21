@@ -278,6 +278,27 @@ describe('createAdministratorCommand (UC-03, parte do operador)', () => {
       expect(err.join('\n')).toContain('Igreja não encontrada.');
     });
 
+    it('igreja inexistente: ensina o caminho (criar a igreja antes e usar o id impresso)', async () => {
+      const { call, err } = setup({
+        execute: () => Promise.reject(new UnknownOrganizationError()),
+      });
+
+      await call(baseArgs);
+
+      expect(err.join('\n')).toContain('pnpm cli create-organization');
+      expect(err.join('\n')).toContain('organizationId');
+    });
+
+    it('a dica de criar a igreja só aparece quando o problema é a igreja', async () => {
+      const { call, err } = setup({
+        execute: () => Promise.reject(new EmailAlreadyRegisteredError()),
+      });
+
+      await call(baseArgs);
+
+      expect(err.join('\n')).not.toContain('create-organization');
+    });
+
     it('erro inesperado não é escondido: propaga', async () => {
       const { call } = setup({
         execute: () => Promise.reject(new Error('banco fora do ar')),

@@ -52,6 +52,14 @@ A senha **nunca** é aceita como argumento (`--password` é recusada): argumento
 processos, e qualquer ferramenta no caminho (inclusive o `pnpm`) pode registrá-los. A senha tem de ter de 10 a 128
 caracteres. O administrador recebe o papel "Administrador" (acesso total) para a igreja toda.
 
+**Ordem dos passos:** primeiro `create-organization` (que imprime o `organizationId`), depois `create-administrator` com
+esse id. Num banco novo não existe nenhuma igreja, e qualquer id dá "Igreja não encontrada".
+
+**Sobre as linhas vermelhas do `pnpm`:** quando o comando termina com erro, o `pnpm` acrescenta linhas como
+`[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL]` e `ELIFECYCLE`. São só o resumo genérico dele ("o script saiu com código 1");
+a mensagem de verdade é a linha que começa com `Erro:` logo acima, e a `Dica:` quando houver. Ao digitar a senha nada
+aparece na tela (nem asteriscos): é proposital, digite e aperte Enter.
+
 ## Comandos do dia a dia
 
 | Comando                 | O que faz                                                              |

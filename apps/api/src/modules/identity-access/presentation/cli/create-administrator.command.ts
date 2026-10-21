@@ -3,6 +3,7 @@ import { DomainError } from '../../../../shared/domain/domain-error.js';
 import { PromptCancelledError } from '../../../../shared/infrastructure/terminal-input.js';
 import type { CliIo } from '../../../../shared/presentation/cli-io.js';
 import type { CreateAdministratorUseCase } from '../../application/create-administrator.use-case.js';
+import { UnknownOrganizationError } from '../../domain/errors.js';
 
 /** De onde vem a senha. Separado do terminal real para o comando ser testável. */
 export interface PasswordReader {
@@ -114,6 +115,11 @@ export async function createAdministratorCommand(
     // Regra de negócio violada (senha fraca, e-mail repetido, igreja inexistente...): mensagem clara, sem a senha.
     if (error instanceof DomainError) {
       io.err(`Erro: ${error.message}`);
+      if (error instanceof UnknownOrganizationError) {
+        io.err(
+          'Dica: crie a igreja antes com `pnpm cli create-organization --name "..."` e use o organizationId que ele imprime.',
+        );
+      }
       return EXIT_DOMAIN_ERROR;
     }
     throw error;
