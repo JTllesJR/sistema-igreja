@@ -43,4 +43,8 @@ O requisito original é o PRD em PDF; as decisões e modelos estão em `docs/` (
 
 - Windows 11 com Docker Desktop (WSL 2). O banco local é o PostgreSQL 17 do `docker-compose.yml` (`pnpm db:up`).
 - `pnpm test:integration` aplica as migrations no banco `igreja_test` sozinho (setup global do Vitest).
+- A API e o `pnpm cli` exigem `JWT_SECRET` (mínimo de 32 caracteres) no `.env`, sem valor padrão de propósito. Nos testes
+  de integração e no CI o segredo é um valor fixo de teste, definido em `vitest.config.integration.ts`.
+- Mutação manual: o separador `|` e o prefixo `//` atrapalham em scripts de shell; para trocar trechos que contêm `||`,
+  chame o `mutate.mjs` diretamente (um argumento por texto) e sempre confirme "mutação aplicada" antes de confiar no resultado.
 - O repositório remoto é privado: `JTllesJR/sistema-igreja`. O CI roda em push e em PR.

@@ -80,7 +80,7 @@ PostgreSQL, então a tabela é **`user_account`**.
 
 | Tabela | Notas |
 |---|---|
-| `user_account` | e-mail único global (`lower(email)`), `password_hash`, `status`, falhas seguidas, `locked_until`, `last_login_at`, `version` |
+| `user_account` | e-mail único global e **sempre normalizado** (`UNIQUE` + `CHECK`, ver seção 11), `password_hash`, `status`, falhas seguidas, `locked_until`, `last_login_at`, `version` |
 | `role` | por igreja; `is_system`; nome único por igreja |
 | `role_permission` | `(role_id, permission)` |
 | `user_role_assignment` | `role_id` e `congregation_id` (nulo = igreja toda), com FK compostas `(organization_id, role_id)` e `(organization_id, congregation_id)` (padrão do ADR 0009) |
@@ -121,6 +121,27 @@ Casos de uso: `CreateAdministrator` (operador), `Authenticate`, `RefreshSession`
 - **Conflito de versão** ao gravar o usuário (duas abas) é repetido até 3 vezes (`updateUser`).
 - **Existência da igreja** vem da porta `OrganizationDirectory`: o `identity-access` não consulta tabelas do
   `organization`. A implementação real usará a API pública do `organization` (primeiro consumidor da seção 8 do ADR 0009).
+
+### 11. Como a infraestrutura ficou (implementado)
+
+Migration `20261020150000_identity_access`; repositórios Prisma que cumprem os mesmos testes de contrato dos fakes;
+`Argon2PasswordHasher`, `JoseAccessTokenSigner`, `Sha256RefreshTokenCodec` e `SystemClock`; `IdentityAccessModule`.
+
+- **E-mail: `UNIQUE` simples + `CHECK (email = lower(btrim(email)))`**, em vez do índice em `lower(email)` previsto na
+  seção 7. Mesma garantia ("único sem diferenciar caixa"), mas a busca por igualdade usa o índice e é expressável no
+  Prisma. O domínio já grava normalizado; o `CHECK` impede que algo fora dele grave diferente.
+- **Compatibilidade do argon2 verificada nos dois sentidos** com a biblioteca de referência do npm (usada só como
+  juiz, fora do projeto): o nosso hasher verifica o hash dela e ela verifica o nosso. Isso revelou que implementações
+  escrevem os parâmetros em ordens diferentes (`m,p,t`); o `PasswordHash` passou a lê-los por nome, não por posição.
+- **Troca do token de renovação:** `UPDATE ... WHERE rotated_at IS NULL AND revoked_at IS NULL` na mesma transação
+  que cria a próxima sessão. Duas requisições simultâneas: uma vence, a outra recebe conflito (tratado como reuso).
+- **Consulta ao `organization`:** pela API pública (`ORGANIZATION_QUERIES`, só `organizationExists` por ora) e um
+  adaptador (`OrganizationQueriesDirectory`); o `identity-access` nunca toca as tabelas do outro módulo.
+- **Variáveis de ambiente:** `JWT_SECRET` (obrigatória, mínimo de 32 caracteres, sem valor padrão e sem valor no
+  `.env.example`), `ACCESS_TOKEN_TTL_SECONDS` (60 a 3600, padrão 900) e `REFRESH_TOKEN_TTL_DAYS` (1 a 90, padrão 30). A
+  mensagem de erro de validação nunca repete o segredo.
+- **Limite conhecido:** a remoção de atribuições de papel está implementada no repositório, mas ainda sem teste,
+  porque nenhuma operação do domínio remove atribuições nesta fatia.
 
 ## Consequências
 

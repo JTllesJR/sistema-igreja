@@ -17,6 +17,33 @@ describe('PasswordHash', () => {
     });
   });
 
+  it('expõe o salt e o resultado em base64 (para verificar a senha)', () => {
+    const hash = PasswordHash.of(A_PASSWORD_HASH);
+
+    expect(hash.salt).toBe('c29tZXNhbHQxMjM0NTY3OA');
+    expect(hash.digest).toBe('aGFzaGhhc2hoYXNoaGFzaGhhc2hoYXNoaGFzaGhhc2g');
+  });
+
+  it('aceita os parâmetros em qualquer ordem (a biblioteca de referência escreve m,p,t)', () => {
+    const hash = PasswordHash.of(
+      '$argon2id$v=19$m=19456,p=1,t=2$jNXnQlUAzHjR4QXA1w5N3g$t4AnFKHcVqWk1RwDWXai3bbWLxfDHRnRj7N2prWlH9E',
+    );
+
+    expect(hash.parameters).toEqual({
+      memory: 19456,
+      passes: 2,
+      parallelism: 1,
+    });
+  });
+
+  it.each([
+    '$argon2id$v=19$m=19456,t=2,p=1,p=2$c29tZXNhbHQ$aGFzaA', // parâmetro repetido
+    '$argon2id$v=19$m=19456,t=2,p=1,x=9$c29tZXNhbHQ$aGFzaA', // parâmetro desconhecido
+    '$argon2id$v=19$m=abc,t=2,p=1$c29tZXNhbHQ$aGFzaA', // valor não numérico
+  ])('rejeita parâmetros malformados "%s"', (raw) => {
+    expect(() => PasswordHash.of(raw)).toThrow(ValidationError);
+  });
+
   it.each([
     '',
     'senha123',

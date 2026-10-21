@@ -129,7 +129,9 @@ POST  /congregations/:id/designate-headquarters
 O `index.ts` expõe só **consultas somente-leitura**, por exemplo `congregationExists(organizationId, congregationId)`
 e `listCongregationIds(organizationId)`, usadas por `identity-access` para validar o escopo de uma atribuição e por
 `members`/`finance` para validar a congregação de destino. Entidades e repositório não são exportados. Eventos de
-domínio (ex.: congregação desativada) entram quando houver um consumidor.
+domínio (ex.: congregação desativada) entram quando houver um consumidor. **Implementado em 2026-10-20:**
+`ORGANIZATION_QUERIES` com `organizationExists`, primeiro consumidor o `identity-access` (ADR 0010); as demais consultas
+chegam com os próximos consumidores.
 
 ### 9. `application` sem framework; contrato do repositório
 

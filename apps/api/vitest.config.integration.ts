@@ -31,6 +31,8 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       DATABASE_URL: testDatabaseUrl,
+      // Segredo FIXO e só de teste (nunca use em outro lugar): torna o ambiente de teste e o CI independentes do .env.
+      JWT_SECRET: 'segredo-somente-para-testes-de-integracao-0123456789',
     },
   },
 });

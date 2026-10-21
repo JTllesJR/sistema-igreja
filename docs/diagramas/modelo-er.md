@@ -44,9 +44,11 @@ erDiagram
     }
 ```
 
-Estas são as duas tabelas do [schema Prisma atual](../../apps/api/prisma/schema.prisma), criadas pelas migrations `20261019000000_init` e `20261020120000_organization_congregations`. O ID é UUID v7 **gerado pela aplicação** (sem default no banco). As restrições de `congregation` estão descritas na seção "Integridade da congregação" abaixo e foram exercitadas contra PostgreSQL 17. Os demais modelos ainda não estão no banco.
+Estas são as duas tabelas do módulo `organization`, criadas pelas migrations `20261019000000_init` e `20261020120000_organization_congregations`. O ID é UUID v7 **gerado pela aplicação** (sem default no banco). As restrições de `congregation` estão descritas na seção "Integridade da congregação" abaixo e foram exercitadas contra PostgreSQL 17.
 
-## Organização e acesso — planejado
+As cinco tabelas do `identity-access` (`user_account`, `role`, `role_permission`, `user_role_assignment` e `session`) vieram na migration `20261020150000_identity_access` e estão na seção seguinte. O [schema Prisma](../../apps/api/prisma/schema.prisma) é a fonte da verdade. Os demais módulos (`members`, `finance`, `audit`) ainda não têm tabelas.
+
+## Organização e acesso — implementado (migration `20261020150000`)
 
 ```mermaid
 erDiagram
@@ -76,7 +78,7 @@ erDiagram
     USER_ACCOUNT {
         uuid id PK
         uuid organization_id FK
-        string email UK "único no sistema, sem diferenciar caixa"
+        string email UK "único no sistema e sempre normalizado (CHECK)"
         string password_hash
         string status
         int failed_login_attempts
@@ -114,7 +116,19 @@ erDiagram
     }
 ```
 
-**Estágio:** o domínio destas entidades está implementado e testado ([ADR 0010](../adr/0010-identity-access-minimo.md)); as tabelas e a migration ainda não existem. A tabela de usuários se chama `user_account` porque `user` é palavra reservada no PostgreSQL.
+**Estágio:** domínio, aplicação e infraestrutura implementados e testados contra PostgreSQL 17 ([ADR 0010](../adr/0010-identity-access-minimo.md)). A tabela de usuários se chama `user_account` porque `user` é palavra reservada no PostgreSQL.
+
+Restrições que o banco impõe (o domínio já garante as mesmas, o banco protege contra qualquer caminho que o contorne):
+
+| Restrição | O que impede | Onde fica |
+| --- | --- | --- |
+| `UNIQUE (email)` + `CHECK (email = lower(btrim(email)))` | Dois usuários com o mesmo e-mail (em qualquer igreja) e e-mail fora do formato normalizado | Prisma (`@unique`) + SQL manual |
+| FK composta `(organization_id, role_id)` → `role` | Dar a um usuário um papel de **outra** igreja | Prisma (relação composta) |
+| FK composta `(organization_id, congregation_id)` → `congregation` | Escopo em congregação de outra igreja (nula = igreja toda, e então não é verificada) | Prisma (relação composta) |
+| FK composta `(organization_id, user_id)` → `user_account` (atribuições e sessões) | Sessão ou atribuição ligada a usuário de outra igreja | Prisma (relação composta) |
+| `UNIQUE (user_id, role_id) WHERE congregation_id IS NULL` e `UNIQUE (user_id, role_id, congregation_id) WHERE congregation_id IS NOT NULL` | A mesma atribuição repetida (duas unicidades parciais, porque `NULL` não se compara em `UNIQUE` comum) | SQL manual |
+| `UNIQUE (organization_id, lower(name))` em `role` | Dois papéis com o mesmo nome na igreja | SQL manual |
+| `UNIQUE (token_hash)` em `session` | Dois tokens de renovação com o mesmo hash | Prisma (`@unique`) |
 
 Uma atribuição com `congregation_id` nulo vale para a organização inteira. Um usuário pode receber vários papéis em congregações diferentes. O **Administrador** é um papel de sistema (`is_system`) com uma única permissão, `*` ("tudo"), criado por igreja. O token de renovação nunca é gravado: só seu hash (`token_hash`); as sessões de um mesmo login compartilham `family_id`. A sede é uma congregação marcada com `is_headquarters`, não outra entidade.
 

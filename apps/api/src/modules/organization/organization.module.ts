@@ -12,10 +12,12 @@ import { RegisterCongregationUseCase } from './application/register-congregation
 import { RenameOrganizationUseCase } from './application/rename-organization.use-case.js';
 import { UpdateCongregationUseCase } from './application/update-congregation.use-case.js';
 import type { OrganizationRepository } from './domain/organization.repository.js';
+import { PrismaOrganizationQueries } from './infrastructure/prisma-organization-queries.js';
 import { PrismaOrganizationRepository } from './infrastructure/prisma-organization.repository.js';
 import { UuidV7IdGenerator } from '../../shared/infrastructure/uuid-v7-id-generator.js';
 import {
   ID_GENERATOR,
+  ORGANIZATION_QUERIES,
   ORGANIZATION_REPOSITORY,
 } from './organization.tokens.js';
 
@@ -55,6 +57,12 @@ function withRepositoryAndIds<T>(
       inject: [PrismaService],
     },
     { provide: ID_GENERATOR, useFactory: () => new UuidV7IdGenerator() },
+    {
+      provide: ORGANIZATION_QUERIES,
+      useFactory: (prisma: PrismaService) =>
+        new PrismaOrganizationQueries(prisma),
+      inject: [PrismaService],
+    },
 
     withRepositoryAndIds(CreateOrganizationUseCase),
     withRepositoryAndIds(RegisterCongregationUseCase),
@@ -68,6 +76,8 @@ function withRepositoryAndIds<T>(
   ],
   // Os casos de uso são exportados para a camada de apresentação (controllers) que virá depois do login.
   exports: [
+    // API pública para os OUTROS módulos (ex.: identity-access confere se a igreja existe).
+    ORGANIZATION_QUERIES,
     CreateOrganizationUseCase,
     RegisterCongregationUseCase,
     GetOrganizationUseCase,

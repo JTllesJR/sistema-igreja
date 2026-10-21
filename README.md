@@ -14,6 +14,8 @@ Requisitos e decisões de arquitetura estão em [`docs/`](docs/README.md).
 ```bash
 pnpm install
 cp .env.example .env      # valores de desenvolvimento; edite se precisar
+# Gere o segredo de assinatura dos tokens e cole em JWT_SECRET no .env (obrigatório, sem valor padrão):
+node -e "console.log(require('node:crypto').randomBytes(48).toString('base64'))"
 pnpm db:up                # sobe o PostgreSQL 17 (docker compose)
 pnpm db:deploy            # aplica as migrations
 pnpm dev                  # API em http://localhost:3000

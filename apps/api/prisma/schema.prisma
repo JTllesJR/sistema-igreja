@@ -36,6 +36,8 @@ model Organization {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   congregations Congregation[]
+  users         UserAccount[]
+  roles         Role[]
 
   @@map("organization")
 }
@@ -54,10 +56,115 @@ model Congregation {
   createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  assignments  UserRoleAssignment[]
 
   // Permite que outras tabelas usem FK composta (organization_id, congregation_id), impedindo que um
   // registro aponte para uma congregação de outra organização (ver docs/diagramas/modelo-er.md).
   @@unique([organizationId, id])
   @@map("congregation")
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// identity-access (ADR 0010). Regras que o Prisma não expressa estão em SQL manual na migration
+// `*_identity_access` (CHECK do e-mail normalizado, nome de papel único sem diferenciar caixa e as duas unicidades
+// parciais das atribuições). Preserve-as ao alterar estas tabelas.
+// ---------------------------------------------------------------------------------------------------------------
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+
+  @@map("user_status")
+}
+
+/// Pessoa que entra no sistema. Pertence a UMA igreja. (`user` é palavra reservada no PostgreSQL.)
+model UserAccount {
+  id                  String     @id @db.Uuid
+  organizationId      String     @map("organization_id") @db.Uuid
+  /// Sempre normalizado (minúsculas, sem espaços nas pontas) e único em TODO o sistema.
+  email               String     @unique
+  /// Hash argon2id em formato PHC. Nunca a senha.
+  passwordHash        String     @map("password_hash")
+  status              UserStatus @default(ACTIVE)
+  failedLoginAttempts Int        @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime?  @map("locked_until") @db.Timestamptz(3)
+  lastLoginAt         DateTime?  @map("last_login_at") @db.Timestamptz(3)
+  /// Travamento otimista.
+  version             Int        @default(0)
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  assignments  UserRoleAssignment[]
+  sessions     Session[]
+
+  @@unique([organizationId, id])
+  @@map("user_account")
+}
+
+/// Conjunto de permissões, por igreja. `is_system` = papel de sistema (ex.: Administrador), não editável.
+model Role {
+  id             String   @id @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String
+  isSystem       Boolean  @default(false) @map("is_system")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  permissions  RolePermission[]
+  assignments  UserRoleAssignment[]
+
+  @@unique([organizationId, id])
+  @@map("role")
+}
+
+/// "modulo:acao" ou "*" (curinga: concede tudo).
+model RolePermission {
+  roleId     String @map("role_id") @db.Uuid
+  permission String
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permission])
+  @@map("role_permission")
+}
+
+/// Usuário + papel + escopo. `congregation_id` nulo = vale para a igreja toda. As FKs são COMPOSTAS com
+/// `organization_id`: o banco recusa um papel, usuário ou congregação de outra igreja.
+model UserRoleAssignment {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  roleId         String   @map("role_id") @db.Uuid
+  congregationId String?  @map("congregation_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user         UserAccount   @relation(fields: [organizationId, userId], references: [organizationId, id], onDelete: Restrict)
+  role         Role          @relation(fields: [organizationId, roleId], references: [organizationId, id], onDelete: Restrict)
+  congregation Congregation? @relation(fields: [organizationId, congregationId], references: [organizationId, id], onDelete: Restrict)
+
+  @@map("user_role_assignment")
+}
+
+/// Uma linha da cadeia de renovação de um login. Guarda só o HASH do token (nunca o token).
+model Session {
+  id              String    @id @db.Uuid
+  organizationId  String    @map("organization_id") @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  /// Todas as sessões geradas por rotação a partir de um mesmo login compartilham a família.
+  familyId        String    @map("family_id") @db.Uuid
+  tokenHash       String    @unique @map("token_hash")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  familyStartedAt DateTime  @map("family_started_at") @db.Timestamptz(3)
+  expiresAt       DateTime  @map("expires_at") @db.Timestamptz(3)
+  rotatedAt       DateTime? @map("rotated_at") @db.Timestamptz(3)
+  revokedAt       DateTime? @map("revoked_at") @db.Timestamptz(3)
+
+  user UserAccount @relation(fields: [organizationId, userId], references: [organizationId, id], onDelete: Restrict)
+
+  @@index([familyId])
+  @@index([userId])
+  @@map("session")
 }

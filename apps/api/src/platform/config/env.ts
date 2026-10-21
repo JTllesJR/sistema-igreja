@@ -12,6 +12,18 @@ export const envSchema = z.object({
   DATABASE_URL: z
     .string()
     .regex(/^postgres(ql)?:\/\/.+/, 'deve ser uma URL postgresql://...'),
+
+  // Segredo de assinatura dos tokens de acesso (HS256, ADR 0010). Sem valor padrão de propósito: um segredo
+  // "de exemplo" esquecido em produção permitiria forjar logins. Gere com: openssl rand -base64 48
+  JWT_SECRET: z.string().min(32, 'deve ter pelo menos 32 caracteres'),
+  ACCESS_TOKEN_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .min(60)
+    .max(3600)
+    .default(900),
+  // O teto de 90 dias é o limite absoluto de uma sessão (ADR 0010): um prazo ocioso maior não faria sentido.
+  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
 });
 
 export type Env = z.infer<typeof envSchema>;
