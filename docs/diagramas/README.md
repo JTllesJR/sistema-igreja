@@ -19,7 +19,7 @@ No GitHub, abra estes arquivos para ver os desenhos renderizados. No editor, use
 - **Planejado:** definido nos casos de uso, modelo de domínio ou ADRs; ainda não implementado.
 - **Proposta:** sugestão para detalhar a implementação; exige revisão antes de virar requisito ou decisão aceita.
 
-O código atual tem API, configuração, acesso ao banco, `/health`, as tabelas `organization` e `congregation` e as **camadas `domain`, `application` e `infrastructure` do módulo `organization`** (agregado, regras, casos de uso, repositório Prisma e módulo Nest, validados por testes unitários e de integração em PostgreSQL) e o comando de linha `pnpm cli create-organization` (UC-17); ainda sem HTTP. O módulo `identity-access` tem só a **camada de domínio** (sem casos de uso, tabelas nem login ainda). Login, permissões, membros, finanças, interface web e isolamento entre organizações ainda são planejados.
+O código atual tem API, configuração, acesso ao banco, `/health`, as tabelas `organization` e `congregation` e as **camadas `domain`, `application` e `infrastructure` do módulo `organization`** (agregado, regras, casos de uso, repositório Prisma e módulo Nest, validados por testes unitários e de integração em PostgreSQL) e o comando de linha `pnpm cli create-organization` (UC-17); ainda sem HTTP. O módulo `identity-access` tem as camadas de **domínio e aplicação** (login, renovação, logout, trocar senha, política de acesso; repositórios só em memória), ainda sem tabelas, argon2, JWT nem HTTP. Login, permissões, membros, finanças, interface web e isolamento entre organizações ainda são planejados.
 
 ## Como usar durante o desenvolvimento
 

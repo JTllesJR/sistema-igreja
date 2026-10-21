@@ -174,3 +174,89 @@ Dois pontos que o desenho torna visíveis:
   confirma, a outra recebe conflito.
 
 A gravação da auditoria (RN-04) na mesma transação ainda precisa ser detalhada, como no fluxo do UC-06.
+
+## 8. Entrar, UC-01 — implementado (aplicação; sem camada HTTP)
+
+```mermaid
+sequenceDiagram
+    actor Cliente
+    participant UC as Authenticate
+    participant Users as UserRepository
+    participant Hasher as PasswordHasher
+    participant Sessions as SessionRepository
+    Cliente->>UC: e-mail e senha
+    alt Formato inválido
+        UC-->>Cliente: InvalidCredentials
+    else Formato válido
+        UC->>Users: findByEmail
+        alt E-mail não cadastrado
+            UC->>Hasher: simulateVerification, gasta o mesmo tempo
+            UC-->>Cliente: InvalidCredentials
+        else Conta bloqueada ou desativada
+            UC-->>Cliente: InvalidCredentials, sem verificar a senha
+        else Cadastrado e liberado
+            UC->>Hasher: verify
+            alt Senha errada
+                UC->>Users: registra falha, a 5ª bloqueia por 15 min
+                UC-->>Cliente: InvalidCredentials
+            else Senha correta
+                UC->>Users: zera falhas, registra login e re-hasha se preciso
+                UC->>Sessions: add, abre uma nova família
+                UC-->>Cliente: token de acesso 15 min e de renovação 30 dias
+            end
+        end
+    end
+```
+
+**Toda falha devolve o mesmo erro**, com a mesma mensagem: quem tenta adivinhar não distingue "e-mail inexistente",
+"senha errada", "conta bloqueada" ou "dado malformado". Com e-mail inexistente o sistema ainda **gasta o tempo de
+uma verificação real**, para a resposta não ser mais rápida e entregar quais e-mails existem. Conta bloqueada ou
+desativada não tem a senha verificada (acertar não adiantaria). Um login em duas abas ao mesmo tempo não falha: a
+gravação do usuário repete em caso de conflito de versão.
+
+## 9. Renovar a sessão, UC-01 — implementado (aplicação; sem camada HTTP)
+
+```mermaid
+sequenceDiagram
+    actor Cliente
+    participant UC as RefreshSession
+    participant Sessions as SessionRepository
+    Cliente->>UC: token de renovação
+    UC->>Sessions: findByTokenHash
+    alt Desconhecido, expirado ou revogado
+        UC-->>Cliente: SessionInvalid
+    else Já trocado: reuso
+        UC->>Sessions: revokeFamily
+        UC-->>Cliente: SessionReuseDetected
+    else Ativo
+        UC->>Sessions: rotate, condicional
+        alt Outra requisição trocou antes: corrida
+            Sessions-->>UC: conflito
+            UC->>Sessions: revokeFamily
+            UC-->>Cliente: SessionReuseDetected
+        else Troca concluída
+            UC-->>Cliente: novos tokens
+        end
+    end
+```
+
+A troca no repositório é **condicional** (só vale se a sessão anterior ainda não foi trocada). Sem isso, duas
+requisições simultâneas com o mesmo token criariam duas sessões novas e o roubo passaria despercebido. Quem perde a
+corrida é tratado como reuso e a **família inteira** é revogada: dono legítimo e ladrão precisam entrar de novo.
+Conta *bloqueada por tentativas* não impede renovar (senão errar a senha de propósito derrubaria o dono); conta
+*desativada* impede.
+
+## 10. Estados de uma sessão — implementado (domínio)
+
+```mermaid
+stateDiagram-v2
+    [*] --> ACTIVE: login, início da família
+    ACTIVE --> ROTATED: renovação, nasce a próxima ACTIVE
+    ACTIVE --> EXPIRED: passou de expires_at
+    ACTIVE --> REVOKED: logout, reuso ou troca de senha
+    ROTATED --> REVOKED: família revogada
+```
+
+Precedência quando mais de uma condição vale: `REVOKED` vence `ROTATED`, que vence `EXPIRED`. Assim, depois que a
+família é revogada, reapresentar um token antigo não parece "reuso" de novo. O prazo é deslizante (30 dias a partir
+de cada renovação) com teto absoluto de 90 dias desde o login.

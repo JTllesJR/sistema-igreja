@@ -47,14 +47,15 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
   gerador UUID v7 e módulo Nest) e o **comando de linha do UC-17** (`pnpm cli create-organization`). Falta apenas
   a `presentation` HTTP, que espera o login.
 
-- 🔄 **`identity-access` mínimo** ([ADR 0010](adr/0010-identity-access-minimo.md)): **camada `domain` implementada e
-  testada** (e-mail, senha, hash, permissão, papel, usuário com bloqueio, sessão com rotação, política de acesso).
-  Faltam `application` (login, renovação, logout, trocar senha, criar administrador), `infrastructure` (argon2,
-  JWT, migration, repositórios) e o comando do operador.
+- 🔄 **`identity-access` mínimo** ([ADR 0010](adr/0010-identity-access-minimo.md)): **camadas `domain` e
+  `application` implementadas e testadas** (login, renovação com rotação e detecção de reuso, logout, usuário
+  atual, política de acesso, trocar senha, criar administrador; repositórios em memória com teste de contrato).
+  Faltam `infrastructure` (argon2, JWT, migration, repositórios Prisma, adaptador do `OrganizationDirectory`) e o
+  comando do operador.
 
 ## Próximos passos
 Em fatias verticais, para que o primeiro resultado visual chegue cedo (cada módulo novo entrega backend e tela):
-1. Concluir o `identity-access` mínimo: `application`, `infrastructure` e comando do operador.
+1. Concluir o `identity-access` mínimo: `infrastructure` (rodando os contratos dos repositórios no PostgreSQL) e comando do operador.
 2. Camada HTTP de login e do `organization`, com validação Zod, tradução de erros de domínio e OpenAPI (Swagger UI).
 3. Web (React + Vite): login e tela de congregações, o primeiro resultado visual.
 4. RBAC completo com escopo (ADR 0004), depois `members` e `finance`, cada um já com tela.

@@ -1,0 +1,56 @@
+import type { Role } from '../domain/role.js';
+import type { User } from '../domain/user.js';
+
+/** Um papel atribuído ao usuário, com o escopo (`congregationId` nulo = igreja toda). */
+export interface AssignedRoleView {
+  roleId: string;
+  roleName: string;
+  isSystem: boolean;
+  congregationId: string | null;
+}
+
+/** Quem é o usuário logado. Nunca inclui hash de senha nem dados de segurança. */
+export interface CurrentUserView {
+  id: string;
+  organizationId: string;
+  email: string;
+  roles: AssignedRoleView[];
+}
+
+/** Os tokens entregues ao cliente. O token de renovação só existe aqui (em texto); no banco fica o hash. */
+export interface TokensView {
+  accessToken: string;
+  accessTokenExpiresAt: Date;
+  refreshToken: string;
+  refreshTokenExpiresAt: Date;
+}
+
+export interface AuthenticationView extends TokensView {
+  user: CurrentUserView;
+}
+
+export function toCurrentUserView(
+  user: User,
+  roles: readonly Role[],
+): CurrentUserView {
+  const byId = new Map(roles.map((role) => [role.id, role]));
+
+  return {
+    id: user.id,
+    organizationId: user.organizationId,
+    email: user.email.value,
+    roles: user.assignments.flatMap((assignment) => {
+      const role = byId.get(assignment.roleId);
+      return role
+        ? [
+            {
+              roleId: role.id,
+              roleName: role.name.value,
+              isSystem: role.isSystem,
+              congregationId: assignment.congregationId,
+            },
+          ]
+        : [];
+    }),
+  };
+}

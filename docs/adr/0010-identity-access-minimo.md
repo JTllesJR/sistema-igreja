@@ -100,6 +100,28 @@ de processos. A **troca da própria senha** entra nesta fatia e revoga as outras
   `shared/domain`, junto de `OrganizationId`, pois vários módulos referenciam congregações.
 - Entra a porta `Clock` (`shared/application`); o domínio recebe `now` por parâmetro, nunca lê o relógio.
 
+### 10. Como a camada `application` ficou (implementado)
+
+Casos de uso: `CreateAdministrator` (operador), `Authenticate`, `RefreshSession`, `Logout`, `GetCurrentUser`,
+`GetAccessPolicy` e `ChangeOwnPassword`. Portas: `UserRepository`, `RoleRepository`, `SessionRepository` (domínio),
+`PasswordHasher`, `AccessTokenSigner`, `RefreshTokenCodec` e `OrganizationDirectory` (aplicação), `Clock` e
+`IdGenerator` (kernel). Detalhes que não estavam nas decisões acima:
+
+- **Falhas de login sempre iguais.** Até dado malformado (e-mail inválido, senha fora da política) vira
+  `InvalidCredentials`, e e-mail inexistente ainda executa `simulateVerification`.
+- **Troca atômica do token de renovação.** `SessionRepository.rotate` é condicional; quem perde a corrida é tratado
+  como reuso e a família é revogada.
+- **Renovar não é bloqueado por tentativas de login.** Só usuário desativado impede. Caso contrário, errar a senha de
+  propósito derrubaria o dono da conta.
+- **Logout recebe o token de renovação**, revoga a família e é idempotente e silencioso (token desconhecido não dá erro).
+- **Trocar senha:** errar a senha atual conta como tentativa de login (um token de acesso roubado não pode adivinhar a
+  senha sem limite), conta bloqueada nem é verificada, e as outras famílias são revogadas (a atual é mantida).
+- **Isolamento entre igrejas:** `GetCurrentUser`, `GetAccessPolicy` e `ChangeOwnPassword` tratam usuário de outra igreja
+  como inexistente; usuário desativado vira "sessão inválida" na hora, mesmo com token de acesso ainda dentro do prazo.
+- **Conflito de versão** ao gravar o usuário (duas abas) é repetido até 3 vezes (`updateUser`).
+- **Existência da igreja** vem da porta `OrganizationDirectory`: o `identity-access` não consulta tabelas do
+  `organization`. A implementação real usará a API pública do `organization` (primeiro consumidor da seção 8 do ADR 0009).
+
 ## Consequências
 
 - (+) O modelo é o definitivo do ADR 0004; UC-02 depois só acrescenta gestão de papéis, sem migração estrutural.
