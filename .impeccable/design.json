@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-21T00:00:00.000Z",
+  "title": "Design System: Sistema de Igreja",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Verde Concluído",
+        "canonical": "#10b981",
+        "tonalRamp": [
+          "#064e3b",
+          "#065f46",
+          "#047857",
+          "#059669",
+          "#10b981",
+          "#34d399",
+          "#a7f3d0",
+          "#d1fae5"
+        ]
+      },
+      "status-backend-ink": {
+        "role": "secondary",
+        "displayName": "Azul Intermediário",
+        "canonical": "#075985",
+        "tonalRamp": [
+          "#0c4a6e",
+          "#075985",
+          "#0369a1",
+          "#0284c7",
+          "#0ea5e9",
+          "#38bdf8",
+          "#bae6fd",
+          "#e0f2fe"
+        ]
+      },
+      "alert-red": {
+        "role": "tertiary",
+        "displayName": "Vermelho de Alerta",
+        "canonical": "#ef4444",
+        "tonalRamp": [
+          "#7f1d1d",
+          "#991b1b",
+          "#b91c1c",
+          "#dc2626",
+          "#ef4444",
+          "#f87171",
+          "#fecaca",
+          "#fee2e2"
+        ]
+      },
+      "caution-amber": {
+        "role": "tertiary",
+        "displayName": "Âmbar de Atenção",
+        "canonical": "#f59e0b",
+        "tonalRamp": [
+          "#78350f",
+          "#92400e",
+          "#b45309",
+          "#d97706",
+          "#f59e0b",
+          "#fbbf24",
+          "#fde68a",
+          "#fef3c7"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Tinta Profunda",
+        "canonical": "#0f172a",
+        "tonalRamp": [
+          "#0f172a",
+          "#1e293b",
+          "#334155",
+          "#475569",
+          "#64748b",
+          "#94a3b8",
+          "#cbd5e1",
+          "#e2e8f0"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Papel de Fundo",
+        "canonical": "#f8fafc",
+        "tonalRamp": [
+          "#0f172a",
+          "#334155",
+          "#64748b",
+          "#94a3b8",
+          "#cbd5e1",
+          "#e2e8f0",
+          "#f1f5f9",
+          "#f8fafc"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Nome do sistema no cabeçalho."
+      },
+      "title": { "displayName": "Title", "purpose": "Título de cartão." },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Itens de lista, apoio e estado da API."
+      },
+      "label": { "displayName": "Label", "purpose": "Selos de status." },
+      "figure": { "displayName": "Figure", "purpose": "Números do resumo." },
+      "code": { "displayName": "Code", "purpose": "Ids de caso de uso." }
+    },
+    "shadows": [],
+    "motion": [],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Cartão",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Contêiner branco plano, com borda fina, que agrupa um módulo.",
+      "html": "<section class=\"ds-card\"><h3 class=\"ds-card-title\">Organização</h3><p class=\"ds-card-text\">Congregações e organização inicial.</p></section>",
+      "css": ".ds-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; font-family: ui-sans-serif, system-ui, sans-serif; color: #0f172a; } .ds-card-title { margin: 0; font-size: 1rem; font-weight: 600; } .ds-card-text { margin: 12px 0 0; font-size: 0.875rem; color: #64748b; }"
+    },
+    {
+      "name": "Selo Concluído",
+      "kind": "chip",
+      "refersTo": "status-badge-done",
+      "description": "Marca um caso de uso entregue de ponta a ponta.",
+      "html": "<span class=\"ds-badge-done\">Concluído</span>",
+      "css": ".ds-badge-done { display: inline-block; background: #d1fae5; color: #065f46; border-radius: 9999px; padding: 2px 8px; font: 500 0.75rem/1.333 ui-sans-serif, system-ui, sans-serif; }"
+    },
+    {
+      "name": "Selo Backend pronto",
+      "kind": "chip",
+      "refersTo": "status-badge-backend",
+      "description": "Regra de negócio e banco prontos; falta API e tela.",
+      "html": "<span class=\"ds-badge-backend\">Backend pronto</span>",
+      "css": ".ds-badge-backend { display: inline-block; background: #e0f2fe; color: #075985; border-radius: 9999px; padding: 2px 8px; font: 500 0.75rem/1.333 ui-sans-serif, system-ui, sans-serif; }"
+    },
+    {
+      "name": "Selo Planejado",
+      "kind": "chip",
+      "refersTo": "status-badge-planned",
+      "description": "Ainda não começou.",
+      "html": "<span class=\"ds-badge-planned\">Planejado</span>",
+      "css": ".ds-badge-planned { display: inline-block; background: #f1f5f9; color: #475569; border-radius: 9999px; padding: 2px 8px; font: 500 0.75rem/1.333 ui-sans-serif, system-ui, sans-serif; }"
+    },
+    {
+      "name": "Indicador de estado da API",
+      "kind": "custom",
+      "refersTo": "api-status-pill",
+      "description": "Ponto colorido mais texto que diz o estado da API e o que fazer.",
+      "html": "<div class=\"ds-api-pill\" role=\"status\"><span class=\"ds-api-dot\"></span>API e banco no ar</div>",
+      "css": ".ds-api-pill { display: inline-flex; align-items: center; gap: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 9999px; padding: 6px 12px; font: 400 0.875rem/1.429 ui-sans-serif, system-ui, sans-serif; color: #0f172a; } .ds-api-dot { width: 10px; height: 10px; border-radius: 9999px; background: #10b981; }"
+    },
+    {
+      "name": "Barra de progresso",
+      "kind": "custom",
+      "refersTo": "progress-fill",
+      "description": "Percentual de casos de uso concluídos.",
+      "html": "<div class=\"ds-progress\" role=\"progressbar\" aria-valuenow=\"6\" aria-valuemin=\"0\" aria-valuemax=\"100\"><div class=\"ds-progress-fill\"></div></div>",
+      "css": ".ds-progress { height: 12px; width: 240px; overflow: hidden; border-radius: 9999px; background: #f1f5f9; } .ds-progress-fill { height: 100%; width: 6%; background: #10b981; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "A Secretaria Organizada",
+    "overview": "Uma mesa de secretaria bem arrumada: papel claro, cada coisa no seu lugar, nenhuma peça de enfeite. O sistema existe para tarefas administrativas feitas por pessoas que nem sempre são técnicas, então o visual trabalha a favor da leitura e da conferência, nunca da expressão. A superfície é quase toda neutra; a cor aparece só quando carrega informação.",
+    "keyCharacteristics": [
+      "Papel claro e quase monocromático (cinza-azulado), com acentos só semânticos.",
+      "Cartões planos, sem sombra, delimitados por uma borda fina.",
+      "Cor sempre acompanhada de texto: o estado nunca depende só da cor.",
+      "Tipografia do sistema, em poucos pesos (400, 500, 600).",
+      "Layout de coluna única centralizada que vira duas colunas em telas médias."
+    ],
+    "rules": [
+      {
+        "name": "The Color-Is-Information Rule",
+        "body": "A cor só aparece para dizer algo (estado, progresso, alerta). Superfícies, bordas e texto comum ficam nos neutros.",
+        "section": "colors"
+      },
+      {
+        "name": "The Never-Color-Alone Rule",
+        "body": "Todo estado colorido vem com texto. Quem não distingue cores, ou está no sol com o celular, entende do mesmo jeito.",
+        "section": "colors"
+      },
+      {
+        "name": "The System-Font Rule",
+        "body": "Sem fonte web: a tela carrega na hora e respeita o aparelho. Introduzir uma fonte exige um motivo de produto, não de gosto.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Superfícies não têm sombra em repouso. Uma sombra só entra quando algo realmente flutua sobre o conteúdo, nunca como enfeite de cartão.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do manter a base em Papel de Fundo (#f8fafc) com cartões brancos de canto de 12px e borda de 1px.",
+      "Do acompanhar toda cor de estado com texto explícito.",
+      "Do usar só os pesos 400, 500 e 600 da fonte do sistema.",
+      "Do separar conteúdo com filetes e espaço, em múltiplos de 4px.",
+      "Do escrever mensagens e rótulos em português simples, dizendo o que fazer."
+    ],
+    "donts": [
+      "Don't usar gradientes, brilhos ou cartões de métrica chamativos: nada de cara de painel de startup.",
+      "Don't usar símbolos religiosos (cruzes, pombas, vitrais) como decoração.",
+      "Don't colocar sombra em cartões em repouso.",
+      "Don't usar cor como o único indicador de estado.",
+      "Don't introduzir uma cor de marca ou fonte web sem que a igreja defina a identidade."
+    ]
+  }
+}
