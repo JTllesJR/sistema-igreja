@@ -73,7 +73,8 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
 ## Próximos passos
 Em fatias verticais, para que o primeiro resultado visual chegue cedo (cada módulo novo entrega backend e tela):
 1. Camada HTTP (ADR 0011): passos (a), (b) e (c) feitos; segue (d) OpenAPI (Swagger UI).
-2. Web: tela de congregações (com TanStack Query, onde a primeira lista justifica o cache); o login já existe.
+2. Web: login e **congregações** (lista, cadastro, edição, desativar e trocar de sede) prontos, verificados contra uma API
+   simulada. Próximas telas: membros e finanças, e a documentação OpenAPI (passo d) da API.
 3. RBAC completo com escopo (ADR 0004), depois `members` e `finance`, cada um já com tela.
 
 Em paralelo:

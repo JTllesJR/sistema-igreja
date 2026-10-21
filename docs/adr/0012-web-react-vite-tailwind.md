@@ -38,9 +38,9 @@ lembrar de atualizá-lo ao entregar algo. Um teste garante só que os ids não s
 
 ### 5. Roteador agora; biblioteca de dados só quando houver listas
 
-Com o login passaram a existir rotas protegidas, então entrou o `react-router` (v8). O **TanStack Query** continua de
-fora: login e sessão têm estado próprio e não precisam de cache de requisições. Ele entra com a primeira lista
-(congregações), onde cache, recarga e estados de carregamento compensam a dependência.
+Com o login passaram a existir rotas protegidas, então entrou o `react-router` (v8). O **TanStack Query** ficou de
+fora enquanto só havia login e sessão, que têm estado próprio e não precisam de cache de requisições. Entrou com a
+primeira lista (congregações, seção 7), onde cache, recarga e estados de carregamento compensam a dependência.
 
 ### 6. Login e sessão na web (implementado)
 
@@ -63,11 +63,37 @@ fora: login e sessão têm estado próprio e não precisam de cache de requisiç
   inteiro no navegador contra uma **API simulada** (senha errada, entrada, recarga, saída, rota protegida). Não foi
   verificado contra a API real com PostgreSQL (veja o ADR 0011, seção 11).
 
+### 7. Tela de congregações (implementado)
+
+Rotas protegidas `/congregacoes` (lista), `/congregacoes/nova` e `/congregacoes/:id/editar` (mesmo formulário).
+
+- **Cliente autenticado** (`auth/authorized-api.ts`): envia o token de acesso e, se a API responder 401 (o token venceu
+  entre duas renovações automáticas), renova **uma vez** e repete. Se ainda for recusado, a sessão acabou de verdade e a
+  tela volta para a entrada. Repetir é seguro porque o 401 do guard acontece antes de qualquer efeito. Só o 401 dispara
+  isso: 403, 404, 409, 422 e falha de rede não renovam nem repetem. Verificado no navegador: com o token vencido, a ação
+  seguinte gerou exatamente uma renovação e funcionou sem aviso.
+- **TanStack Query** guarda a lista sob a chave `['congregations']`; toda mutação a invalida e a lista é buscada de novo.
+  Tentativas automáticas só para falha de rede (erro 4xx não melhora repetindo).
+- **A lógica do formulário fica fora do React** (`congregations/form.ts`): validação rápida, conversão do texto dos campos
+  para o contrato (apara, campo vazio vira `null`, UF em maiúsculas) e tradução do erro da API em mensagem geral e erros
+  por campo. A chave do erro por campo é a mesma que a API devolve em `errors[].path` (ex.: `serviceTimes.0.time`), então
+  o erro do servidor cai no campo certo. A API repete todas as regras; a validação local só dá retorno mais cedo.
+- **Botões de gestão só aparecem para o Administrador** (papel de sistema na igreja toda), porque a web ainda não recebe
+  as permissões do usuário, só os papéis. É só **apresentação**: quem decide é a API (403). **Limite conhecido:** um papel
+  personalizado com `organization:manage` (UC-02) não veria os botões; resolver expondo as permissões em `/auth/me`.
+- **Ações destrutivas pedem confirmação** (`window.confirm`): desativar e trocar a sede. Simples e acessível; vira um
+  diálogo próprio quando o design amadurecer. A sede não oferece "Desativar" (a API também recusa).
+- **Sem `GET /congregations/:id`:** a edição busca na lista em cache. Basta enquanto a lista é pequena.
+- **Verificado no navegador contra uma API simulada:** envio vazio, nome repetido (409), endereço parcial, cadastro com
+  endereço e culto, edição com os campos preenchidos, trocar de sede, desativar, filtrar, reativar e token vencido. Alvos
+  de toque de 40px ou mais no celular (os links do cabeçalho foram ajustados) e sem rolagem horizontal. Não verificado
+  contra a API real com PostgreSQL.
+
 ## Consequências
 
 - `pnpm dev` passa a subir API e web; a web fica em `http://localhost:5173`, a origem já liberada em `CORS_ORIGINS`.
 - `VITE_API_URL` (opcional) muda o endereço da API; o padrão é `http://localhost:3000`.
 - Tudo o que vai para o navegador é público: **nunca** colocar segredo em variável `VITE_*`.
-- Novas dependências de produção: `react`, `react-dom` e `react-router`; de desenvolvimento: `vite` (já existia), `@vitejs/plugin-react`,
+- Novas dependências de produção: `react`, `react-dom`, `react-router` e `@tanstack/react-query`; de desenvolvimento: `vite` (já existia), `@vitejs/plugin-react`,
   `tailwindcss`, `@tailwindcss/vite` e os tipos do React. Todas respeitam a política de idade do pnpm (ADR 0008).
 - Os testes da web ficam em lógica pura (sem `jsdom`); testes de componentes entram quando houver interação.
