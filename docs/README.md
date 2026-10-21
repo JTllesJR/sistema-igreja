@@ -65,12 +65,14 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
 
 - ✅ **Web inicial** ([ADR 0012](adr/0012-web-react-vite-tailwind.md)): `apps/web` (React + Vite + Tailwind) com a
   página **Andamento do sistema**: saúde da API e do banco ao vivo (contrato compartilhado) e o estado dos 18 casos de
-  uso. Sobe com `pnpm dev` em `http://localhost:5173`.
+  uso. Sobe com `pnpm dev` em `http://localhost:5173`. **Login na web:** telas `/entrar` e `/conta` (protegida), sessão
+  com token de acesso só em memória e renovação automática; verificado no navegador contra uma API simulada, ainda
+  não contra a API real com banco.
 
 ## Próximos passos
 Em fatias verticais, para que o primeiro resultado visual chegue cedo (cada módulo novo entrega backend e tela):
 1. Camada HTTP (ADR 0011): passos (a) e (b) feitos; seguem (c) endpoints de congregações e (d) OpenAPI (Swagger UI).
-2. Web: tela de login (a API já está pronta) e de congregações, sobre a base já criada (com roteador e TanStack Query).
+2. Web: tela de congregações (com TanStack Query, onde a primeira lista justifica o cache); o login já existe.
 3. RBAC completo com escopo (ADR 0004), depois `members` e `finance`, cada um já com tela.
 
 Em paralelo:

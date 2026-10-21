@@ -213,7 +213,15 @@ Itens separados por uma linha de 1px; id em mono pequeno e cinza, título à esq
 
 ### Navegação, campos e botões
 
-Ainda não existem. Quando aparecerem (login, congregações), devem seguir a mesma linguagem calma: alvos de toque confortáveis, bordas finas, rótulos visíveis e foco com contorno claro.
+**Navegação:** links de texto em 14px e peso médio, com cantos de 6px; o ativo ganha fundo Trilho e tinta profunda, os demais ficam em cinza-escuro. Ficam no cabeçalho, ao lado do indicador da API.
+
+**Campos:** rótulo SEMPRE visível acima (14px, peso médio), nunca só placeholder. Altura de 44px, canto de 8px, borda de 1px em cinza médio (#94a3b8, mais forte que o filete dos cartões, para o campo ser percebido) e texto de 16px. Foco com contorno de 2px na tinta profunda.
+
+**Botão principal:** 44px de altura, largura total em formulários, fundo na tinta profunda (#0f172a), texto branco, canto de 8px. Desativado fica com 60% de opacidade e cursor de bloqueio.
+
+**Botão secundário:** mesmo tamanho, fundo branco, borda cinza média e texto na tinta profunda.
+
+**Mensagem de erro:** faixa com fundo vermelho muito claro, borda vermelha clara e texto vermelho-escuro, no topo do formulário, com `role="alert"`; diz o que aconteceu e o que fazer, nunca só a cor.
 
 ## Do's and Don'ts
 
