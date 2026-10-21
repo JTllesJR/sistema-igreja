@@ -23,15 +23,28 @@ Os diagramas planejados são um **modelo lógico resumido**, não migrations pro
 
 ```mermaid
 erDiagram
+    ORGANIZATION ||--o{ CONGREGATION : possui
     ORGANIZATION {
         uuid id PK
         string name
+        int version
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    CONGREGATION {
+        uuid id PK
+        uuid organization_id FK
+        string name
+        boolean is_headquarters
+        enum status
+        jsonb address
+        jsonb service_times
         timestamptz created_at
         timestamptz updated_at
     }
 ```
 
-Esta é a única entidade no [schema Prisma atual](../../apps/api/prisma/schema.prisma). O ID é UUID v7. Os modelos abaixo ainda não estão no banco.
+Estas são as duas tabelas do [schema Prisma atual](../../apps/api/prisma/schema.prisma), criadas pelas migrations `20261019000000_init` e `20261020120000_organization_congregations`. O ID é UUID v7 **gerado pela aplicação** (sem default no banco). As restrições de `congregation` estão descritas na seção "Integridade da congregação" abaixo e foram exercitadas contra PostgreSQL 17. Os demais modelos ainda não estão no banco.
 
 ## Organização e acesso — planejado
 
@@ -87,11 +100,11 @@ erDiagram
 
 Uma atribuição com `congregation_id` nulo vale para a organização inteira. Um usuário pode receber vários papéis em congregações diferentes. A sede é uma congregação marcada com `is_headquarters`, não outra entidade.
 
-`status` da congregação é `ACTIVE` ou `INACTIVE`; congregação não é excluída. `version` da organização é o contador do travamento otimista. `address` e `service_times` são JSON validado na aplicação. Os atributos de `organization` e `congregation` seguem o [ADR 0009](../adr/0009-modulo-organization.md); a migration ainda não existe.
+`status` da congregação é `ACTIVE` ou `INACTIVE`; congregação não é excluída. `version` da organização é o contador do travamento otimista. `address` e `service_times` são JSON validado na aplicação. Os atributos de `organization` e `congregation` seguem o [ADR 0009](../adr/0009-modulo-organization.md); as duas tabelas já existem no banco (ver "Banco atual").
 
-### Integridade da congregação — planejado
+### Integridade da congregação — implementado (migration `20261020120000`)
 
-Restrições decididas para a tabela `congregation`, verificadas em PostgreSQL 17 (ADR 0009). Servem de modelo para os demais módulos:
+Restrições da tabela `congregation`, exercitadas por testes de integração em PostgreSQL 17 (ADR 0009). A FK composta ainda não é usada por nenhuma tabela, pois `member` e `financial_entry` não existem. Servem de modelo para os demais módulos:
 
 | Restrição                                  | O que impede                                                         | Onde fica                       |
 | ------------------------------------------ | -------------------------------------------------------------------- | ------------------------------- |

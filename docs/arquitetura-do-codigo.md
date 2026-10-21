@@ -52,7 +52,11 @@ presentation ──▶ application ──▶ domain ◀── infrastructure
 - Tabelas em `snake_case` no banco (`@@map`/`@map`).
 - **A partir do módulo `organization` (ADR 0009):** os ids UUID v7 são gerados pelo domínio, por uma porta
   `IdGenerator`, e não pelo Prisma; todo caso de uso recebe `execute(contexto, comando)` com
-  `contexto = { organizationId, actorId }`. (A tabela `organization` atual ainda usa o default do Prisma até essa migração.)
+  `contexto = { organizationId, actorId }`. O banco não tem default de id; o gerador é `UuidV7IdGenerator`.
+- **Raiz de composição:** o `<modulo>.module.ts` liga cada porta à sua implementação (`useFactory`) e cria os casos de
+  uso. É o único lugar que conhece `application` e `infrastructure` ao mesmo tempo.
+- **Repositórios cumprem um teste de contrato** (`describe<...>RepositoryContract`) e rodam contra o fake em memória
+  e contra o PostgreSQL. Teste de integração cobre ainda o que só o banco real prova (índices, concorrência, rollback).
 - Restrições que o Prisma não expressa (índices parciais ou funcionais) vão em SQL manual na migration e devem ser
   preservadas ao alterar a tabela. Referências a tabelas de outros módulos usam FK composta `(organization_id, id)`.
 

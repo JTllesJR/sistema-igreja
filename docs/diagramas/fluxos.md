@@ -114,7 +114,7 @@ Exemplo: uma entrada de R$ 100,00 é armazenada como `10000` centavos com direç
 
 Na implementação, validar organização, escopo, unicidade de estorno e vínculo com o original. Duas requisições simultâneas de estorno devem resultar em apenas um estorno persistido.
 
-## 6. Ciclo de vida da congregação, UC-05 — planejado
+## 6. Ciclo de vida da congregação, UC-05 — implementado (domínio e aplicação; sem camada HTTP)
 
 ```mermaid
 stateDiagram-v2
@@ -128,7 +128,7 @@ congregação **ativa**, e a sede não pode ser desativada. Para desativá-la, d
 Este estado é regra de negócio, visível e reversível; não é o soft delete (`deleted_at`) dos demais cadastros.
 Decisão em [ADR 0009](../adr/0009-modulo-organization.md).
 
-## 7. Designar nova sede, UC-05 — planejado
+## 7. Designar nova sede, UC-05 — implementado (domínio, aplicação e repositório; sem camada HTTP)
 
 ```mermaid
 sequenceDiagram
@@ -167,7 +167,9 @@ sequenceDiagram
 Dois pontos que o desenho torna visíveis:
 
 - **A ordem dos `UPDATE`s importa.** O índice único parcial "uma sede por organização" é verificado a cada comando e
-  não é adiável. Marcar a nova antes de desmarcar a antiga violaria o índice no meio da transação.
+  não é adiável. Marcar a nova antes de desmarcar a antiga violaria o índice no meio da transação. O repositório
+  Prisma grava em três passos (desmarcar a sede antiga, atualizar as existentes, inserir as novas), e há teste de
+  integração que força a pior ordem da lista (nova sede antes da antiga) para provar que o resultado não depende dela.
 - **A versão evita sobrescrita silenciosa.** Duas designações simultâneas partem da mesma `version`; só a primeira
   confirma, a outra recebe conflito.
 

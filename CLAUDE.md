@@ -18,7 +18,13 @@ O requisito original é o PRD em PDF; as decisões e modelos estão em `docs/` (
 
 ## Regras que não se negociam
 
-- `domain` é TypeScript puro; o linter barra imports de Nest/Prisma/platform ali (`apps/api/.oxlintrc.json`).
+- `domain` é TypeScript puro; `application` também não importa framework nem infraestrutura (casos de uso sem
+  decorators do Nest). O linter barra isso (`apps/api/.oxlintrc.json`); a ligação é feita no `<modulo>.module.ts`.
+- Migration que mexe em `congregation` deve **preservar os dois índices manuais** (sede única e nome único): o
+  Prisma não os expressa no schema (ADR 0009). Conferir com `prisma migrate diff` que não há deriva.
+- Todo repositório novo cumpre um teste de contrato, rodado contra o fake em memória e contra o PostgreSQL.
+- Ao validar testes, **sabotar o código de propósito** e ver o teste falhar (mutação manual). Já achou buracos reais.
+  Cuidado: no Git Bash, argumentos começando por `//` são convertidos em `/`.
 - Um módulo não toca nas tabelas de outro módulo (ADR 0001). Toda tabela de negócio tem `organization_id` (ADR 0003).
 - Dinheiro em centavos inteiros; lançamentos financeiros imutáveis, correção por estorno (ADR 0005).
 - Dados de membros são sensíveis (LGPD, ADR 0006).

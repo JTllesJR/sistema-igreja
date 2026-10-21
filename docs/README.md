@@ -41,12 +41,13 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
 - ✅ **Fase 1 — Esqueleto técnico:** monorepo, Prisma + migration inicial, NestJS com `/health`, lint, testes
   unitários e de integração, CI. Validada localmente com Docker (PostgreSQL 17) e no CI do GitHub.
 - 🔄 **Fase 2 — Módulos de negócio:** `organization` desenhado ([ADR 0009](adr/0009-modulo-organization.md)).
-  **Camadas `domain` e `application` implementadas e testadas** (agregado, 8 casos de uso, porta do repositório,
-  repositório em memória e teste de contrato). Faltam `infrastructure` (migration e repositório Prisma) e, depois do
-  login, `presentation`.
+  **Camadas `domain`, `application` e `infrastructure` implementadas e testadas** (agregado, 8 casos de uso,
+  migration com os índices, repositório Prisma validado pelo mesmo teste de contrato do repositório em memória,
+  gerador UUID v7 e módulo Nest). Falta apenas a `presentation`, que espera o login. Falta também o comando de
+  linha do UC-17.
 
 ## Próximos passos
-- Continuar `organization`: persistência (`infrastructure`: migration com os índices, repositório Prisma, gerador de
-  UUID v7 e ligação no módulo Nest), rodando o mesmo teste de contrato contra o PostgreSQL. Sem HTTP até existir login.
+- Comando de linha para criar a organização inicial (UC-17), que reutiliza o caso de uso já pronto.
+- `identity-access` (usuários, RBAC com escopo, ADR 0004) e, só então, a camada HTTP do `organization`.
 - Depois, `identity-access` com RBAC por escopo (ADR 0004) e, só então, a camada HTTP dos dois módulos.
 - Validar com a igreja as perguntas ao final de [casos-de-uso-mvp.md](casos-de-uso-mvp.md).

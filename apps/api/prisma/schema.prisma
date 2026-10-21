@@ -1,8 +1,12 @@
 // Schema do banco. Convenções (ver docs/modelo-dominio.md):
 //  - tabelas e colunas em snake_case no banco, camelCase no código (@@map / @map)
-//  - ids UUID v7 (ordenáveis por tempo: melhor localidade de índice que v4)
+//  - ids UUID v7 GERADOS PELO DOMÍNIO (porta IdGenerator, ADR 0009); o banco não tem default de id
 //  - timestamps com fuso (timestamptz)
 //  - toda tabela de negócio carrega organization_id (ADR 0003)
+//
+// ATENÇÃO: duas regras do módulo organization NÃO aparecem aqui porque o Prisma não as expressa
+// (índice único parcial e índice único funcional). Elas vivem em SQL manual na migration
+// `*_organization_congregations` e devem ser preservadas ao alterar a tabela `congregation`.
 
 generator client {
   provider = "prisma-client"
@@ -15,12 +19,45 @@ datasource db {
   provider = "postgresql"
 }
 
+enum CongregationStatus {
+  ACTIVE
+  INACTIVE
+
+  @@map("congregation_status")
+}
+
 /// A igreja/denominação que usa o sistema (tenant). Raiz de todo o isolamento de dados.
 model Organization {
-  id        String   @id @default(uuid(7)) @db.Uuid
+  id        String   @id @db.Uuid
   name      String
+  /// Travamento otimista: incrementada a cada gravação do agregado (ADR 0009, seção 5).
+  version   Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  congregations Congregation[]
+
   @@map("organization")
+}
+
+/// Unidade local da igreja. Congregação não é excluída: fica ACTIVE ou INACTIVE.
+model Congregation {
+  id             String             @id @db.Uuid
+  organizationId String             @map("organization_id") @db.Uuid
+  name           String
+  isHeadquarters Boolean            @default(false) @map("is_headquarters")
+  status         CongregationStatus @default(ACTIVE)
+  /// JSON validado pela aplicação (value object Address). Nulo = sem endereço.
+  address        Json?
+  /// JSON validado pela aplicação (lista de ServiceTime).
+  serviceTimes   Json               @default("[]") @map("service_times")
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  // Permite que outras tabelas usem FK composta (organization_id, congregation_id), impedindo que um
+  // registro aponte para uma congregação de outra organização (ver docs/diagramas/modelo-er.md).
+  @@unique([organizationId, id])
+  @@map("congregation")
 }

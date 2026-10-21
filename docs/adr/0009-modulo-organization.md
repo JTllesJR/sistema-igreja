@@ -91,7 +91,17 @@ As duas primeiras não são expressáveis no `schema.prisma`; vão em SQL manual
 - O mesmo nome com outra caixa na mesma organização é recusado; em organizações diferentes é aceito.
 - Várias congregações comuns na mesma organização são aceitas.
 
+**Implementado em 2026-10-20** na migration `20261020120000_organization_congregations` (as três restrições, as duas
+manuais com comentário no próprio SQL) e no `PrismaOrganizationRepository`, que grava em uma transação com
+checagem de `version` e, depois, em três passos: **desmarcar a sede antiga → atualizar as existentes → inserir as
+novas**. Toda escrita usa a chave composta `(organization_id, id)`, então nunca alcança uma linha de outra organização.
+O mesmo teste de contrato do repositório em memória passa no PostgreSQL 17.
+
 **Limites conhecidos:**
+
+- Trocar nomes entre duas congregações dentro de **uma única** gravação (A↔B) violaria o índice de nome único durante
+  as atualizações sequenciais. Os casos de uso gravam uma operação por vez, então não ocorre; se um dia for preciso,
+  exigirá um nome temporário.
 
 - `lower()` não ignora acentos. O domínio normaliza (caixa, acentos, espaços) e rejeita antes; o banco é a rede de
   segurança só para o caso de caixa.
