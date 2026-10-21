@@ -287,3 +287,75 @@ describe('logout', () => {
     expect(session.getState()).toEqual({ status: 'anonymous' });
   });
 });
+
+describe('getAccessToken e renewAccessToken (usados pelo cliente autenticado)', () => {
+  it('getAccessToken: null sem sessão, o token com sessão', async () => {
+    const { session } = setup();
+    expect(session.getAccessToken()).toBeNull();
+
+    await session.login('maria@igreja.com', 'senha-segura-1');
+    expect(session.getAccessToken()).toBe('login-token');
+
+    await session.logout();
+    expect(session.getAccessToken()).toBeNull();
+  });
+
+  it('renova na hora, troca o token em memória, agenda a próxima e devolve o novo', async () => {
+    const { session, client, timers } = setup();
+    await session.login('maria@igreja.com', 'senha-segura-1');
+
+    expect(await session.renewAccessToken()).toBe('refreshed-token');
+
+    expect(session.getAccessToken()).toBe('refreshed-token');
+    expect(client.refresh).toHaveBeenCalledTimes(1);
+    expect(timers.pendingCount).toBe(1);
+  });
+
+  it('dois 401 ao mesmo tempo: ambos recebem o mesmo token novo e só fica uma renovação agendada', async () => {
+    // A união das chamadas em uma só requisição é do AuthClient (testada em client.spec.ts); aqui o gerenciador
+    // só precisa continuar coerente quando as duas respostas chegam.
+    const { session, timers } = setup();
+    await session.login('maria@igreja.com', 'senha-segura-1');
+
+    const [a, b] = await Promise.all([
+      session.renewAccessToken(),
+      session.renewAccessToken(),
+    ]);
+
+    expect(a).toBe('refreshed-token');
+    expect(b).toBe('refreshed-token');
+    expect(session.getAccessToken()).toBe('refreshed-token');
+    expect(timers.pendingCount).toBe(1);
+  });
+
+  it('sessão recusada: vira anônimo e devolve null', async () => {
+    const { session, timers } = setup({
+      refresh: vi.fn(() =>
+        Promise.reject(apiError(401, 'identity.session_invalid')),
+      ),
+    });
+    await session.login('maria@igreja.com', 'senha-segura-1');
+
+    expect(await session.renewAccessToken()).toBeNull();
+
+    expect(session.getState()).toEqual({ status: 'anonymous' });
+    expect(timers.pendingCount).toBe(0);
+  });
+
+  it('rede fora: repassa o erro e continua logado', async () => {
+    const error = apiError(0, 'network');
+    const { session } = setup({ refresh: vi.fn(() => Promise.reject(error)) });
+    await session.login('maria@igreja.com', 'senha-segura-1');
+
+    await expect(session.renewAccessToken()).rejects.toBe(error);
+
+    expect(session.getState()).toMatchObject({ status: 'authenticated' });
+  });
+
+  it('sem sessão, devolve null sem chamar a API', async () => {
+    const { session, client } = setup();
+
+    expect(await session.renewAccessToken()).toBeNull();
+    expect(client.refresh).not.toHaveBeenCalled();
+  });
+});

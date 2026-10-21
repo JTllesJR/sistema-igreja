@@ -110,29 +110,51 @@ export class SessionManager {
   #scheduleRenewal(expiresAt: number, delay?: number): void {
     this.#cancelRenewal();
     this.#renewalTimer = this.timers.setTimeout(
-      () => void this.#renew(),
+      () => void this.#renewFromTimer(),
       delay ?? msUntilRenewal(expiresAt, this.timers.now()),
     );
   }
 
-  async #renew(): Promise<void> {
+  /** O token de acesso atual, ou `null` se não há sessão. Só leitura: quem precisa de outro usa `renewAccessToken`. */
+  getAccessToken(): string | null {
+    return this.#state.status === 'authenticated'
+      ? this.#state.accessToken
+      : null;
+  }
+
+  /**
+   * Troca o token de acesso agora (ex.: a API respondeu 401 porque ele venceu). Devolve o novo token, ou `null`
+   * se a sessão acabou (e então a pessoa vai para a entrada). Falha de rede é repassada: o cookie continua valendo.
+   * Várias chamadas ao mesmo tempo dividem uma só renovação (`AuthClient.refresh`).
+   */
+  async renewAccessToken(): Promise<string | null> {
     const current = this.#state;
-    if (current.status !== 'authenticated') return;
+    if (current.status !== 'authenticated') return null;
 
     try {
       const tokens = await this.client.refresh();
-      // Saiu (ou entrou de novo) durante a renovação: não ressuscita a sessão antiga.
-      if (this.#state !== current) return;
+      // Saiu (ou outra chamada já renovou) durante a espera: não sobrescreve o estado mais novo.
+      if (this.#state !== current) return this.getAccessToken();
       this.#set({ ...current, accessToken: tokens.accessToken });
       this.#scheduleRenewal(Date.parse(tokens.accessTokenExpiresAt));
+      return tokens.accessToken;
     } catch (error) {
-      if (this.#state !== current) return;
-      if (error instanceof ApiError && error.code === 'network') {
-        // Rede caiu: o cookie continua valendo, então tenta de novo em vez de deslogar.
-        this.#scheduleRenewal(0, RETRY_AFTER_NETWORK_FAILURE_MS);
-        return;
-      }
+      if (this.#state !== current) return this.getAccessToken();
+      if (error instanceof ApiError && error.code === 'network') throw error;
+      this.#cancelRenewal();
       this.#set({ status: 'anonymous' });
+      return null;
+    }
+  }
+
+  async #renewFromTimer(): Promise<void> {
+    try {
+      await this.renewAccessToken();
+    } catch {
+      // Rede caiu: o cookie continua valendo, então tenta de novo em vez de deslogar.
+      if (this.#state.status === 'authenticated') {
+        this.#scheduleRenewal(0, RETRY_AFTER_NETWORK_FAILURE_MS);
+      }
     }
   }
 

@@ -5,7 +5,7 @@ import { consultarSaude, type EstadoApi } from './api/health';
 import { useSession } from './auth/SessionProvider';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `rounded-md px-3 py-2 text-sm font-medium ${
+  `inline-flex min-h-10 items-center rounded-md px-3 text-sm font-medium ${
     isActive
       ? 'bg-slate-100 text-slate-900'
       : 'text-slate-600 hover:text-slate-900'
@@ -52,9 +52,14 @@ export function Layout() {
               Andamento
             </NavLink>
             {session.status === 'authenticated' ? (
-              <NavLink to="/conta" className={linkClass}>
-                Minha conta
-              </NavLink>
+              <>
+                <NavLink to="/congregacoes" className={linkClass}>
+                  Congregações
+                </NavLink>
+                <NavLink to="/conta" className={linkClass}>
+                  Minha conta
+                </NavLink>
+              </>
             ) : (
               <NavLink to="/entrar" className={linkClass}>
                 Entrar
