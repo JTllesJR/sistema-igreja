@@ -35,6 +35,9 @@ Escopo do MVP no PRD: **login, permissões, cadastro de membros, finanças bási
 | UC-17 | Criar organização inicial | Operador | Linha de comando; cria a organização e sua sede. Sem endpoint público (ADR 0009). O primeiro administrador é criado por comando equivalente no `identity-access`. |
 
 ### Membros
+
+> **Implementados** (API e telas; [ADR 0013](adr/0013-modulo-members-e-auditoria.md)): UC-06, UC-07, UC-09 e UC-10, mais a
+> anonimização (LGPD). **UC-08 (documentos e foto) fica de fora** por exigir armazenamento privado.
 | ID | Caso de uso | Ator | Observações |
 |---|---|---|---|
 | UC-06 | Cadastrar e editar membro | Secretário, Dirigente | Dados pessoais, cargo/função, foto. |

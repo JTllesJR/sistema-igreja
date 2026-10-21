@@ -37,6 +37,7 @@ O requisito original é o PRD em PDF; as decisões e modelos estão em `docs/` (
 - Um módulo não toca nas tabelas de outro módulo (ADR 0001). Toda tabela de negócio tem `organization_id` (ADR 0003).
 - Dinheiro em centavos inteiros; lançamentos financeiros imutáveis, correção por estorno (ADR 0005).
 - Dados de membros são sensíveis (LGPD, ADR 0006).
+  Leitura deles é auditada ANTES de devolver (se a trilha falha, nada sai) e a trilha nunca guarda dado pessoal (ADR 0013).
 - Dependências: nunca contornar o `minimumReleaseAge` do pnpm nem liberar `allowBuilds` sem justificar (ADR 0008).
 - TypeScript fica em 6.0.x: o Nest CLI não funciona com o 7.0 (confirmado no CI). Reavaliar no 7.1.
 - Dependabot: PRs de versão maior de `typescript`, `@types/node` e `postgres` são ignorados por decisão (ADR 0008).

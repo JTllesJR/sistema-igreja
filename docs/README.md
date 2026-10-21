@@ -26,6 +26,7 @@ casos de uso, modelo ER, sequências, atividades e estados, distinguindo impleme
 | [0010](adr/0010-identity-access-minimo.md) | `identity-access` mínimo: usuários, senha, sessões e papéis | aceita |
 | [0011](adr/0011-camada-http.md) | Camada HTTP: validação, autenticação, erros e endurecimento | aceita |
 | [0012](adr/0012-web-react-vite-tailwind.md) | Web: React, Vite e Tailwind | aceita |
+| [0013](adr/0013-modulo-members-e-auditoria.md) | Módulo `members` e a trilha de auditoria | aceita |
 
 ## Como usar os ADRs
 Toda decisão estrutural nova vira um ADR curto (contexto, decisão, alternativas, consequências). Se uma decisão mudar,
@@ -70,12 +71,23 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
   com token de acesso só em memória e renovação automática; verificado no navegador contra uma API simulada, ainda
   não contra a API real com banco.
 
+- ✅ **Módulo `members` e auditoria** ([ADR 0013](adr/0013-modulo-members-e-auditoria.md)), fatia vertical inteira: cadastro, edição,
+  lista e busca, ficha, história (batismo, recepção), mudança de situação, transferência entre congregações e
+  **anonimização (LGPD)**, com API, banco e telas. Permissões `members:read`, `members:write` (por congregação) e
+  `members:anonymize` (igreja toda); o escopo chega até a consulta ao banco e membro fora do escopo responde 404. A
+  **trilha de auditoria** é somente-anexação (gatilho no banco), registra leituras ANTES de devolver (falha fechada) e
+  nunca guarda dado pessoal. Testado com repositórios em memória (inclusive duas igrejas e a falha da trilha) e com
+  mutação manual; **a migration, o repositório Prisma e o gatilho só serão exercitados no CI** (sem Docker nesta máquina).
+
 ## Próximos passos
 Em fatias verticais, para que o primeiro resultado visual chegue cedo (cada módulo novo entrega backend e tela):
 1. Camada HTTP (ADR 0011): passos (a), (b) e (c) feitos; segue (d) OpenAPI (Swagger UI).
-2. Web: login e **congregações** (lista, cadastro, edição, desativar e trocar de sede) prontos, verificados contra uma API
-   simulada. Próximas telas: membros e finanças, e a documentação OpenAPI (passo d) da API.
-3. RBAC completo com escopo (ADR 0004), depois `members` e `finance`, cada um já com tela.
+2. Web: login, **congregações** e **membros** prontos, verificados contra uma API simulada. **Dar push e conferir o CI**:
+   é o que valida a migration, o repositório Prisma e o gatilho da trilha com o PostgreSQL real.
+3. **Papéis por congregação e convites (UC-02 e UC-03):** hoje só o Administrador existe de fato; sem isto, secretários
+   escopados a uma congregação (o caso de uso central de `members`) só são exercitados nos testes.
+4. `finance` (dinheiro em centavos, lançamentos imutáveis, ADR 0005), já com tela; documentos e foto dos membros (UC-08,
+   com armazenamento privado) e a consulta à trilha de auditoria (UC-04).
 
 Em paralelo:
 - Validar com a igreja as perguntas ao final de [casos-de-uso-mvp.md](casos-de-uso-mvp.md).
