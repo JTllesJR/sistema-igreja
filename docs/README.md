@@ -40,10 +40,11 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
 - ✅ **Fase 0 — Fundação conceitual:** glossário, casos de uso, modelo de domínio, ADRs 0001–0007.
 - ✅ **Fase 1 — Esqueleto técnico:** monorepo, Prisma + migration inicial, NestJS com `/health`, lint, testes
   unitários e de integração, CI. Validada localmente com Docker (PostgreSQL 17) e no CI do GitHub.
-- 🔄 **Fase 2 — Módulos de negócio:** `organization` desenhado ([ADR 0009](adr/0009-modulo-organization.md));
-  implementação ainda não iniciada.
+- 🔄 **Fase 2 — Módulos de negócio:** `organization` desenhado ([ADR 0009](adr/0009-modulo-organization.md)).
+  **Camada `domain` implementada e testada** (value objects, `Congregation`, agregado `Organization`).
+  Faltam `application`, `infrastructure` (migration e repositório) e, depois do login, `presentation`.
 
 ## Próximos passos
-- Implementar `organization` (domínio e testes primeiro, depois aplicação e persistência; sem HTTP até existir login).
+- Continuar `organization`: casos de uso (`application`) e persistência (`infrastructure`), sem HTTP até existir login.
 - Depois, `identity-access` com RBAC por escopo (ADR 0004) e, só então, a camada HTTP dos dois módulos.
 - Validar com a igreja as perguntas ao final de [casos-de-uso-mvp.md](casos-de-uso-mvp.md).

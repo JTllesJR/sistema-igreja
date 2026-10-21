@@ -19,7 +19,7 @@ No GitHub, abra estes arquivos para ver os desenhos renderizados. No editor, use
 - **Planejado:** definido nos casos de uso, modelo de domínio ou ADRs; ainda não implementado.
 - **Proposta:** sugestão para detalhar a implementação; exige revisão antes de virar requisito ou decisão aceita.
 
-O código atual tem API, configuração, acesso ao banco, `/health` e a tabela `organization`. Login, permissões, membros, finanças, interface web e isolamento entre organizações ainda são planejados.
+O código atual tem API, configuração, acesso ao banco, `/health`, a tabela `organization` e a **camada de domínio do módulo `organization`** (agregado, regras e testes unitários; ainda sem casos de uso, persistência das congregações nem HTTP). Login, permissões, membros, finanças, interface web e isolamento entre organizações ainda são planejados.
 
 ## Como usar durante o desenvolvimento
 
