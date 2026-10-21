@@ -29,6 +29,8 @@ export const assignedRoleSchema = z.object({
   roleId: z.string(),
   roleName: z.string(),
   isSystem: z.boolean(),
+  /** `modulo:acao` ou `*` (tudo). Serve para a interface esconder o que a pessoa não pode usar; quem decide é a API. */
+  permissions: z.array(z.string()),
   congregationId: z.string().nullable(),
 });
 

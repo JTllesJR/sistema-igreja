@@ -6,6 +6,8 @@ export interface AssignedRoleView {
   roleId: string;
   roleName: string;
   isSystem: boolean;
+  /** O que o papel concede (`modulo:acao` ou `*`), para a interface mostrar só o que a pessoa pode fazer. */
+  permissions: string[];
   congregationId: string | null;
 }
 
@@ -47,6 +49,7 @@ export function toCurrentUserView(
               roleId: role.id,
               roleName: role.name.value,
               isSystem: role.isSystem,
+              permissions: role.permissions.map((p) => p.value),
               congregationId: assignment.congregationId,
             },
           ]

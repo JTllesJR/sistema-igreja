@@ -372,6 +372,7 @@ describe('GET /auth/me', () => {
           roleId: running.admin.roleId,
           roleName: 'Administrador',
           isSystem: true,
+          permissions: ['*'],
           congregationId: null,
         },
       ],

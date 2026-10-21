@@ -36,6 +36,7 @@ describe('AuthenticateUseCase (UC-01, entrar)', () => {
             roleId: bed.admin.roleId,
             roleName: 'Administrador',
             isSystem: true,
+            permissions: ['*'],
             congregationId: null,
           },
         ],
