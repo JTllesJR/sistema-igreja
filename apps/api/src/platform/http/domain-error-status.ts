@@ -18,6 +18,14 @@ export const DOMAIN_ERROR_STATUS: Readonly<Record<string, number>> = {
   'organization.congregation_already_headquarters': 409,
   'organization.cannot_deactivate_headquarters': 409,
 
+  'members.not_found': 404,
+  // 403: o usuário VÊ o membro, mas não pode esta ação. (Quem não pode nem ver recebe 'members.not_found'.)
+  'members.access_denied': 403,
+  'members.anonymized': 409,
+  'members.already_in_status': 409,
+  'members.already_in_congregation': 409,
+  'members.congregation_unavailable': 422,
+
   'identity.invalid_credentials': 401,
   'identity.session_invalid': 401,
   'identity.session_reuse_detected': 401,
