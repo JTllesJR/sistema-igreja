@@ -4,6 +4,7 @@ export const ROLE_REPOSITORY = Symbol('RoleRepository');
 export const SESSION_REPOSITORY = Symbol('SessionRepository');
 export const PASSWORD_HASHER = Symbol('PasswordHasher');
 export const ACCESS_TOKEN_SIGNER = Symbol('AccessTokenSigner');
+export const ACCESS_TOKEN_VERIFIER = Symbol('AccessTokenVerifier');
 export const REFRESH_TOKEN_CODEC = Symbol('RefreshTokenCodec');
 export const ORGANIZATION_DIRECTORY = Symbol('OrganizationDirectory');
 export const CLOCK = Symbol('Clock');

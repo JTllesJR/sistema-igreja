@@ -47,6 +47,7 @@ describe('statusForDomainError (código de domínio -> status HTTP)', () => {
       'identity.invalid_credentials': 401,
       'identity.session_invalid': 401,
       'identity.session_reuse_detected': 401,
+      'identity.permission_denied': 403,
       'identity.current_password_incorrect': 422,
       'identity.email_already_registered': 409,
       'identity.user_not_found': 404,

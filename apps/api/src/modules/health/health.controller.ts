@@ -1,8 +1,11 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import type { HealthResponse } from '@igreja/contracts';
 import type { Response } from 'express';
+import { Public } from '../../platform/http/access-control.js';
 import { HealthService } from './health.service.js';
 
+// Aberto de propósito: monitoramento e orquestradores consultam sem login (ADR 0011).
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(private readonly health: HealthService) {}

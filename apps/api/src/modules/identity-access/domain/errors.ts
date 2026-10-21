@@ -29,6 +29,16 @@ export class SessionReuseDetectedError extends DomainError {
   }
 }
 
+/** Usuário autenticado, mas sem a permissão que a rota exige (ADR 0004 e 0011). */
+export class PermissionDeniedError extends DomainError {
+  constructor() {
+    super(
+      'identity.permission_denied',
+      'Você não tem permissão para esta ação.',
+    );
+  }
+}
+
 /** Erro único de login: não revela se o e-mail existe, se a senha está errada ou se a conta está bloqueada. */
 export class InvalidCredentialsError extends DomainError {
   constructor() {

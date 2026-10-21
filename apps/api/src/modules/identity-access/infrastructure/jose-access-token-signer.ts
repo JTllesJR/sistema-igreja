@@ -1,9 +1,12 @@
-import { SignJWT } from 'jose';
+import { jwtVerify, SignJWT } from 'jose';
+import { OrganizationId } from '../../../shared/domain/identifiers.js';
 import type {
   AccessTokenClaims,
   AccessTokenSigner,
   SignedAccessToken,
 } from '../application/access-token-signer.js';
+import type { AccessTokenVerifier } from '../application/access-token-verifier.js';
+import { SessionId, UserId } from '../domain/ids.js';
 
 const MIN_SECRET_LENGTH = 32;
 
@@ -13,12 +16,14 @@ export interface JoseAccessTokenSignerOptions {
 }
 
 /**
- * Emite o token de acesso: JWT curto assinado com HS256 (ADR 0010).
+ * Emite e confere o token de acesso: JWT curto assinado com HS256 (ADR 0010).
  *
  * Carrega só `sub` (usuário), `org` (igreja) e `sid` (sessão), mais `iat`/`exp`. Permissões NÃO vão no token:
  * a cada requisição o guard consulta a política de acesso atual, então mudanças de papel valem na hora.
  */
-export class JoseAccessTokenSigner implements AccessTokenSigner {
+export class JoseAccessTokenSigner
+  implements AccessTokenSigner, AccessTokenVerifier
+{
   readonly #key: Uint8Array;
   readonly #ttlSeconds: number;
 
@@ -47,5 +52,34 @@ export class JoseAccessTokenSigner implements AccessTokenSigner {
       .sign(this.#key);
 
     return { token, expiresAt: new Date(expiresAt * 1000) };
+  }
+
+  /**
+   * Confere assinatura, algoritmo (só HS256: recusa `none` e troca de algoritmo) e validade, e exige que o token traga
+   * usuário, igreja e sessão em formato de identificador. Qualquer defeito vira `null`, sem dizer qual.
+   */
+  async verify(token: string, now: Date): Promise<AccessTokenClaims | null> {
+    try {
+      const { payload } = await jwtVerify(token, this.#key, {
+        algorithms: ['HS256'],
+        currentDate: now,
+        requiredClaims: ['sub', 'exp', 'iat'],
+      });
+      const { sub, org, sid } = payload as Record<string, unknown>;
+      if (
+        typeof sub !== 'string' ||
+        typeof org !== 'string' ||
+        typeof sid !== 'string'
+      ) {
+        return null;
+      }
+      return {
+        userId: UserId.of(sub),
+        organizationId: OrganizationId.of(org),
+        sessionId: SessionId.of(sid),
+      };
+    } catch {
+      return null;
+    }
   }
 }

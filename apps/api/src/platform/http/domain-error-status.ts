@@ -21,6 +21,7 @@ export const DOMAIN_ERROR_STATUS: Readonly<Record<string, number>> = {
   'identity.invalid_credentials': 401,
   'identity.session_invalid': 401,
   'identity.session_reuse_detected': 401,
+  'identity.permission_denied': 403,
   // 422 e não 401: o usuário está autenticado; um 401 faria o cliente achar que a sessão acabou e deslogar.
   'identity.current_password_incorrect': 422,
   'identity.email_already_registered': 409,

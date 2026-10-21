@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { describe, expect, it, vi } from 'vitest';
+import { IS_PUBLIC_KEY } from '../../platform/http/access-control.js';
 import { HealthController } from './health.controller.js';
 import { HealthService } from './health.service.js';
 
@@ -50,5 +51,11 @@ describe('HealthController', () => {
       checks: { database: 'down' },
     });
     expect(response.statusCode).toBe(503);
+  });
+});
+
+describe('acesso', () => {
+  it('é @Public(): o guard global não pode exigir login do monitoramento', () => {
+    expect(Reflect.getMetadata(IS_PUBLIC_KEY, HealthController)).toBe(true);
   });
 });

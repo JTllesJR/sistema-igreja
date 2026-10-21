@@ -6,7 +6,8 @@
  * - `CreateAdministratorUseCase`, `createAdministratorCommand` e `PasswordReader`: usados pelo comando do operador
  *   (`src/cli.ts`).
  *
- * A camada HTTP (login, guard) ainda vai exportar os casos de uso de que precisar.
+ * - `CurrentPolicy`: a política de acesso do usuário logado, para o controller filtrar por escopo de congregação.
+ * Quem protege rotas usa `@Public`, `@RequirePermission` e `@CurrentContext`, de `platform/http/access-control`.
  */
 export { CreateAdministratorUseCase } from './application/create-administrator.use-case.js';
 export { IdentityAccessModule } from './identity-access.module.js';
@@ -14,3 +15,5 @@ export {
   createAdministratorCommand,
   type PasswordReader,
 } from './presentation/cli/create-administrator.command.js';
+export { AccessPolicy } from './domain/access-policy.js';
+export { CurrentPolicy } from './presentation/http/authenticated-request.js';

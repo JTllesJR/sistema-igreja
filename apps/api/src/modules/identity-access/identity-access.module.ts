@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { DatabaseModule } from '../../platform/database/database.module.js';
 import { PrismaService } from '../../platform/database/prisma.service.js';
 import { ENV } from '../../platform/config/config.module.js';
@@ -37,8 +38,11 @@ import { PrismaRoleRepository } from './infrastructure/prisma-role.repository.js
 import { PrismaSessionRepository } from './infrastructure/prisma-session.repository.js';
 import { PrismaUserRepository } from './infrastructure/prisma-user.repository.js';
 import { Sha256RefreshTokenCodec } from './infrastructure/sha256-refresh-token-codec.js';
+import { AuthController } from './presentation/http/auth.controller.js';
+import { AuthGuard } from './presentation/http/auth.guard.js';
 import {
   ACCESS_TOKEN_SIGNER,
+  ACCESS_TOKEN_VERIFIER,
   CLOCK,
   ID_GENERATOR,
   ORGANIZATION_DIRECTORY,
@@ -56,7 +60,11 @@ const DAY_MS = 24 * 60 * 60_000;
 // ligada à sua implementação e as configurações vêm do ambiente já validado.
 @Module({
   imports: [DatabaseModule, OrganizationModule],
+  controllers: [AuthController],
   providers: [
+    // Guard global que nega por padrão (ADR 0011): vale para TODAS as rotas de TODOS os módulos.
+    { provide: APP_GUARD, useClass: AuthGuard },
+
     // Repositórios
     {
       provide: USER_REPOSITORY,
@@ -86,6 +94,8 @@ const DAY_MS = 24 * 60 * 60_000;
         }),
       inject: [ENV],
     },
+    // Mesma instância (e mesma chave) emite e confere o token.
+    { provide: ACCESS_TOKEN_VERIFIER, useExisting: ACCESS_TOKEN_SIGNER },
     {
       provide: REFRESH_TOKEN_CODEC,
       useFactory: () => new Sha256RefreshTokenCodec(),
@@ -232,7 +242,7 @@ const DAY_MS = 24 * 60 * 60_000;
       inject: [USER_REPOSITORY, SESSION_REPOSITORY, PASSWORD_HASHER, CLOCK],
     },
   ],
-  // Exportados para a camada de apresentação (controllers e guard) que virá no próximo passo.
+  // Exportados para o comando do operador e para os testes; os controllers e o guard já ficam dentro do módulo.
   exports: [
     CreateAdministratorUseCase,
     AuthenticateUseCase,
