@@ -217,46 +217,25 @@ describe('canManageOrganization', () => {
     email: 'a@b.com',
     roles,
   });
+  const role = (permissions: string[], congregationId: string | null) => ({
+    roleId: 'r',
+    roleName: 'Papel',
+    isSystem: false,
+    permissions,
+    congregationId,
+  });
 
-  it('só o administrador (papel de sistema) na igreja toda', () => {
+  it('quem tem organization:manage na igreja toda, inclusive pelo curinga', () => {
+    expect(canManageOrganization(user([role(['*'], null)]))).toBe(true);
     expect(
-      canManageOrganization(
-        user([
-          {
-            roleId: 'r',
-            roleName: 'Administrador',
-            isSystem: true,
-            congregationId: null,
-          },
-        ]),
-      ),
+      canManageOrganization(user([role(['organization:manage'], null)])),
     ).toBe(true);
   });
 
   it.each([
     ['sem papéis', []],
-    [
-      'papel comum',
-      [
-        {
-          roleId: 'r',
-          roleName: 'Tesoureiro',
-          isSystem: false,
-          congregationId: null,
-        },
-      ],
-    ],
-    [
-      'administrador de uma congregação só',
-      [
-        {
-          roleId: 'r',
-          roleName: 'Administrador',
-          isSystem: true,
-          congregationId: 'c1',
-        },
-      ],
-    ],
+    ['só leitura', [role(['organization:read'], null)]],
+    ['gestão de uma congregação só', [role(['organization:manage'], 'c1')]],
   ])('não: %s', (_nome, roles) => {
     expect(canManageOrganization(user(roles))).toBe(false);
   });

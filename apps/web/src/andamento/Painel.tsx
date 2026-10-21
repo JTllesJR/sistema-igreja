@@ -7,6 +7,10 @@ import {
 
 const rotulos: Record<Status, { texto: string; classe: string }> = {
   concluido: { texto: 'Concluído', classe: 'bg-emerald-100 text-emerald-800' },
+  entregue: {
+    texto: 'Pronto, falta banco real',
+    classe: 'bg-teal-100 text-teal-800',
+  },
   backend: { texto: 'Backend pronto', classe: 'bg-sky-100 text-sky-800' },
   planejado: { texto: 'Planejado', classe: 'bg-slate-100 text-slate-600' },
 };
@@ -26,24 +30,27 @@ export function Painel() {
         </h2>
         <div
           role="progressbar"
-          aria-valuenow={resumo.percentualConcluido}
+          aria-valuenow={resumo.percentualEntregue}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="Casos de uso concluídos"
+          aria-label="Casos de uso com API e tela prontas"
           className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100"
         >
           <div
             className="h-full bg-emerald-500"
-            style={{ width: `${resumo.percentualConcluido}%` }}
+            style={{ width: `${resumo.percentualEntregue}%` }}
           />
         </div>
-        <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+        <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-5">
           <Numero rotulo="Total" valor={resumo.total} />
           <Numero rotulo="Concluídos" valor={resumo.concluidos} />
+          <Numero rotulo="Prontos, falta banco real" valor={resumo.entregues} />
           <Numero rotulo="Backend pronto" valor={resumo.backend} />
           <Numero rotulo="Planejados" valor={resumo.planejados} />
         </dl>
         <p className="mt-3 text-sm text-slate-500">
+          “Pronto, falta banco real” significa API e tela prontas e testadas,
+          mas ainda não validadas com o PostgreSQL real (só o CI tem banco).
           “Backend pronto” significa regra de negócio e banco testados; falta a
           tela e, em alguns casos, expor por HTTP.
         </p>

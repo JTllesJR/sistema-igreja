@@ -4,6 +4,7 @@ import type {
   RegisterCongregationRequest,
 } from '@igreja/contracts';
 import type { ApiError } from '../auth/http';
+import { hasPermission } from '../auth/permissions';
 
 /**
  * Lógica do formulário de congregação, sem React: assim é testada sem tela. Os campos do formulário são sempre texto
@@ -158,22 +159,28 @@ export function validateForm(form: CongregationForm): FieldErrors {
 const orNull = (value: string): string | null =>
   value.trim() === '' ? null : value.trim();
 
+/** O endereço do formulário no formato da API; sem nenhum campo preenchido, `null` (na edição, isso remove). */
+export function toAddressRequest(
+  address: AddressForm,
+): RegisterCongregationRequest['address'] {
+  return hasAddress(address)
+    ? {
+        street: address.street.trim(),
+        number: orNull(address.number),
+        complement: orNull(address.complement),
+        district: orNull(address.district),
+        city: address.city.trim(),
+        state: address.state.trim().toUpperCase(),
+        postalCode: orNull(address.postalCode),
+      }
+    : null;
+}
+
 /** Converte o formulário (texto) no corpo da API. Sem endereço preenchido, envia `null` (remove, na edição). */
 export function toRequest(form: CongregationForm): RegisterCongregationRequest {
-  const { address } = form;
   return {
     name: form.name.trim(),
-    address: hasAddress(address)
-      ? {
-          street: address.street.trim(),
-          number: orNull(address.number),
-          complement: orNull(address.complement),
-          district: orNull(address.district),
-          city: address.city.trim(),
-          state: address.state.trim().toUpperCase(),
-          postalCode: orNull(address.postalCode),
-        }
-      : null,
+    address: toAddressRequest(form.address),
     serviceTimes: form.serviceTimes.map((s) => ({
       weekday: s.weekday,
       time: s.time,
@@ -221,11 +228,9 @@ export function describeApiError(error: ApiError): {
 }
 
 /**
- * Hoje a web ainda não recebe as permissões do usuário (só os papéis), então "pode gerenciar" é o Administrador na
- * igreja toda. Serve só para MOSTRAR ou esconder botões: quem decide é a API, que responde 403 a quem não pode.
+ * A pessoa tem a permissão (`modulo:acao`) para a IGREJA TODA? O curinga `*` do Administrador cobre qualquer uma.
+ * Serve só para MOSTRAR ou esconder botões: quem decide é a API, que responde 403 a quem não pode.
  */
 export function canManageOrganization(user: CurrentUser): boolean {
-  return user.roles.some(
-    (role) => role.isSystem && role.congregationId === null,
-  );
+  return hasPermission(user, 'organization:manage');
 }

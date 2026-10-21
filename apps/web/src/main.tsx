@@ -4,11 +4,13 @@ import { createRoot } from 'react-dom/client';
 import { ApiProvider } from './api/context';
 import { App } from './App';
 import { createAuthorizedApi } from './auth/authorized-api';
+import { clearCacheOnLogout } from './auth/clear-on-logout';
 import { createAuthClient } from './auth/client';
 import { createHttp, ApiError } from './auth/http';
 import { SessionProvider } from './auth/SessionProvider';
 import { SessionManager } from './auth/session';
 import { createCongregationsApi } from './congregations/api';
+import { createMembersApi } from './members/api';
 import './index.css';
 
 const root = document.getElementById('root');
@@ -35,13 +37,19 @@ const queryClient = new QueryClient({
   },
 });
 
+// Sair esvazia o cache: dados de membros não podem sobrar na memória para a próxima pessoa que usar o navegador.
+clearCacheOnLogout(session, queryClient);
+
+const apis = {
+  congregations: createCongregationsApi(authorized),
+  members: createMembersApi(authorized),
+};
+
 createRoot(root).render(
   <StrictMode>
     <SessionProvider session={session}>
       <QueryClientProvider client={queryClient}>
-        <ApiProvider
-          apis={{ congregations: createCongregationsApi(authorized) }}
-        >
+        <ApiProvider apis={apis}>
           <App />
         </ApiProvider>
       </QueryClientProvider>

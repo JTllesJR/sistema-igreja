@@ -18,27 +18,30 @@ const caso = (
 });
 
 describe('resumir', () => {
-  it('conta cada status e calcula o percentual concluído arredondado', () => {
+  it('conta cada status e calcula o percentual com API e tela prontas (concluídos e entregues)', () => {
     // Quantidades diferentes por status: com uma de cada, trocar um filtro por outro passaria despercebido.
     const resumo = resumir([
       caso('a', 'M', 'concluido'),
-      caso('b', 'M', 'concluido'),
-      caso('c', 'M', 'backend'),
-      caso('d', 'M', 'planejado'),
+      caso('b', 'M', 'entregue'),
+      caso('c', 'M', 'entregue'),
+      caso('d', 'M', 'backend'),
       caso('e', 'M', 'planejado'),
       caso('f', 'M', 'planejado'),
+      caso('g', 'M', 'planejado'),
+      caso('h', 'M', 'planejado'),
     ]);
     expect(resumo).toEqual({
-      total: 6,
-      concluidos: 2,
+      total: 8,
+      concluidos: 1,
+      entregues: 2,
       backend: 1,
-      planejados: 3,
-      percentualConcluido: 33,
+      planejados: 4,
+      percentualEntregue: 38,
     });
   });
 
   it('lista vazia não divide por zero', () => {
-    expect(resumir([]).percentualConcluido).toBe(0);
+    expect(resumir([]).percentualEntregue).toBe(0);
   });
 });
 

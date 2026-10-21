@@ -1,9 +1,11 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import type { CongregationsApi } from '../congregations/api';
+import type { MembersApi } from '../members/api';
 
 /** Os clientes da API que as telas usam. Montados em `main.tsx` (e substituíveis por falsos nos testes). */
 export interface Apis {
   congregations: CongregationsApi;
+  members: MembersApi;
 }
 
 const ApiContext = createContext<Apis | null>(null);
