@@ -52,6 +52,14 @@ export class AccessPolicy {
     );
   }
 
+  /**
+   * Tem a permissão para a IGREJA TODA, e não só para algumas congregações? Ações que mexem no que é de todos
+   * (ex.: criar congregações) exigem isto: `hasPermission` sozinho deixaria um dirigente de UMA congregação agir em todas.
+   */
+  hasOrganizationWide(permission: Permission): boolean {
+    return this.scopeFor(permission).kind === 'ORGANIZATION';
+  }
+
   scopeFor(permission: Permission): PermissionScope {
     const grants = this.grantsFor(permission);
 

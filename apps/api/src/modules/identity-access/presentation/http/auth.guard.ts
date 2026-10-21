@@ -8,6 +8,7 @@ import { Reflector } from '@nestjs/core';
 import {
   IS_PUBLIC_KEY,
   REQUIRED_PERMISSION_KEY,
+  type PermissionRequirement,
 } from '../../../../platform/http/access-control.js';
 import type { Clock } from '../../../../shared/application/clock.js';
 import { DomainError } from '../../../../shared/domain/domain-error.js';
@@ -69,14 +70,10 @@ export class AuthGuard implements CanActivate {
     };
     const policy = await this.loadPolicy(context);
 
-    const required = this.reflector.getAllAndOverride<string | undefined>(
-      REQUIRED_PERMISSION_KEY,
-      targets,
-    );
-    if (
-      required !== undefined &&
-      !policy.hasPermission(Permission.of(required))
-    ) {
+    const required = this.reflector.getAllAndOverride<
+      PermissionRequirement | undefined
+    >(REQUIRED_PERMISSION_KEY, targets);
+    if (required && !isSatisfiedBy(policy, required)) {
       throw new PermissionDeniedError();
     }
 
@@ -96,6 +93,16 @@ export class AuthGuard implements CanActivate {
       throw error;
     }
   }
+}
+
+function isSatisfiedBy(
+  policy: AccessPolicy,
+  { permission, organizationWide }: PermissionRequirement,
+): boolean {
+  const required = Permission.of(permission);
+  return organizationWide
+    ? policy.hasOrganizationWide(required)
+    : policy.hasPermission(required);
 }
 
 /** `Authorization: Bearer <token>`: esquema sem diferenciar caixa, um único espaço, token sem espaços. */

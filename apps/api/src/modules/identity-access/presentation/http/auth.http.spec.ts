@@ -1,54 +1,28 @@
 import { Controller, Get } from '@nestjs/common';
-import type { NestExpressApplication } from '@nestjs/platform-express';
-import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  ConfigModule,
-  ENV,
-} from '../../../../platform/config/config.module.js';
-import { parseEnv } from '../../../../platform/config/env.js';
 import {
   CurrentContext,
   Public,
   RequirePermission,
 } from '../../../../platform/http/access-control.js';
-import { configureHttpApp } from '../../../../platform/http/configure-http-app.js';
-import { HttpPlatformModule } from '../../../../platform/http/http-platform.module.js';
 import type { RequestContext } from '../../../../shared/application/request-context.js';
-import { OrganizationId } from '../../../../shared/domain/identifiers.js';
-import { FixedClock } from '../../../../shared/testing/fixed-clock.js';
-import { uuidFor } from '../../../../shared/testing/uuid-for.js';
-import type { AccessTokenSigner } from '../../application/access-token-signer.js';
-import { CreateAdministratorUseCase } from '../../application/create-administrator.use-case.js';
-import type { PasswordHasher } from '../../application/password-hasher.js';
-import { FakeOrganizationDirectory } from '../../application/testing/fakes.js';
-import { Email } from '../../domain/email.js';
-import { RoleId, SessionId, UserId } from '../../domain/ids.js';
-import { PlainPassword } from '../../domain/plain-password.js';
-import { Role } from '../../domain/role.js';
-import { RoleName } from '../../domain/role-name.js';
-import { Permission } from '../../domain/permission.js';
-import { NOW, aPasswordHash } from '../../domain/testing/fixtures.js';
-import { InMemoryRoleRepository } from '../../domain/testing/in-memory-role.repository.js';
-import { InMemorySessionRepository } from '../../domain/testing/in-memory-session.repository.js';
-import { InMemoryUserRepository } from '../../domain/testing/in-memory-user.repository.js';
-import { User } from '../../domain/user.js';
 import {
-  ACCESS_TOKEN_SIGNER,
-  CLOCK,
-  ORGANIZATION_DIRECTORY,
-  PASSWORD_HASHER,
-  ROLE_REPOSITORY,
-  SESSION_REPOSITORY,
-  USER_REPOSITORY,
-} from '../../identity-access.tokens.js';
-import { IdentityAccessModule } from '../../identity-access.module.js';
+  CongregationId,
+  OrganizationId,
+} from '../../../../shared/domain/identifiers.js';
+import { uuidFor } from '../../../../shared/testing/uuid-for.js';
+import { SessionId, UserId } from '../../domain/ids.js';
+import { NOW } from '../../domain/testing/fixtures.js';
+import {
+  type HttpTestApp,
+  startHttpTestApp,
+  TEST_ADMIN_EMAIL as EMAIL,
+  TEST_ORGANIZATION as ORGANIZATION,
+  TEST_PASSWORD as PASSWORD,
+} from './testing/http-test-app.js';
 
-const ORGANIZATION = OrganizationId.of(uuidFor(1));
 const OTHER_ORGANIZATION = OrganizationId.of(uuidFor(2));
-const EMAIL = 'admin@igreja.com';
-const PASSWORD = 'senha-super-segura-1';
 const NEW_PASSWORD = 'outra-senha-bem-segura-2';
 
 /** Rotas só de teste: provam o comportamento do guard global sem depender de nenhum módulo de negócio. */
@@ -70,113 +44,27 @@ class ProbeController {
   finance() {
     return { ok: true };
   }
+
+  @RequirePermission('finance:read', { organizationWide: true })
+  @Get('finance-all')
+  financeAll() {
+    return { ok: true };
+  }
 }
 
-let app: NestExpressApplication | undefined;
+const running: HttpTestApp[] = [];
 
 afterEach(async () => {
-  await app?.close();
-  app = undefined;
+  await Promise.all(running.splice(0).map((app) => app.close()));
 });
 
-/** A aplicação HTTP real (guard, filtro de erros, limite de taxa, cookies), mas com repositórios em memória. */
 async function startApp() {
-  const clock = new FixedClock(NOW);
-  const organizations = new FakeOrganizationDirectory();
-  organizations.add(ORGANIZATION);
-  const users = new InMemoryUserRepository();
-  const roles = new InMemoryRoleRepository();
-
-  const moduleRef = await Test.createTestingModule({
-    imports: [ConfigModule, HttpPlatformModule, IdentityAccessModule],
-    controllers: [ProbeController],
-  })
-    .overrideProvider(ENV)
-    .useValue(
-      parseEnv({
-        NODE_ENV: 'test',
-        DATABASE_URL: 'postgresql://nao:usado@localhost:5432/nenhum',
-        JWT_SECRET: 'segredo-somente-para-testes-http-0123456789-abc',
-        CORS_ORIGINS: 'http://localhost:5173',
-      }),
-    )
-    .overrideProvider(USER_REPOSITORY)
-    .useValue(users)
-    .overrideProvider(ROLE_REPOSITORY)
-    .useValue(roles)
-    .overrideProvider(SESSION_REPOSITORY)
-    .useValue(new InMemorySessionRepository())
-    .overrideProvider(ORGANIZATION_DIRECTORY)
-    .useValue(organizations)
-    .overrideProvider(CLOCK)
-    .useValue(clock)
-    .compile();
-
-  app = moduleRef.createNestApplication<NestExpressApplication>();
-  configureHttpApp(app, { CORS_ORIGINS: ['http://localhost:5173'] });
-  await app.init();
-
-  const hasher = moduleRef.get<PasswordHasher>(PASSWORD_HASHER, {
-    strict: false,
-  });
-  const signer = moduleRef.get<AccessTokenSigner>(ACCESS_TOKEN_SIGNER, {
-    strict: false,
-  });
-
-  const admin = await moduleRef
-    .get(CreateAdministratorUseCase, { strict: false })
-    .execute({
-      organizationId: ORGANIZATION,
-      email: EMAIL,
-      password: PASSWORD,
-    });
-
-  /** Usuário comum, com um papel de permissões específicas (ou sem papel nenhum). */
-  async function addUser(
-    n: number,
-    options: { permissions?: string[]; status?: 'ACTIVE' | 'DISABLED' } = {},
-  ) {
-    const email = Email.create(`usuario${n}@igreja.com`);
-    const hash = await hasher.hash(PlainPassword.create(PASSWORD, email));
-    const id = UserId.of(uuidFor(500 + n));
-    const user = User.restore({
-      id,
-      organizationId: ORGANIZATION,
-      email,
-      passwordHash: hash,
-      status: options.status ?? 'ACTIVE',
-      failedLoginAttempts: 0,
-      lockedUntil: null,
-      lastLoginAt: null,
-      assignments: [],
-      version: 0,
-    });
-    if (options.permissions) {
-      const role = Role.restore({
-        id: RoleId.of(uuidFor(600 + n)),
-        organizationId: ORGANIZATION,
-        name: RoleName.create(`Papel ${n}`),
-        isSystem: false,
-        permissions: options.permissions.map((p) => Permission.of(p)),
-      });
-      await roles.add(role);
-      user.assignRole(role.id);
-    }
-    await users.add(user);
-    return { id, email: email.value };
-  }
-
-  return {
-    server: app.getHttpServer() as Parameters<typeof request>[0],
-    clock,
-    admin,
-    addUser,
-    signer,
-    aPasswordHash,
-  };
+  const app = await startHttpTestApp({ controllers: [ProbeController] });
+  running.push(app);
+  return app;
 }
 
-type Running = Awaited<ReturnType<typeof startApp>>;
+type Running = HttpTestApp;
 
 const login = (running: Running, email = EMAIL, password = PASSWORD) =>
   request(running.server).post('/auth/login').send({ email, password });
@@ -422,6 +310,46 @@ describe('guard global (nega por padrão)', () => {
         expect(response.body.code).toBe('identity.permission_denied');
       }
     });
+  });
+});
+
+describe('@RequirePermission com organizationWide', () => {
+  it('papel só de UMA congregação passa na checagem comum, mas não na que exige a igreja toda', async () => {
+    const running = await startApp();
+    const leader = await running.addUser(1, {
+      permissions: ['finance:read'],
+      congregationId: CongregationId.of(uuidFor(900)),
+    });
+    const { accessToken } = await loggedIn(running, leader.email);
+
+    const anyScope = await request(running.server)
+      .get('/probe/finance')
+      .set(bearer(accessToken));
+    const wholeChurch = await request(running.server)
+      .get('/probe/finance-all')
+      .set(bearer(accessToken));
+
+    expect(anyScope.status).toBe(200);
+    expect(wholeChurch.status).toBe(403);
+    expect(wholeChurch.body.code).toBe('identity.permission_denied');
+  });
+
+  it('papel da igreja toda passa; o administrador também', async () => {
+    const running = await startApp();
+    const treasurer = await running.addUser(1, {
+      permissions: ['finance:read'],
+    });
+    const tokens = [
+      (await loggedIn(running, treasurer.email)).accessToken,
+      (await loggedIn(running)).accessToken,
+    ];
+
+    for (const token of tokens) {
+      const response = await request(running.server)
+        .get('/probe/finance-all')
+        .set(bearer(token));
+      expect(response.status).toBe(200);
+    }
   });
 });
 

@@ -14,6 +14,8 @@ import { UpdateCongregationUseCase } from './application/update-congregation.use
 import type { OrganizationRepository } from './domain/organization.repository.js';
 import { PrismaOrganizationQueries } from './infrastructure/prisma-organization-queries.js';
 import { PrismaOrganizationRepository } from './infrastructure/prisma-organization.repository.js';
+import { CongregationsController } from './presentation/http/congregations.controller.js';
+import { OrganizationController } from './presentation/http/organization.controller.js';
 import { UuidV7IdGenerator } from '../../shared/infrastructure/uuid-v7-id-generator.js';
 import {
   ID_GENERATOR,
@@ -49,6 +51,7 @@ function withRepositoryAndIds<T>(
 
 @Module({
   imports: [DatabaseModule],
+  controllers: [OrganizationController, CongregationsController],
   providers: [
     {
       provide: ORGANIZATION_REPOSITORY,
@@ -74,7 +77,7 @@ function withRepositoryAndIds<T>(
     withRepository(ReactivateCongregationUseCase),
     withRepository(DesignateHeadquartersUseCase),
   ],
-  // Os casos de uso são exportados para a camada de apresentação (controllers) que virá depois do login.
+  // Os casos de uso também são exportados para testes e para o comando do operador (src/cli.ts).
   exports: [
     // API pública para os OUTROS módulos (ex.: identity-access confere se a igreja existe).
     ORGANIZATION_QUERIES,

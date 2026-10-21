@@ -17,9 +17,25 @@ export const REQUIRED_PERMISSION_KEY = 'access:permission';
 /** Rota aberta, sem login (ex.: `/health`, `/auth/login`). Use com muito critério. */
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
-/** Exige que o usuário tenha esta permissão (`modulo:acao`) em ALGUM escopo. A checagem por congregação é do caso de uso. */
-export const RequirePermission = (permission: string) =>
-  SetMetadata(REQUIRED_PERMISSION_KEY, permission);
+export interface PermissionRequirement {
+  permission: string;
+  /** Exige a permissão para a IGREJA TODA, e não só para algumas congregações (ADR 0004). */
+  organizationWide: boolean;
+}
+
+/**
+ * Exige que o usuário tenha esta permissão (`modulo:acao`). Por padrão basta tê-la em ALGUM escopo, e a filtragem por
+ * congregação é do caso de uso; com `organizationWide`, só vale para quem a tem na igreja toda: use em ações que mexem
+ * no que é de todas as congregações, para que um dirigente de UMA delas não aja em todas.
+ */
+export const RequirePermission = (
+  permission: string,
+  options: { organizationWide?: boolean } = {},
+) =>
+  SetMetadata(REQUIRED_PERMISSION_KEY, {
+    permission,
+    organizationWide: options.organizationWide ?? false,
+  } satisfies PermissionRequirement);
 
 /** Onde o guard guarda quem está autenticado, dentro do objeto da requisição. */
 export const AUTH_KEY = 'auth';

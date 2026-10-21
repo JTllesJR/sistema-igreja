@@ -79,6 +79,36 @@ describe('AccessPolicy', () => {
         congregationIds: [congId(1)],
       });
     });
+
+    it('NÃO vale para a igreja toda, mesmo tendo a permissão em algum escopo', () => {
+      expect(policy.hasPermission(read)).toBe(true);
+      expect(policy.hasOrganizationWide(read)).toBe(false);
+    });
+  });
+
+  describe('hasOrganizationWide', () => {
+    it('vale para a atribuição na igreja toda, inclusive se houver outras restritas', () => {
+      expect(
+        AccessPolicy.from([assign(administrator)], roles).hasOrganizationWide(
+          read,
+        ),
+      ).toBe(true);
+      expect(
+        AccessPolicy.from(
+          [assign(treasurer, congId(1)), assign(treasurer)],
+          roles,
+        ).hasOrganizationWide(read),
+      ).toBe(true);
+    });
+
+    it('não vale sem atribuições nem para permissão que o papel não tem', () => {
+      expect(AccessPolicy.from([], roles).hasOrganizationWide(read)).toBe(
+        false,
+      );
+      expect(
+        AccessPolicy.from([assign(secretary)], roles).hasOrganizationWide(read),
+      ).toBe(false);
+    });
   });
 
   describe('combinação de atribuições', () => {
