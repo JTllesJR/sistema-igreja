@@ -60,8 +60,9 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
   `application/problem+json` com tabela código→status auditada por teste, `ZodValidationPipe`, `helmet`, CORS com lista
   de origens, limite do corpo, limite de taxa por IP e `X-Request-Id`. **(b) Autenticação pronta:** `/auth/login`,
   `/auth/refresh`, `/auth/logout`, `/auth/me` e `/auth/change-password`, refresh em cookie `httpOnly`, guard global que
-  nega por padrão, `@Public`, `@RequirePermission` e limites de taxa por rota. Faltam **(c)** endpoints de congregações
-  e **(d)** OpenAPI.
+  nega por padrão, `@Public`, `@RequirePermission` e limites de taxa por rota. **(c) Congregações pronto:**
+  `/organization` e `/congregations` (listar, criar, editar, desativar, reativar, designar sede), com permissões
+  `organization:read` e `organization:manage` (esta exige a igreja toda). Falta **(d)** OpenAPI.
 
 - ✅ **Web inicial** ([ADR 0012](adr/0012-web-react-vite-tailwind.md)): `apps/web` (React + Vite + Tailwind) com a
   página **Andamento do sistema**: saúde da API e do banco ao vivo (contrato compartilhado) e o estado dos 18 casos de
@@ -71,7 +72,7 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
 
 ## Próximos passos
 Em fatias verticais, para que o primeiro resultado visual chegue cedo (cada módulo novo entrega backend e tela):
-1. Camada HTTP (ADR 0011): passos (a) e (b) feitos; seguem (c) endpoints de congregações e (d) OpenAPI (Swagger UI).
+1. Camada HTTP (ADR 0011): passos (a), (b) e (c) feitos; segue (d) OpenAPI (Swagger UI).
 2. Web: tela de congregações (com TanStack Query, onde a primeira lista justifica o cache); o login já existe.
 3. RBAC completo com escopo (ADR 0004), depois `members` e `finance`, cada um já com tela.
 

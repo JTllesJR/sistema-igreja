@@ -139,6 +139,40 @@ Contratos Zod em `packages/contracts` (`auth.ts`).
 - **Limite conhecido:** não há ainda um teste ponta a ponta HTTP contra o PostgreSQL real; o `pnpm test:integration`
   existente continua sendo o que roda com banco.
 
+### 12. Como o passo (c), congregações, ficou (implementado)
+
+| Rota | Permissão | Escopo exigido |
+|---|---|---|
+| `GET /organization` | `organization:read` | em algum escopo |
+| `PATCH /organization` | `organization:manage` | **igreja toda** |
+| `GET /congregations?status=` | `organization:read` | em algum escopo |
+| `POST /congregations` (201) | `organization:manage` | **igreja toda** |
+| `PATCH /congregations/:id` | `organization:manage` | **igreja toda** |
+| `POST /congregations/:id/deactivate`, `/reactivate`, `/designate-headquarters` | `organization:manage` | **igreja toda** |
+
+- **Sem `:id` para a igreja.** `/organization` é sempre a do usuário logado (do token). Em `/congregations/:id`, o id
+  de congregação de **outra igreja responde 404**, igual a um que não existe; verificado por teste que confere que a
+  outra igreja ficou intacta.
+- **`@RequirePermission(permissão, { organizationWide: true })`.** O guard só conferia "tem a permissão em ALGUM
+  escopo", o que deixaria um dirigente de **uma** congregação criar ou desativar congregações de **todas** (os casos de
+  uso não filtram por escopo; ainda). A opção nova exige a permissão na igreja toda (`AccessPolicy.hasOrganizationWide`).
+  É o primeiro uso real do escopo do ADR 0004. Ler (`organization:read`) continua valendo em qualquer escopo: quem
+  opera uma congregação precisa enxergar as outras.
+- **Ações de situação são `POST` em sub-recurso**, e não `PATCH` de um campo `status`: cada uma tem regra própria (a
+  sede não pode ser desativada; só congregação ativa vira sede) e devolve a congregação já atualizada. Respondem 200.
+- **Corpo que o cliente não deveria mandar é descartado**, não rejeitado: `organizationId`, `isHeadquarters` e `status`
+  enviados na criação são ignorados (o Zod remove campos desconhecidos). `PATCH`: campo ausente = manter,
+  `address: null` = remover o endereço, `serviceTimes: []` = remover os horários.
+- **Dois níveis de validação.** O contrato (`packages/contracts/src/organization.ts`) barra o que é mal formado e
+  limita tamanhos (400, com o caminho do campo); as regras de verdade (UF existente, nome único sem diferenciar caixa,
+  horários sem conflito) continuam no domínio (422 ou 409). O `:id` da URL é validado como UUID (400).
+- **Os controllers do módulo não importam o `identity-access`.** Os marcadores ficam em `platform/http`; importar o
+  módulo daria um ciclo (o `identity-access` já importa o `organization`).
+- **Testes:** `organization.http.spec.ts` sobe a aplicação inteira com repositórios em memória e **duas igrejas** (31
+  testes: permissões e escopo, isolamento entre igrejas, regras de situação, formato do contrato). Os helpers
+  (`startHttpTestApp`) foram extraídos para serem usados também pelos próximos módulos. Mutação manual em 11 pontos
+  (permissões, escopo, validações, ação trocada, status HTTP): todos pegos depois de dois testes acrescentados.
+
 ## Consequências
 
 - Todo cliente recebe erros num formato único e previsível; a web mostra `detail` e reage a `code`.
