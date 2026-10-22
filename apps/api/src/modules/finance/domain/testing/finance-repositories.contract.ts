@@ -644,7 +644,8 @@ export function describeFinanceRepositoriesContract(
           ),
         ]);
         await repos.entries.add([
-          anIncome({ id: 90, account: 10, cents: 1_234 }),
+          // A categoria também é da igreja 2: a chave estrangeira composta do banco recusa a de outra igreja.
+          anIncome({ id: 90, account: 10, category: 10, cents: 1_234 }),
         ]);
       });
 

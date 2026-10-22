@@ -78,6 +78,13 @@ export class PrismaRoleRepository implements RoleRepository {
   ): Promise<void> {
     // Numa transação só: ninguém enxerga o papel sem permissões no meio da troca.
     await this.prisma.$transaction(async (tx) => {
+      // Papel inexistente é ignorado (contrato): sem esta checagem, o INSERT feriria a chave estrangeira.
+      const exists = await tx.role.findUnique({
+        where: { id: roleId },
+        select: { id: true },
+      });
+      if (!exists) return;
+
       await tx.rolePermission.deleteMany({ where: { roleId } });
       await tx.rolePermission.createMany({
         data: permissions.map((permission) => ({
