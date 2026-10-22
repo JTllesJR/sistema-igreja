@@ -28,6 +28,13 @@ export interface MemberSearchCriteria {
   offset: number;
 }
 
+/** Quantos membros há numa congregação com uma situação. Só número: nenhum dado de pessoa (UC-16). */
+export interface MemberStatusCount {
+  congregationId: CongregationId;
+  status: MemberStatus;
+  count: number;
+}
+
 export interface MemberPage {
   items: MemberSummary[];
   /** Quantos membros casam com a busca, ignorando a paginação. */
@@ -49,6 +56,8 @@ export interface MemberPage {
  *  - `search` ignora membros anonimizados, ordena por nome (sem acentos) e depois por id, e respeita a paginação.
  *  - `findSummaries` devolve o resumo dos membros pedidos que existem NESTA igreja e não foram anonimizados (id
  *    desconhecido, de outra igreja ou anonimizado é ignorado), ordenados como a busca. Aceita lista vazia.
+ *  - `countByStatus` conta os membros NESTA igreja por congregação e situação, só nas congregações dadas (`null` = todas;
+ *    lista vazia = nenhuma), ignorando anonimizados. Só devolve combinações com pelo menos um membro, em qualquer ordem.
  */
 export interface MemberRepository {
   findById(
@@ -69,4 +78,8 @@ export interface MemberRepository {
     organizationId: OrganizationId,
     ids: readonly MemberId[],
   ): Promise<MemberSummary[]>;
+  countByStatus(
+    organizationId: OrganizationId,
+    congregationIds: readonly CongregationId[] | null,
+  ): Promise<MemberStatusCount[]>;
 }

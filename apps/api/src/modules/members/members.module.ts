@@ -18,6 +18,7 @@ import type { CongregationDirectory } from './application/congregation-directory
 import { GetMemberUseCase } from './application/get-member.use-case.js';
 import { ListMembersUseCase } from './application/list-members.use-case.js';
 import { RepositoryMemberQueries } from './application/member-queries.js';
+import { GetMemberStatsUseCase } from './application/member-stats.use-case.js';
 import { RecordMemberEventUseCase } from './application/record-member-event.use-case.js';
 import { RegisterMemberUseCase } from './application/register-member.use-case.js';
 import { TransferMemberUseCase } from './application/transfer-member.use-case.js';
@@ -145,6 +146,7 @@ function withMutationPorts<T>(
     withMutationPorts(AnonymizeMemberUseCase),
     withRepositoryAndAudit(GetMemberUseCase),
     withRepositoryAndAudit(ListMembersUseCase),
+    withRepositoryAndAudit(GetMemberStatsUseCase),
   ],
 })
 export class MembersModule {}

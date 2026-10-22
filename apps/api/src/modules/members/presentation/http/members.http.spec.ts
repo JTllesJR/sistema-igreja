@@ -1,6 +1,7 @@
 import {
   memberDetailSchema,
   memberListResponseSchema,
+  memberStatsResponseSchema,
 } from '@igreja/contracts';
 import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -421,6 +422,93 @@ describe('GET /members (lista e busca)', () => {
       .set(u.admin);
 
     expect(response.status).toBe(400);
+  });
+});
+
+describe('GET /members/stats (UC-16, contagem por situação)', () => {
+  async function populated() {
+    const started = await start();
+    const u = await users(started.app);
+    for (const [name, congregation] of [
+      ['Ana Souza', C1],
+      ['Álvaro Lima', C1],
+      ['José Conceição', C2],
+    ] as const) {
+      await create(started, u.admin, { fullName: name }, congregation);
+    }
+    return { started, u };
+  }
+  const zero = { ACTIVE: 0, AWAY: 0, TRANSFERRED_OUT: 0, DECEASED: 0 };
+
+  it('a igreja toda para quem a enxerga toda (rota não é confundida com /:id), sem a outra igreja', async () => {
+    const { started, u } = await populated();
+
+    const response = await request(started.app.server)
+      .get('/members/stats')
+      .set(u.readerAll);
+
+    expect(response.status).toBe(200);
+    expect(memberStatsResponseSchema.parse(response.body)).toEqual({
+      scope: 'ORGANIZATION',
+      totals: { ...zero, ACTIVE: 3 },
+      byCongregation: [
+        { congregationId: C1, counts: { ...zero, ACTIVE: 2 } },
+        { congregationId: C2, counts: { ...zero, ACTIVE: 1 } },
+      ],
+    });
+    expect(response.text).not.toMatch(/Ana|Álvaro|José/);
+  });
+
+  it('ESCOPO: a secretária da 1 só conta a 1, e pedir a 2 dá zeros', async () => {
+    const { started, u } = await populated();
+
+    const own = await request(started.app.server)
+      .get('/members/stats')
+      .set(u.secretary1);
+    const other = await request(started.app.server)
+      .get(`/members/stats?congregationId=${C2}`)
+      .set(u.secretary1);
+
+    expect(own.body.totals).toEqual({ ...zero, ACTIVE: 2 });
+    expect(own.body.scope).toBe('CONGREGATIONS');
+    expect(other.body.totals).toEqual(zero);
+  });
+
+  it('exige members:read (401 sem login, 403 sem a permissão) e congregationId malformado dá 400', async () => {
+    const { started, u } = await populated();
+    const server = started.app.server;
+
+    expect((await request(server).get('/members/stats')).status).toBe(401);
+    expect(
+      (await request(server).get('/members/stats').set(u.writerNoRead)).status,
+    ).toBe(403);
+    expect(
+      (
+        await request(server)
+          .get('/members/stats?congregationId=nao-e-uuid')
+          .set(u.admin)
+      ).status,
+    ).toBe(400);
+  });
+
+  it('audita a consulta e FALHA FECHADA se a trilha não grava (500)', async () => {
+    const { started, u } = await populated();
+    started.audit.entries.length = 0;
+
+    await request(started.app.server)
+      .get('/members/stats')
+      .set(u.admin)
+      .expect(200);
+    expect(started.audit.entries.map((e) => e.action)).toEqual([
+      'member.stats_read',
+    ]);
+
+    started.audit.failWith = new Error('trilha fora do ar');
+    const failed = await request(started.app.server)
+      .get('/members/stats')
+      .set(u.admin);
+    expect(failed.status).toBe(500);
+    expect(failed.text).not.toContain('trilha fora');
   });
 });
 

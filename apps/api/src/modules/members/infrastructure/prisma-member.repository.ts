@@ -18,6 +18,7 @@ import type {
   MemberPage,
   MemberRepository,
   MemberSearchCriteria,
+  MemberStatusCount,
   MemberSummary,
 } from '../domain/member.repository.js';
 import type { MemberHistoryEvent } from '../domain/member-history-event.js';
@@ -175,6 +176,29 @@ export class PrismaMemberRepository implements MemberRepository {
       fullName: row.fullName,
       congregationId: CongregationId.of(row.congregationId),
       status: row.status,
+    }));
+  }
+
+  async countByStatus(
+    organizationId: OrganizationId,
+    congregationIds: readonly CongregationId[] | null,
+  ): Promise<MemberStatusCount[]> {
+    // Um GROUP BY no banco: nenhuma linha de membro sai do PostgreSQL, só os números.
+    const groups = await this.prisma.member.groupBy({
+      by: ['congregationId', 'status'],
+      where: {
+        organizationId,
+        anonymizedAt: null,
+        ...(congregationIds === null
+          ? {}
+          : { congregationId: { in: [...congregationIds] } }),
+      },
+      _count: { _all: true },
+    });
+    return groups.map((group) => ({
+      congregationId: CongregationId.of(group.congregationId),
+      status: group.status,
+      count: group._count._all,
     }));
   }
 }

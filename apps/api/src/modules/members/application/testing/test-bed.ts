@@ -16,6 +16,7 @@ import type { CongregationDirectory } from '../congregation-directory.js';
 import { GetMemberUseCase } from '../get-member.use-case.js';
 import { ListMembersUseCase } from '../list-members.use-case.js';
 import type { MemberAccess } from '../member-access.js';
+import { GetMemberStatsUseCase } from '../member-stats.use-case.js';
 import { RecordMemberEventUseCase } from '../record-member-event.use-case.js';
 import { RegisterMemberUseCase } from '../register-member.use-case.js';
 import { TransferMemberUseCase } from '../transfer-member.use-case.js';
@@ -148,5 +149,6 @@ export function aMembersBed() {
     anonymize: new AnonymizeMemberUseCase(repository, ids, clock, audit),
     get: new GetMemberUseCase(repository, audit),
     list: new ListMembersUseCase(repository, audit),
+    stats: new GetMemberStatsUseCase(repository, audit),
   };
 }

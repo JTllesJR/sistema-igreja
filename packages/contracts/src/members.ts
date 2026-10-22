@@ -120,6 +120,28 @@ export const memberListResponseSchema = z.object({
 });
 export type MemberListResponse = z.infer<typeof memberListResponseSchema>;
 
+/** UC-16 (membros): contagem por situação. Ausente = tudo o que o usuário vê. */
+export const memberStatsQuerySchema = z.object({
+  congregationId: z.uuid().optional(),
+});
+export type MemberStatsQuery = z.infer<typeof memberStatsQuerySchema>;
+
+const statusCountsSchema = z.object({
+  ACTIVE: z.number().int(),
+  AWAY: z.number().int(),
+  TRANSFERRED_OUT: z.number().int(),
+  DECEASED: z.number().int(),
+});
+
+export const memberStatsResponseSchema = z.object({
+  scope: z.enum(['ORGANIZATION', 'CONGREGATIONS']),
+  totals: statusCountsSchema,
+  byCongregation: z.array(
+    z.object({ congregationId: z.string(), counts: statusCountsSchema }),
+  ),
+});
+export type MemberStatsResponse = z.infer<typeof memberStatsResponseSchema>;
+
 export const memberHistoryEventSchema = z.object({
   id: z.string(),
   type: memberEventTypeSchema,

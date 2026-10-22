@@ -11,6 +11,7 @@ import type {
   MemberPage,
   MemberRepository,
   MemberSearchCriteria,
+  MemberStatusCount,
   MemberSummary,
 } from '../member.repository.js';
 
@@ -147,6 +148,32 @@ export class InMemoryMemberRepository implements MemberRepository {
           status: props.status,
         })),
     );
+  }
+
+  countByStatus(
+    organizationId: OrganizationId,
+    congregationIds: readonly CongregationId[] | null,
+  ): Promise<MemberStatusCount[]> {
+    const counts = new Map<string, MemberStatusCount>();
+    for (const { props } of this.#store.values()) {
+      if (
+        props.organizationId !== organizationId ||
+        props.anonymizedAt !== null ||
+        (congregationIds !== null &&
+          !congregationIds.includes(props.congregationId))
+      ) {
+        continue;
+      }
+      const key = `${props.congregationId}|${props.status}`;
+      const found = counts.get(key) ?? {
+        congregationId: props.congregationId,
+        status: props.status,
+        count: 0,
+      };
+      found.count += 1;
+      counts.set(key, found);
+    }
+    return Promise.resolve([...counts.values()]);
   }
 }
 

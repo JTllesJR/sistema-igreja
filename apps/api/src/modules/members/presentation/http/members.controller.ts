@@ -18,6 +18,10 @@ import {
   type MemberCreated,
   type MemberDetail,
   type MemberListResponse,
+  type MemberStatsQuery,
+  type MemberStatsResponse,
+  memberStatsQuerySchema,
+  memberStatsResponseSchema,
   type RecordMemberEventRequest,
   recordMemberEventRequestSchema,
   type RegisterMemberRequest,
@@ -46,6 +50,7 @@ import { AnonymizeMemberUseCase } from '../../application/anonymize-member.use-c
 import { ChangeMemberStatusUseCase } from '../../application/change-member-status.use-case.js';
 import { GetMemberUseCase } from '../../application/get-member.use-case.js';
 import { ListMembersUseCase } from '../../application/list-members.use-case.js';
+import { GetMemberStatsUseCase } from '../../application/member-stats.use-case.js';
 import { RecordMemberEventUseCase } from '../../application/record-member-event.use-case.js';
 import { RegisterMemberUseCase } from '../../application/register-member.use-case.js';
 import { TransferMemberUseCase } from '../../application/transfer-member.use-case.js';
@@ -90,6 +95,8 @@ export class MembersController {
     private readonly recordEvent: RecordMemberEventUseCase,
     @Inject(AnonymizeMemberUseCase)
     private readonly anonymizeMember: AnonymizeMemberUseCase,
+    @Inject(GetMemberStatsUseCase)
+    private readonly memberStats: GetMemberStatsUseCase,
   ) {}
 
   @RequirePermission(MEMBERS_READ)
@@ -123,6 +130,26 @@ export class MembersController {
     body: RegisterMemberRequest,
   ): Promise<MemberCreated> {
     return this.registerMember.execute(context, memberAccessFrom(policy), body);
+  }
+
+  // Declarada ANTES de `:id`: senão o Nest casaria "stats" como um id e o validaria como UUID (400).
+  @RequirePermission(MEMBERS_READ)
+  @Throttle(READ_LIMIT)
+  @ApiDoc({
+    summary:
+      'Conta os membros por situação e congregação, no escopo do usuário (UC-16).',
+    description:
+      'Só números. A consulta é registrada na trilha de auditoria antes de devolver.',
+    response: memberStatsResponseSchema,
+  })
+  @Get('stats')
+  stats(
+    @CurrentContext() context: RequestContext,
+    @CurrentPolicy() policy: AccessPolicy,
+    @Query(new ZodValidationPipe(memberStatsQuerySchema))
+    query: MemberStatsQuery,
+  ): Promise<MemberStatsResponse> {
+    return this.memberStats.execute(context, memberAccessFrom(policy), query);
   }
 
   // Ficha completa: leitura auditada, com limite mais apertado.

@@ -521,6 +521,58 @@ export function describeMemberRepositoryContract(
         await expect(repository.findSummaries(org, [])).resolves.toEqual([]);
       });
     });
+
+    describe('countByStatus', () => {
+      const sorted = (
+        rows: { congregationId: string; status: string; count: number }[],
+      ) =>
+        [...rows].sort(
+          (a, b) =>
+            a.congregationId.localeCompare(b.congregationId) ||
+            a.status.localeCompare(b.status),
+        );
+
+      async function seed() {
+        await repository.add(aMember(1, { congregation: 1 }));
+        await repository.add(aMember(2, { congregation: 1 }));
+        await repository.add(aMember(3, { congregation: 1 }));
+        await repository.add(aMember(4, { congregation: 2 }));
+        await repository.add(aMember(5, { congregation: 3 }));
+        const away = (await repository.findById(org, memberId(3)))!;
+        away.changeStatus('AWAY', eventId(80), after(NOW, 1_000));
+        await repository.save(away);
+        // Anonimizado não conta; outra igreja nunca conta.
+        const anonymous = (await repository.findById(org, memberId(5)))!;
+        anonymous.anonymize(eventId(81), after(NOW, 1_000));
+        await repository.save(anonymous);
+        await repository.add(aMember(6, { organization: 2, congregation: 10 }));
+      }
+
+      it('conta por congregação e situação, só nesta igreja e sem anonimizados', async () => {
+        await seed();
+
+        expect(sorted(await repository.countByStatus(org, null))).toEqual(
+          sorted([
+            { congregationId: congId(1), status: 'ACTIVE', count: 2 },
+            { congregationId: congId(1), status: 'AWAY', count: 1 },
+            { congregationId: congId(2), status: 'ACTIVE', count: 1 },
+          ]),
+        );
+        expect(await repository.countByStatus(orgId(2), null)).toEqual([
+          { congregationId: congId(10), status: 'ACTIVE', count: 1 },
+        ]);
+      });
+
+      it('ESCOPO: só as congregações dadas; lista vazia conta nenhuma', async () => {
+        await seed();
+
+        expect(await repository.countByStatus(org, [congId(2)])).toEqual([
+          { congregationId: congId(2), status: 'ACTIVE', count: 1 },
+        ]);
+        expect(await repository.countByStatus(org, [congId(10)])).toEqual([]);
+        expect(await repository.countByStatus(org, [])).toEqual([]);
+      });
+    });
   });
 }
 
