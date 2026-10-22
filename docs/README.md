@@ -80,19 +80,21 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
   nunca guarda dado pessoal. Testado com repositórios em memória (inclusive duas igrejas e a falha da trilha) e com
   mutação manual; **a migration, o repositório Prisma e o gatilho só serão exercitados no CI** (sem Docker nesta máquina).
 
-- 🔄 **Usuários e papéis, versão enxuta** ([ADR 0014](adr/0014-usuarios-papeis-padrao-e-senha-temporaria.md)): etapas 1, 2 e 3 prontas
+- ✅ **Usuários e papéis, versão enxuta** ([ADR 0014](adr/0014-usuarios-papeis-padrao-e-senha-temporaria.md)): etapas 1, 2 e 3 prontas
   (papéis padrão e `GET /roles`; usuários, atribuições e a regra do último Administrador travada no banco; criar usuário
-  com senha temporária, troca obrigatória aplicada no guard e reset de senha). Falta (4) as telas na web.
+  com senha temporária, troca obrigatória aplicada no guard e reset de senha) e (4) as **telas na web**: lista de usuários,
+  novo usuário com senha temporária mostrada uma vez, atribuir e remover papel, desativar, redefinir senha e a troca
+  obrigatória no primeiro acesso. Verificado contra uma API simulada; falta só o banco real (CI).
 
 ## Próximos passos
 Em fatias verticais, para que o primeiro resultado visual chegue cedo (cada módulo novo entrega backend e tela):
 1. Camada HTTP (ADR 0011): passos (a), (b) e (c) feitos; segue (d) OpenAPI (Swagger UI).
-2. Web: login, **congregações** e **membros** prontos, verificados contra uma API simulada. **Dar push e conferir o CI**:
-   é o que valida a migration, o repositório Prisma e o gatilho da trilha com o PostgreSQL real.
-3. **Papéis por congregação e convites (UC-02 e UC-03):** hoje só o Administrador existe de fato; sem isto, secretários
-   escopados a uma congregação (o caso de uso central de `members`) só são exercitados nos testes.
-4. `finance` (dinheiro em centavos, lançamentos imutáveis, ADR 0005), já com tela; documentos e foto dos membros (UC-08,
-   com armazenamento privado) e a consulta à trilha de auditoria (UC-04).
+2. Web: login, congregações, membros, **usuários e papéis** e a troca de senha prontos, verificados contra uma API
+   simulada. **Conferir o CI**: é o que valida as migrations, os repositórios Prisma e o gatilho da trilha com o PostgreSQL real.
+3. **`finance`** (dinheiro em centavos, lançamentos imutáveis, ADR 0005; papel Tesoureiro), já com tela. Antes, levar à igreja
+   as perguntas do `casos-de-uso-mvp.md` (limite de aprovação, dízimo identificado ou anônimo, repasse à sede).
+4. Dashboard consolidado da Diretoria (UC-16), documentos e foto dos membros (UC-08, com armazenamento privado), consulta à
+   trilha de auditoria (UC-04), editor de papéis e convite por link (adiados no ADR 0014) e o OpenAPI.
 
 Em paralelo:
 - Validar com a igreja as perguntas ao final de [casos-de-uso-mvp.md](casos-de-uso-mvp.md).

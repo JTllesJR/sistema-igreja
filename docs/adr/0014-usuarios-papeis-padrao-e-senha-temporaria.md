@@ -64,7 +64,7 @@ Toda ação administrativa grava na trilha **depois** de salvar, como em `member
 1. **Papéis padrão e `GET /roles`** — **implementado** (veja "Como a etapa 1 ficou").
 2. Usuários e atribuições, com a regra do último Administrador — **implementado** (veja "Como a etapa 2 ficou").
 3. Senha temporária e troca obrigatória — **implementado** (veja "Como a etapa 3 ficou").
-4. Telas na web.
+4. Telas na web — **implementado** (veja "Como a etapa 4 ficou").
 
 ## Fora desta decisão (adiado)
 
@@ -136,3 +136,28 @@ Convite por link, editor de papéis, catálogo de permissões, papel Tesoureiro 
   reset e a destrava da conta).
 - **Limite conhecido:** o Administrador pode redefinir a própria senha por aqui (fica sem sessão e com uma temporária);
   para trocar a própria senha o caminho certo é `/auth/change-password`.
+
+## Como a etapa 4 ficou (implementado)
+
+- **Telas:** `/usuarios` (lista com papéis e escopos, último acesso, atribuir e remover papel, desativar e reativar,
+  redefinir senha), `/usuarios/novo` (e-mail, papel e congregação) e `/trocar-senha`. O item "Usuários" do menu só aparece
+  para quem tem `access:manage-users` na igreja toda; a API continua decidindo (403).
+- **A senha temporária aparece uma vez e só na memória da tela.** Fica no estado do componente: as mutações que a devolvem
+  (criar e redefinir) usam `gcTime: 0`, então o TanStack Query não a guarda; não vai para URL, `localStorage` nem
+  `sessionStorage` (verificado no navegador); o botão "Já anotei" a descarta. Há botão de copiar, com aviso quando a área
+  de transferência não está disponível.
+- **Troca obrigatória na interface:** quem entra com senha temporária é levado a `/trocar-senha` (no login e em qualquer
+  rota protegida); a API já recusa todo o resto (seção 4), então isto só leva a pessoa ao lugar certo. Depois de trocar, a
+  web relê o usuário (`SessionManager.reloadUser`) para saber que a obrigação acabou. A mesma tela serve para a troca
+  voluntária (link em "Minha conta"). Validação local: 10 a 128 caracteres, nova diferente da atual e confirmação igual; os
+  campos de senha são apagados ao enviar e, em caso de erro, a nova senha e a confirmação são limpas.
+- **Papel de igreja toda não leva congregação:** o Administrador (o papel com `*`) esconde o seletor de congregação e o
+  pedido sempre vai com `congregationId: null`, mesmo que o formulário guarde um valor antigo. A API repete a regra.
+- **Verificado no navegador contra uma API simulada:** criar a secretária, ver a senha uma vez, entrar com ela e ser levado à
+  troca, tentar abrir outra tela (volta para a troca), senha atual errada, regras locais, troca com sucesso (o menu passa a
+  mostrar Membros e não mostra Usuários), atribuir papel, "Administrador" sem seletor de congregação, desativar, reativar,
+  redefinir (senha aparece uma vez) e a recusa do último Administrador (remover o papel e desativar). Sem rolagem
+  horizontal e alvos de toque de 40 px ou mais no celular. Mutação manual: 11 pontos, todos pegos.
+- **Não verificado:** contra a API real com PostgreSQL (como o resto da web).
+- **Limite conhecido:** não há tela para o Administrador alterar o papel de si mesmo com cuidado extra (a API só protege o
+  último Administrador); e a lista não tem busca nem paginação (igreja de poucas dezenas de usuários).
