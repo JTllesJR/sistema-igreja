@@ -3,3 +3,5 @@ export const MEMBER_REPOSITORY = Symbol('MemberRepository');
 export const CONGREGATION_DIRECTORY = Symbol('CongregationDirectory');
 export const ID_GENERATOR = Symbol('MembersIdGenerator');
 export const CLOCK = Symbol('MembersClock');
+/** API pública de consulta do módulo, para uso dos outros módulos (ADR 0015). */
+export const MEMBER_QUERIES = Symbol('MemberQueries');

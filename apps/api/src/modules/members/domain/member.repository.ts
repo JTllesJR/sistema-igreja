@@ -47,6 +47,8 @@ export interface MemberPage {
  *    Depois de `add`/`save`, carregue o membro de novo antes de alterá-lo outra vez.
  *  - `listHistory` devolve os eventos do mais recente para o mais antigo.
  *  - `search` ignora membros anonimizados, ordena por nome (sem acentos) e depois por id, e respeita a paginação.
+ *  - `findSummaries` devolve o resumo dos membros pedidos que existem NESTA igreja e não foram anonimizados (id
+ *    desconhecido, de outra igreja ou anonimizado é ignorado), ordenados como a busca. Aceita lista vazia.
  */
 export interface MemberRepository {
   findById(
@@ -63,4 +65,8 @@ export interface MemberRepository {
     organizationId: OrganizationId,
     criteria: MemberSearchCriteria,
   ): Promise<MemberPage>;
+  findSummaries(
+    organizationId: OrganizationId,
+    ids: readonly MemberId[],
+  ): Promise<MemberSummary[]>;
 }

@@ -1,4 +1,4 @@
-import { ValidationError } from '../../../shared/domain/domain-error.js';
+import { ValidationError } from './domain-error.js';
 
 const FORMAT = /^(\d{4})-(\d{2})-(\d{2})$/;
 const MIN_YEAR = 1900;

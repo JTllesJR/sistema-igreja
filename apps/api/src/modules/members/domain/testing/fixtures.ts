@@ -4,7 +4,7 @@ import {
   OrganizationId,
 } from '../../../../shared/domain/identifiers.js';
 import { uuidFor } from '../../../../shared/testing/uuid-for.js';
-import { CalendarDate } from '../calendar-date.js';
+import { CalendarDate } from '../../../../shared/domain/calendar-date.js';
 import { ContactEmail } from '../contact-email.js';
 import { MemberEventId, MemberId } from '../ids.js';
 import { Member } from '../member.js';

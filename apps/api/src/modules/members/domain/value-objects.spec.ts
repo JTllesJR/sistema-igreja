@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ValidationError } from '../../../shared/domain/domain-error.js';
 import { thrownBy } from '../../../shared/testing/thrown-by.js';
-import { CalendarDate } from './calendar-date.js';
+import { CalendarDate } from '../../../shared/domain/calendar-date.js';
 import { ContactEmail } from './contact-email.js';
 import { ANONYMIZED_NAME, PersonName } from './person-name.js';
 import { Phone } from './phone.js';

@@ -476,6 +476,51 @@ export function describeMemberRepositoryContract(
         expect(beyond).toEqual({ items: [], total: 5 });
       });
     });
+
+    describe('findSummaries', () => {
+      it('devolve só os pedidos que existem NESTA igreja e não foram anonimizados, ordenados por nome', async () => {
+        await repository.add(aMember(1, { name: 'Zélia Souza' }));
+        await repository.add(aMember(2, { name: 'Ana Souza' }));
+        await repository.add(aMember(3, { name: 'Bruno Lima' }));
+        await repository.add(
+          aMember(4, {
+            name: 'De Outra Igreja',
+            organization: 2,
+            congregation: 10,
+          }),
+        );
+        const anonymous = (await repository.findById(org, memberId(3)))!;
+        anonymous.anonymize(eventId(70), after(NOW, 1_000));
+        await repository.save(anonymous);
+
+        const found = await repository.findSummaries(org, [
+          memberId(1),
+          memberId(2),
+          memberId(3),
+          memberId(4),
+          memberId(404),
+        ]);
+
+        expect(found).toEqual([
+          {
+            id: memberId(2),
+            fullName: 'Ana Souza',
+            congregationId: congId(1),
+            status: 'ACTIVE',
+          },
+          {
+            id: memberId(1),
+            fullName: 'Zélia Souza',
+            congregationId: congId(1),
+            status: 'ACTIVE',
+          },
+        ]);
+      });
+
+      it('lista vazia devolve vazio', async () => {
+        await expect(repository.findSummaries(org, [])).resolves.toEqual([]);
+      });
+    });
   });
 }
 

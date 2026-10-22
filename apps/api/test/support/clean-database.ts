@@ -7,6 +7,10 @@ import type { PrismaService } from '../../src/platform/database/prisma.service.j
 export async function cleanDatabase(prisma: PrismaService): Promise<void> {
   // `audit_log` é somente-anexação (gatilho recusa DELETE); só TRUNCATE a esvazia, e só um banco de testes permite isto.
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "audit_log"');
+  // `financial_entry` também é imutável (gatilho recusa DELETE): só TRUNCATE a esvazia, e só em banco de testes.
+  await prisma.$executeRawUnsafe('TRUNCATE TABLE "financial_entry"');
+  await prisma.financialAccount.deleteMany();
+  await prisma.financeCategory.deleteMany();
   await prisma.memberHistoryEvent.deleteMany();
   await prisma.member.deleteMany();
   await prisma.session.deleteMany();

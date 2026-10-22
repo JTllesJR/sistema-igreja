@@ -25,7 +25,7 @@ const namesOf = async (roles: RoleRepository, org: OrganizationId) =>
   (await roles.listByOrganization(org)).map((r) => r.name.value).sort();
 
 describe('ensureDefaultRoles (ADR 0014)', () => {
-  it('numa igreja sem papéis, cria Administrador, Dirigente e Secretário e os devolve', async () => {
+  it('numa igreja sem papéis, cria os cinco papéis padrão e os devolve', async () => {
     const { roles, ids } = setup();
 
     const result = await ensureDefaultRoles(roles, ids, ORG_A);
@@ -33,10 +33,14 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
     expect(result.administrator.name.value).toBe('Administrador');
     expect(result.leader.name.value).toBe('Dirigente');
     expect(result.secretary.name.value).toBe('Secretário');
+    expect(result.treasurer.name.value).toBe('Tesoureiro');
+    expect(result.board.name.value).toBe('Diretoria');
     expect(await namesOf(roles, ORG_A)).toEqual([
       'Administrador',
+      'Diretoria',
       'Dirigente',
       'Secretário',
+      'Tesoureiro',
     ]);
     for (const role of Object.values(result)) {
       expect(role.organizationId).toBe(ORG_A);
@@ -60,7 +64,7 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
     expect(second.administrator.id).toBe(first.administrator.id);
     expect(second.leader.id).toBe(first.leader.id);
     expect(second.secretary.id).toBe(first.secretary.id);
-    expect(await roles.listByOrganization(ORG_A)).toHaveLength(3);
+    expect(await roles.listByOrganization(ORG_A)).toHaveLength(5);
     expect(idsRequested).toBe(0);
   });
 
@@ -75,7 +79,7 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
     const result = await ensureDefaultRoles(roles, ids, ORG_A);
 
     expect(result.administrator.id).toBe(admin.id);
-    expect(await roles.listByOrganization(ORG_A)).toHaveLength(3);
+    expect(await roles.listByOrganization(ORG_A)).toHaveLength(5);
   });
 
   it('não mexe em papéis personalizados da igreja', async () => {
@@ -84,7 +88,7 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
       Role.restore({
         id: RoleId.of(uuidFor(778)),
         organizationId: ORG_A,
-        name: RoleName.create('Tesoureiro'),
+        name: RoleName.create('Auxiliar financeiro'),
         isSystem: false,
         permissions: [Permission.of('finance:read')],
       }),
@@ -94,6 +98,8 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
 
     expect(await namesOf(roles, ORG_A)).toEqual([
       'Administrador',
+      'Auxiliar financeiro',
+      'Diretoria',
       'Dirigente',
       'Secretário',
       'Tesoureiro',
@@ -108,8 +114,8 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
 
     expect(b.administrator.id).not.toBe(a.administrator.id);
     expect(b.administrator.organizationId).toBe(ORG_B);
-    expect(await roles.listByOrganization(ORG_A)).toHaveLength(3);
-    expect(await roles.listByOrganization(ORG_B)).toHaveLength(3);
+    expect(await roles.listByOrganization(ORG_A)).toHaveLength(5);
+    expect(await roles.listByOrganization(ORG_B)).toHaveLength(5);
   });
 
   it('se outra chamada criou o mesmo papel no meio do caminho, relê e usa o dela (corrida)', async () => {
@@ -123,6 +129,7 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
       findByIds: (idsToFind) => roles.findByIds(idsToFind),
       findAdministrator: (org) => roles.findAdministrator(org),
       listByOrganization: (org) => roles.listByOrganization(org),
+      replacePermissions: (id, p) => roles.replacePermissions(id, p),
       add: async (role) => {
         if (role.name.value === 'Secretário') {
           await roles.add(winner);
@@ -135,7 +142,7 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
     const result = await ensureDefaultRoles(racing, ids, ORG_A);
 
     expect(result.secretary.id).toBe(winner.id);
-    expect(await roles.listByOrganization(ORG_A)).toHaveLength(3);
+    expect(await roles.listByOrganization(ORG_A)).toHaveLength(5);
   });
 
   it('um erro que não é de nome repetido não é escondido', async () => {
@@ -144,6 +151,7 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
       findByIds: (x) => roles.findByIds(x),
       findAdministrator: (x) => roles.findAdministrator(x),
       listByOrganization: (x) => roles.listByOrganization(x),
+      replacePermissions: (id, p) => roles.replacePermissions(id, p),
       add: () => Promise.reject(new Error('banco fora do ar')),
     };
 
@@ -158,6 +166,7 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
       findByIds: (x) => roles.findByIds(x),
       findAdministrator: (x) => roles.findAdministrator(x),
       listByOrganization: (x) => roles.listByOrganization(x),
+      replacePermissions: (id, p) => roles.replacePermissions(id, p),
       add: async (role) => {
         // Um concorrente criou o MESMO papel E a nossa gravação falhou por outro motivo: não é uma corrida a ignorar.
         await roles.add(
@@ -176,5 +185,68 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
     await expect(ensureDefaultRoles(racing, ids, ORG_A)).rejects.toThrow(
       'conexão perdida',
     );
+  });
+
+  it('SINCRONIZA as permissões de um papel de sistema que ficou para trás (versão antiga do sistema)', async () => {
+    const { roles, ids } = setup();
+    const old = Role.restore({
+      id: RoleId.of(uuidFor(790)),
+      organizationId: ORG_A,
+      name: RoleName.create('Dirigente'),
+      isSystem: true,
+      permissions: [Permission.of('members:read')],
+    });
+    await roles.add(old);
+
+    const result = await ensureDefaultRoles(roles, ids, ORG_A);
+
+    expect(result.leader.id).toBe(old.id);
+    const stored = (await roles.listByOrganization(ORG_A)).find(
+      (r) => r.id === old.id,
+    );
+    expect(stored?.permissions.map((p) => p.value).sort()).toEqual(
+      Role.leader({ id: old.id, organizationId: ORG_A })
+        .permissions.map((p) => p.value)
+        .sort(),
+    );
+  });
+
+  it('não escreve nada quando as permissões já estão em dia', async () => {
+    const { roles, ids } = setup();
+    await ensureDefaultRoles(roles, ids, ORG_A);
+    let writes = 0;
+    const counting: RoleRepository = {
+      findByIds: (x) => roles.findByIds(x),
+      findAdministrator: (x) => roles.findAdministrator(x),
+      listByOrganization: (x) => roles.listByOrganization(x),
+      add: (role) => roles.add(role),
+      replacePermissions: (id, p) => {
+        writes += 1;
+        return roles.replacePermissions(id, p);
+      },
+    };
+
+    await ensureDefaultRoles(counting, ids, ORG_A);
+
+    expect(writes).toBe(0);
+  });
+
+  it('NÃO mexe nas permissões de um papel personalizado que tenha o mesmo nome de um padrão', async () => {
+    const { roles, ids } = setup();
+    const custom = Role.restore({
+      id: RoleId.of(uuidFor(791)),
+      organizationId: ORG_A,
+      name: RoleName.create('Tesoureiro'),
+      isSystem: false,
+      permissions: [Permission.of('members:read')],
+    });
+    await roles.add(custom);
+
+    await ensureDefaultRoles(roles, ids, ORG_A);
+
+    const stored = (await roles.listByOrganization(ORG_A)).find(
+      (r) => r.id === custom.id,
+    );
+    expect(stored?.permissions.map((p) => p.value)).toEqual(['members:read']);
   });
 });

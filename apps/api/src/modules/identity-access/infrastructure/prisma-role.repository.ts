@@ -71,6 +71,23 @@ export class PrismaRoleRepository implements RoleRepository {
       });
     });
   }
+
+  async replacePermissions(
+    roleId: RoleId,
+    permissions: readonly Permission[],
+  ): Promise<void> {
+    // Numa transação só: ninguém enxerga o papel sem permissões no meio da troca.
+    await this.prisma.$transaction(async (tx) => {
+      await tx.rolePermission.deleteMany({ where: { roleId } });
+      await tx.rolePermission.createMany({
+        data: permissions.map((permission) => ({
+          roleId,
+          permission: permission.value,
+        })),
+        skipDuplicates: true,
+      });
+    });
+  }
 }
 
 function toDomain(row: RoleRow): Role {

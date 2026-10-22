@@ -6,10 +6,12 @@ import { RoleName } from './role-name.js';
 export const ADMINISTRATOR_ROLE_NAME = 'Administrador';
 export const LEADER_ROLE_NAME = 'Dirigente';
 export const SECRETARY_ROLE_NAME = 'Secretário';
+export const TREASURER_ROLE_NAME = 'Tesoureiro';
+export const BOARD_ROLE_NAME = 'Diretoria';
 
 /**
  * Papel: um conjunto de permissões, por igreja (ADR 0004). Papéis de sistema não são editáveis pelo usuário.
- * Papéis padrão (Administrador, Dirigente, Secretário) são de sistema e fixos no código (ADR 0014); papéis
+ * Papéis padrão (Administrador, Dirigente, Secretário, Tesoureiro, Diretoria) são de sistema e fixos no código (ADR 0014); papéis
  * personalizados (UC-02 completo) usarão a mesma estrutura.
  */
 export class Role {
@@ -49,6 +51,10 @@ export class Role {
       'members:write',
       'members:anonymize',
       'organization:read',
+      // Financeiro (ADR 0015): vê os números da congregação e quem contribuiu; e, atuando na sede, aprova.
+      'finance:read',
+      'finance:approve',
+      'finance:read-individual',
     ]);
   }
 
@@ -60,6 +66,37 @@ export class Role {
     return Role.system(input, SECRETARY_ROLE_NAME, [
       'members:read',
       'members:write',
+      'organization:read',
+    ]);
+  }
+
+  /**
+   * Tesoureiro: lança e consulta o financeiro, vê quem contribuiu (precisa para identificar o dízimo) e enxerga a igreja.
+   * NÃO aprova (separação de funções) e NÃO ganha `members:read`: a ficha do membro tem endereço e telefone, e ele
+   * escolhe o membro por uma busca mínima do próprio financeiro (ADR 0015).
+   */
+  static treasurer(input: {
+    id: RoleId;
+    organizationId: OrganizationId;
+  }): Role {
+    return Role.system(input, TREASURER_ROLE_NAME, [
+      'finance:read',
+      'finance:write',
+      'finance:read-individual',
+      'organization:read',
+    ]);
+  }
+
+  /**
+   * Diretoria: acompanha e APROVA o financeiro, vê quem contribuiu e consulta membros. Não lança. Atribuída na igreja
+   * toda, alcança a sede e decide os pedidos de todas as congregações.
+   */
+  static board(input: { id: RoleId; organizationId: OrganizationId }): Role {
+    return Role.system(input, BOARD_ROLE_NAME, [
+      'finance:read',
+      'finance:approve',
+      'finance:read-individual',
+      'members:read',
       'organization:read',
     ]);
   }

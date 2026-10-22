@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuditModule } from './modules/audit/index.js';
+import { FinanceModule } from './modules/finance/index.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { IdentityAccessModule } from './modules/identity-access/index.js';
 import { MembersModule } from './modules/members/index.js';
@@ -16,6 +17,7 @@ import { HttpPlatformModule } from './platform/http/http-platform.module.js';
     IdentityAccessModule,
     AuditModule,
     MembersModule,
+    FinanceModule,
   ],
 })
 export class AppModule {}

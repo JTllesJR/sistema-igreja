@@ -31,4 +31,15 @@ export class PrismaOrganizationQueries implements OrganizationQueries {
     });
     return row ? { id: CongregationId.of(row.id), status: row.status } : null;
   }
+
+  async findHeadquarters(
+    organizationId: OrganizationId,
+  ): Promise<CongregationSummary | null> {
+    // Só existe uma sede por igreja (índice parcial único, ADR 0009).
+    const row = await this.prisma.congregation.findFirst({
+      where: { organizationId, isHeadquarters: true },
+      select: { id: true, status: true },
+    });
+    return row ? { id: CongregationId.of(row.id), status: row.status } : null;
+  }
 }

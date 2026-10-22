@@ -2,12 +2,13 @@ import type { AuditLog } from '../../../shared/application/audit-log.js';
 import type { Clock } from '../../../shared/application/clock.js';
 import type { RequestContext } from '../../../shared/application/request-context.js';
 import { Address, type AddressInput } from '../../../shared/domain/address.js';
-import { CalendarDate } from '../domain/calendar-date.js';
+import { CalendarDate } from '../../../shared/domain/calendar-date.js';
+import { ValidationError } from '../../../shared/domain/domain-error.js';
 import { ContactEmail } from '../domain/contact-email.js';
 import type { ProfileChanges } from '../domain/member.js';
 import type { MemberRepository } from '../domain/member.repository.js';
-import { PersonName } from '../domain/person-name.js';
 import { isMemberPosition } from '../domain/member-position.js';
+import { PersonName } from '../domain/person-name.js';
 import { Phone } from '../domain/phone.js';
 import { optionalInput } from './inputs.js';
 import type { MemberAccess } from './member-access.js';
@@ -21,9 +22,9 @@ export interface UpdateMemberCommand {
   phone?: string | null;
   email?: string | null;
   address?: AddressInput | null;
-}
   /** Ausente = manter. O cargo nunca é apagado: é sempre um dos valores da lista. */
   position?: string;
+}
 
 /** UC-06: altera o cadastro. Exige poder ESCREVER na congregação atual do membro. */
 export class UpdateMemberUseCase {
@@ -65,7 +66,6 @@ export class UpdateMemberUseCase {
         command.address === null ? null : Address.create(command.address);
     }
 
-    const changed = member.updateProfile(changes, this.clock.now());
     if (command.position !== undefined) {
       if (!isMemberPosition(command.position)) {
         throw new ValidationError('position', 'O cargo informado não existe.');
@@ -73,6 +73,7 @@ export class UpdateMemberUseCase {
       changes.position = command.position;
     }
 
+    const changed = member.updateProfile(changes, this.clock.now());
     // Nada mudou de verdade: não há o que gravar nem o que auditar.
     if (changed.length === 0) return;
 

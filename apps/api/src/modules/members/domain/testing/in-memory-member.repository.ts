@@ -11,6 +11,7 @@ import type {
   MemberPage,
   MemberRepository,
   MemberSearchCriteria,
+  MemberSummary,
 } from '../member.repository.js';
 
 interface Stored {
@@ -119,6 +120,34 @@ export class InMemoryMemberRepository implements MemberRepository {
         })),
     });
   }
+
+  findSummaries(
+    organizationId: OrganizationId,
+    ids: readonly MemberId[],
+  ): Promise<MemberSummary[]> {
+    const wanted = new Set<string>(ids);
+    return Promise.resolve(
+      [...this.#store.values()]
+        .map((stored) => stored.props)
+        .filter(
+          (props) =>
+            wanted.has(props.id) &&
+            props.organizationId === organizationId &&
+            props.anonymizedAt === null,
+        )
+        .sort(
+          (a, b) =>
+            a.fullName.searchKey.localeCompare(b.fullName.searchKey) ||
+            a.id.localeCompare(b.id),
+        )
+        .map((props) => ({
+          id: props.id,
+          fullName: props.fullName.value,
+          congregationId: props.congregationId,
+          status: props.status,
+        })),
+    );
+  }
 }
 
 function snapshot(member: Member): MemberProps {
@@ -132,8 +161,8 @@ function snapshot(member: Member): MemberProps {
     email: member.email,
     address: member.address,
     status: member.status,
+    position: member.position,
     anonymizedAt: member.anonymizedAt,
     version: member.version,
   };
 }
-    position: member.position,

@@ -26,6 +26,30 @@ export const DOMAIN_ERROR_STATUS: Readonly<Record<string, number>> = {
   'members.already_in_congregation': 409,
   'members.congregation_unavailable': 422,
 
+  // Financeiro (ADR 0015). 404: não existe ou o usuário não pode nem ver (a resposta é a mesma, de propósito).
+  'finance.account_not_found': 404,
+  'finance.category_not_found': 404,
+  'finance.entry_not_found': 404,
+  'finance.member_not_found': 404,
+  'finance.account_name_taken': 409,
+  'finance.category_name_taken': 409,
+  // 409: o pedido já foi decidido ou o lançamento já tem estorno; o estado mudou.
+  'finance.entry_not_pending': 409,
+  'finance.already_reversed': 409,
+  // 403: o usuário vê o dado, mas não pode esta ação financeira. Quem pediu não decide o próprio pedido.
+  'finance.access_denied': 403,
+  'finance.approval_not_allowed': 403,
+  'finance.self_approval_forbidden': 403,
+  // 422: o pedido está bem formado, mas a regra do sistema o recusa.
+  'finance.account_unavailable': 422,
+  'finance.category_unavailable': 422,
+  'finance.member_unavailable': 422,
+  'finance.congregation_unavailable': 422,
+  'finance.insufficient_balance': 422,
+  'finance.not_reversible': 422,
+  'finance.transfer_same_congregation': 422,
+  'finance.transfer_requires_headquarters': 422,
+
   'identity.invalid_credentials': 401,
   'identity.session_invalid': 401,
   'identity.session_reuse_detected': 401,

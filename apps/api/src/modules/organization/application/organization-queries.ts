@@ -20,6 +20,11 @@ export interface OrganizationQueries {
     organizationId: OrganizationId,
     congregationId: CongregationId,
   ): Promise<CongregationSummary | null>;
+
+  /** A sede da igreja (a congregação marcada como sede), ou `null` se ainda não há. Quem aprova no `finance` atua nela. */
+  findHeadquarters(
+    organizationId: OrganizationId,
+  ): Promise<CongregationSummary | null>;
 }
 
 /** O mínimo que outros módulos precisam saber de uma congregação. */

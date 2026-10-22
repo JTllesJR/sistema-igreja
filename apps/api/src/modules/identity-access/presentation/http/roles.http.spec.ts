@@ -40,8 +40,10 @@ describe('GET /roles', () => {
     const roles = (response.body as unknown[]).map((r) => roleSchema.parse(r));
     expect(roles.map((r) => r.name)).toEqual([
       'Administrador',
+      'Diretoria',
       'Dirigente',
       'Secretário',
+      'Tesoureiro',
     ]);
     expect(roles.find((r) => r.name === 'Secretário')?.permissions).toEqual([
       'members:read',

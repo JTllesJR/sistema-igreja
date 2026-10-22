@@ -9,8 +9,8 @@
 // `*_organization_congregations` e devem ser preservadas ao alterar a tabela `congregation`.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
   // O projeto é ESM com moduleResolution nodenext: imports relativos precisam terminar em .js.
   importFileExtension = "js"
 }
@@ -35,10 +35,12 @@ model Organization {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  congregations Congregation[]
-  users         UserAccount[]
-  roles         Role[]
-  members       Member[]
+  congregations     Congregation[]
+  users             UserAccount[]
+  roles             Role[]
+  members           Member[]
+  financialAccounts FinancialAccount[]
+  financeCategories FinanceCategory[]
 
   @@map("organization")
 }
@@ -57,11 +59,12 @@ model Congregation {
   createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  assignments  UserRoleAssignment[]
-  members      Member[]
-  eventsFrom   MemberHistoryEvent[] @relation("EventFromCongregation")
-  eventsTo     MemberHistoryEvent[] @relation("EventToCongregation")
+  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  assignments       UserRoleAssignment[]
+  members           Member[]
+  financialAccounts FinancialAccount[]
+  eventsFrom        MemberHistoryEvent[] @relation("EventFromCongregation")
+  eventsTo          MemberHistoryEvent[] @relation("EventToCongregation")
 
   // Permite que outras tabelas usem FK composta (organization_id, congregation_id), impedindo que um
   // registro aponte para uma congregação de outra organização (ver docs/diagramas/modelo-er.md).
@@ -202,6 +205,7 @@ enum MemberEventType {
   @@map("member_event_type")
 }
 
+/// Pessoa cadastrada em UMA congregação. Nunca é excluída: é anonimizada (dados pessoais apagados, linha mantida).
 /// Cargo na igreja (DADO SENSÍVEL). Lista informada pela igreja em 2026-10-22; diferente da situação (`MemberStatus`).
 enum MemberPosition {
   MEMBER
@@ -215,32 +219,32 @@ enum MemberPosition {
   @@map("member_position")
 }
 
-/// Pessoa cadastrada em UMA congregação. Nunca é excluída: é anonimizada (dados pessoais apagados, linha mantida).
 model Member {
-  id             String       @id @db.Uuid
-  organizationId String       @map("organization_id") @db.Uuid
-  congregationId String       @map("congregation_id") @db.Uuid
-  fullName       String       @map("full_name")
+  id             String         @id @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  congregationId String         @map("congregation_id") @db.Uuid
+  fullName       String         @map("full_name")
   /// Nome sem acentos, em minúsculas: SÓ para a busca (derivado de full_name pelo domínio).
-  nameKey        String       @map("name_key")
-  birthDate      DateTime?    @map("birth_date") @db.Date
+  nameKey        String         @map("name_key")
+  birthDate      DateTime?      @map("birth_date") @db.Date
   /// Só dígitos (DDD + número).
   phone          String?
   email          String?
   /// JSON validado pela aplicação (value object Address). Nulo = sem endereço.
   address        Json?
-  status         MemberStatus @default(ACTIVE)
+  status         MemberStatus   @default(ACTIVE)
   position       MemberPosition @default(MEMBER)
   /// Preenchido quando os dados pessoais foram apagados (pedido do titular). Irreversível.
-  anonymizedAt   DateTime?    @map("anonymized_at") @db.Timestamptz(3)
+  anonymizedAt   DateTime?      @map("anonymized_at") @db.Timestamptz(3)
   /// Travamento otimista.
-  version        Int          @default(0)
-  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  version        Int            @default(0)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  congregation Congregation         @relation(fields: [organizationId, congregationId], references: [organizationId, id], onDelete: Restrict)
-  history      MemberHistoryEvent[]
+  organization  Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  congregation  Congregation         @relation(fields: [organizationId, congregationId], references: [organizationId, id], onDelete: Restrict)
+  history       MemberHistoryEvent[]
+  contributions FinancialEntry[]
 
   @@unique([organizationId, id])
   @@index([organizationId, congregationId])
@@ -292,4 +296,138 @@ model AuditLog {
   @@index([organizationId, occurredAt])
   @@index([organizationId, entity, entityId])
   @@map("audit_log")
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// finance (ADR 0015). Regras que o Prisma não expressa estão em SQL manual na migration `*_finance`: CHECKs de coerência
+// do lançamento, índices únicos parciais e funcionais e o GATILHO que torna `financial_entry` imutável (recusa DELETE e
+// UPDATE de lançamento já decidido). Preserve-as ao alterar estas tabelas. Dinheiro em CENTAVOS inteiros (ADR 0005).
+// ---------------------------------------------------------------------------------------------------------------
+
+enum AccountKind {
+  CASH
+  BANK
+
+  @@map("account_kind")
+}
+
+/// Conta e categoria nunca são apagadas: são arquivadas.
+enum ArchiveStatus {
+  ACTIVE
+  ARCHIVED
+
+  @@map("archive_status")
+}
+
+enum EntryDirection {
+  IN
+  OUT
+
+  @@map("entry_direction")
+}
+
+/// ORDINARY: entrada ou saída comum (tem categoria). OPENING_BALANCE: saldo inicial. TRANSFER: perna de um repasse.
+/// REVERSAL: estorno de outro lançamento.
+enum EntryKind {
+  ORDINARY
+  OPENING_BALANCE
+  TRANSFER
+  REVERSAL
+
+  @@map("entry_kind")
+}
+
+/// PENDING: aguardando a sede (ainda não é dinheiro). CONFIRMED: vale. REJECTED e CANCELLED: não valem.
+enum EntryStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+
+  @@map("entry_status")
+}
+
+/// Onde o dinheiro está: caixa ou conta bancária de UMA congregação.
+model FinancialAccount {
+  id             String        @id @db.Uuid
+  organizationId String        @map("organization_id") @db.Uuid
+  congregationId String        @map("congregation_id") @db.Uuid
+  name           String
+  kind           AccountKind
+  status         ArchiveStatus @default(ACTIVE)
+  /// Travamento otimista.
+  version        Int           @default(0)
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  congregation Congregation     @relation(fields: [organizationId, congregationId], references: [organizationId, id], onDelete: Restrict)
+  entries      FinancialEntry[]
+
+  @@unique([organizationId, id])
+  /// Alvo da chave estrangeira composta do lançamento: o lançamento não pode apontar para conta de outra congregação.
+  @@unique([organizationId, id, congregationId])
+  @@index([organizationId, congregationId])
+  @@map("financial_account")
+}
+
+/// Classificação de entradas ou saídas, por igreja (personalizável).
+model FinanceCategory {
+  id             String         @id @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  name           String
+  direction      EntryDirection
+  status         ArchiveStatus  @default(ACTIVE)
+  version        Int            @default(0)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  entries      FinancialEntry[]
+
+  @@unique([organizationId, id])
+  @@map("finance_category")
+}
+
+/// Um lançamento. IMUTÁVEL depois de decidido (gatilho no banco); a correção é um estorno (ADR 0005 e 0015).
+model FinancialEntry {
+  id              String         @id @db.Uuid
+  organizationId  String         @map("organization_id") @db.Uuid
+  congregationId  String         @map("congregation_id") @db.Uuid
+  accountId       String         @map("account_id") @db.Uuid
+  kind            EntryKind
+  direction       EntryDirection
+  /// Centavos, sempre positivo (o sentido está em `direction`).
+  amountCents     BigInt         @map("amount_cents")
+  /// O dia do fato (não o de hoje): pode ser anterior ao registro.
+  occurredOn      DateTime       @map("occurred_on") @db.Date
+  description     String?
+  categoryId      String?        @map("category_id") @db.Uuid
+  /// Quem contribuiu (dado SENSÍVEL, ADR 0006). Nulo = anônimo.
+  memberId        String?        @map("member_id") @db.Uuid
+  /// As duas pernas de um repasse compartilham este id.
+  transferId      String?        @map("transfer_id") @db.Uuid
+  reversesEntryId String?        @map("reverses_entry_id") @db.Uuid
+  status          EntryStatus
+  requestedBy     String         @map("requested_by") @db.Uuid
+  requestedAt     DateTime       @map("requested_at") @db.Timestamptz(3)
+  /// Quem aprovou ou recusou. Sempre DIFERENTE de requested_by (CHECK no banco). Nulo na entrada que nasce confirmada.
+  decidedBy       String?        @map("decided_by") @db.Uuid
+  decidedAt       DateTime?      @map("decided_at") @db.Timestamptz(3)
+  decisionNote    String?        @map("decision_note")
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  account    FinancialAccount @relation(fields: [organizationId, accountId, congregationId], references: [organizationId, id, congregationId], onDelete: Restrict)
+  category   FinanceCategory? @relation(fields: [organizationId, categoryId], references: [organizationId, id], onDelete: Restrict)
+  member     Member?          @relation(fields: [organizationId, memberId], references: [organizationId, id], onDelete: Restrict)
+  reverses   FinancialEntry?  @relation("EntryReversal", fields: [organizationId, reversesEntryId], references: [organizationId, id], onDelete: Restrict)
+  reversedBy FinancialEntry[] @relation("EntryReversal")
+
+  @@unique([organizationId, id])
+  @@index([organizationId, congregationId, occurredOn])
+  @@index([organizationId, accountId])
+  @@index([organizationId, memberId, occurredOn])
+  @@index([organizationId, status])
+  @@index([organizationId, transferId])
+  @@map("financial_entry")
 }

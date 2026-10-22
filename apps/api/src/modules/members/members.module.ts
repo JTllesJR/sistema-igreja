@@ -17,6 +17,7 @@ import { ChangeMemberStatusUseCase } from './application/change-member-status.us
 import type { CongregationDirectory } from './application/congregation-directory.js';
 import { GetMemberUseCase } from './application/get-member.use-case.js';
 import { ListMembersUseCase } from './application/list-members.use-case.js';
+import { RepositoryMemberQueries } from './application/member-queries.js';
 import { RecordMemberEventUseCase } from './application/record-member-event.use-case.js';
 import { RegisterMemberUseCase } from './application/register-member.use-case.js';
 import { TransferMemberUseCase } from './application/transfer-member.use-case.js';
@@ -28,6 +29,7 @@ import {
   CLOCK,
   CONGREGATION_DIRECTORY,
   ID_GENERATOR,
+  MEMBER_QUERIES,
   MEMBER_REPOSITORY,
 } from './members.tokens.js';
 import { MembersController } from './presentation/http/members.controller.js';
@@ -71,6 +73,7 @@ function withMutationPorts<T>(
 @Module({
   imports: [DatabaseModule, OrganizationModule, AuditModule],
   controllers: [MembersController],
+  exports: [MEMBER_QUERIES],
   providers: [
     {
       provide: MEMBER_REPOSITORY,
@@ -82,6 +85,12 @@ function withMutationPorts<T>(
       useFactory: (queries: OrganizationQueries) =>
         new OrganizationQueriesCongregationDirectory(queries),
       inject: [ORGANIZATION_QUERIES],
+    },
+    {
+      provide: MEMBER_QUERIES,
+      useFactory: (repository: MemberRepository) =>
+        new RepositoryMemberQueries(repository),
+      inject: [MEMBER_REPOSITORY],
     },
     { provide: ID_GENERATOR, useFactory: () => new UuidV7IdGenerator() },
     { provide: CLOCK, useFactory: () => new SystemClock() },

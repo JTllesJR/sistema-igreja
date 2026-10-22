@@ -9,7 +9,7 @@ import {
   CongregationId,
   OrganizationId,
 } from '../../../shared/domain/identifiers.js';
-import { CalendarDate } from '../domain/calendar-date.js';
+import { CalendarDate } from '../../../shared/domain/calendar-date.js';
 import { ContactEmail } from '../domain/contact-email.js';
 import { MemberNotFoundError } from '../domain/errors.js';
 import { MemberEventId, MemberId } from '../domain/ids.js';
@@ -18,6 +18,7 @@ import type {
   MemberPage,
   MemberRepository,
   MemberSearchCriteria,
+  MemberSummary,
 } from '../domain/member.repository.js';
 import type { MemberHistoryEvent } from '../domain/member-history-event.js';
 import { PersonName } from '../domain/person-name.js';
@@ -153,6 +154,29 @@ export class PrismaMemberRepository implements MemberRepository {
       })),
     };
   }
+
+  async findSummaries(
+    organizationId: OrganizationId,
+    ids: readonly MemberId[],
+  ): Promise<MemberSummary[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.prisma.member.findMany({
+      where: { organizationId, anonymizedAt: null, id: { in: [...ids] } },
+      orderBy: [{ nameKey: 'asc' }, { id: 'asc' }],
+      select: {
+        id: true,
+        fullName: true,
+        congregationId: true,
+        status: true,
+      },
+    });
+    return rows.map((row) => ({
+      id: MemberId.of(row.id),
+      fullName: row.fullName,
+      congregationId: CongregationId.of(row.congregationId),
+      status: row.status,
+    }));
+  }
 }
 
 /** Colunas que mudam ao gravar o agregado (tudo, menos o que identifica e a versão). */
@@ -168,6 +192,7 @@ function toColumns(member: Member) {
       ? (member.address.toPrimitives() as unknown as Prisma.InputJsonObject)
       : Prisma.JsonNull,
     status: member.status,
+    position: member.position,
     anonymizedAt: member.anonymizedAt,
   };
 }
@@ -192,7 +217,6 @@ function eventData(member: Member): Prisma.MemberHistoryEventCreateManyInput[] {
 function toDomain(row: MemberRow): Member {
   return Member.restore({
     id: MemberId.of(row.id),
-    position: member.position,
     organizationId: OrganizationId.of(row.organizationId),
     congregationId: CongregationId.of(row.congregationId),
     fullName: PersonName.create(row.fullName),
@@ -206,6 +230,7 @@ function toDomain(row: MemberRow): Member {
         ? null
         : Address.fromPrimitives(row.address as unknown as AddressPrimitives),
     status: row.status,
+    position: row.position,
     anonymizedAt: row.anonymizedAt,
     version: row.version,
   });
@@ -230,7 +255,6 @@ function toEvent(row: EventRow): MemberHistoryEvent {
     recordedAt: row.recordedAt,
   };
 }
-    position: row.position,
 
 /** Antepõe `\` a `\`, `%` e `_`: no LIKE do PostgreSQL, a barra invertida é o escape padrão. */
 function escapeLikePattern(term: string): string {

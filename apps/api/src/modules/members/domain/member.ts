@@ -5,7 +5,7 @@ import type {
   OrganizationId,
 } from '../../../shared/domain/identifiers.js';
 import { optionalText } from '../../../shared/domain/text.js';
-import { CalendarDate } from './calendar-date.js';
+import { CalendarDate } from '../../../shared/domain/calendar-date.js';
 import type { ContactEmail } from './contact-email.js';
 import {
   MemberAlreadyInCongregationError,

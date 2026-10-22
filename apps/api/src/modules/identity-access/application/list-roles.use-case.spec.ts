@@ -21,8 +21,10 @@ describe('ListRolesUseCase (GET /roles)', () => {
 
     expect(roles.map((r) => r.name)).toEqual([
       'Administrador',
+      'Diretoria',
       'Dirigente',
       'Secretário',
+      'Tesoureiro',
     ]);
     expect(roles.find((r) => r.name === 'Administrador')).toMatchObject({
       isSystem: true,
@@ -43,6 +45,9 @@ describe('ListRolesUseCase (GET /roles)', () => {
     );
 
     expect(leader?.permissions).toEqual([
+      'finance:approve',
+      'finance:read',
+      'finance:read-individual',
       'members:anonymize',
       'members:read',
       'members:write',
@@ -66,9 +71,11 @@ describe('ListRolesUseCase (GET /roles)', () => {
 
     expect(names).toEqual([
       'Administrador',
+      'Diretoria',
       'Dirigente',
       'Ótimo papel',
       'Secretário',
+      'Tesoureiro',
     ]);
   });
 
@@ -82,8 +89,8 @@ describe('ListRolesUseCase (GET /roles)', () => {
       organizationId: other,
     });
 
-    expect(roles).toHaveLength(3);
-    expect(await bed.roles.listByOrganization(other)).toHaveLength(3);
+    expect(roles).toHaveLength(5);
+    expect(await bed.roles.listByOrganization(other)).toHaveLength(5);
   });
 
   it('não mostra papéis de outra igreja', async () => {
@@ -93,7 +100,7 @@ describe('ListRolesUseCase (GET /roles)', () => {
 
     const mine = await useCase.execute(bed.adminContext);
 
-    expect(mine).toHaveLength(3);
+    expect(mine).toHaveLength(5);
     const otherIds = (await bed.roles.listByOrganization(other)).map(
       (r) => r.id,
     );

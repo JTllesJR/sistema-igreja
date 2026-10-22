@@ -118,5 +118,33 @@ export function describeRoleRepositoryContract(
       );
       await expect(repository.add(treasurer(4, 2))).resolves.toBeUndefined();
     });
+
+    it('replacePermissions troca TODO o conjunto de permissões, sem tocar nos outros papéis', async () => {
+      await repository.add(treasurer(2, 1));
+      await repository.add(treasurer(3, 2));
+
+      await repository.replacePermissions(roleId(2), [
+        Permission.of('finance:read'),
+        Permission.of('finance:write'),
+        Permission.of('finance:write'),
+      ]);
+
+      const changed = (await repository.findByIds([roleId(2)]))[0];
+      const untouched = (await repository.findByIds([roleId(3)]))[0];
+      expect(changed && snapshot(changed)).toEqual({
+        ...snapshot(treasurer(2, 1)),
+        permissions: ['finance:read', 'finance:write'],
+      });
+      expect(untouched && snapshot(untouched)).toEqual(
+        snapshot(treasurer(3, 2)),
+      );
+    });
+
+    it('replacePermissions de um papel que não existe não faz nada', async () => {
+      await expect(
+        repository.replacePermissions(roleId(99), [Permission.of('x:y')]),
+      ).resolves.toBeUndefined();
+      await expect(repository.findByIds([roleId(99)])).resolves.toEqual([]);
+    });
   });
 }

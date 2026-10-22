@@ -1,5 +1,5 @@
 import type { CongregationId } from '../../../shared/domain/identifiers.js';
-import type { CalendarDate } from './calendar-date.js';
+import type { CalendarDate } from '../../../shared/domain/calendar-date.js';
 import type { MemberEventId } from './ids.js';
 import type { MemberStatus } from './member-status.js';
 

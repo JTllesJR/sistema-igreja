@@ -5,7 +5,7 @@ import type { RequestContext } from '../../../shared/application/request-context
 import { Address, type AddressInput } from '../../../shared/domain/address.js';
 import { ValidationError } from '../../../shared/domain/domain-error.js';
 import { CongregationId } from '../../../shared/domain/identifiers.js';
-import { CalendarDate } from '../domain/calendar-date.js';
+import { CalendarDate } from '../../../shared/domain/calendar-date.js';
 import { ContactEmail } from '../domain/contact-email.js';
 import { MemberAccessDeniedError } from '../domain/errors.js';
 import { MemberEventId, MemberId } from '../domain/ids.js';

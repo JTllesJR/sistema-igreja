@@ -6,6 +6,12 @@ import {
   MEMBERS_READ,
   MEMBERS_WRITE,
 } from '../../members/members.permissions.js';
+import {
+  FINANCE_APPROVE,
+  FINANCE_READ,
+  FINANCE_READ_INDIVIDUAL,
+  FINANCE_WRITE,
+} from '../../finance/finance.permissions.js';
 import { ORGANIZATION_READ } from '../../organization/organization.permissions.js';
 import { Permission } from './permission.js';
 import { Role } from './role.js';
@@ -95,12 +101,15 @@ describe('Role', () => {
       );
     });
 
-    it('Dirigente: tudo do Secretário e mais a anonimização de membros (sem gerir a igreja)', () => {
+    it('Dirigente: tudo do Secretário, a anonimização de membros e o financeiro da congregação (sem lançar nem gerir a igreja)', () => {
       const leader = Role.leader(input);
 
       expect(leader.name.value).toBe('Dirigente');
       expect(leader.isSystem).toBe(true);
       expect(permissionsOf(leader)).toEqual([
+        'finance:approve',
+        'finance:read',
+        'finance:read-individual',
         'members:anonymize',
         'members:read',
         'members:write',
@@ -109,13 +118,60 @@ describe('Role', () => {
       expect(leader.grants(Permission.of('organization:manage'))).toBe(false);
     });
 
+    it('Tesoureiro: lança e consulta o financeiro e vê quem contribuiu, mas NÃO aprova nem lê a ficha dos membros', () => {
+      const treasurer = Role.treasurer(input);
+
+      expect(treasurer.name.value).toBe('Tesoureiro');
+      expect(treasurer.isSystem).toBe(true);
+      expect(permissionsOf(treasurer)).toEqual([
+        'finance:read',
+        'finance:read-individual',
+        'finance:write',
+        'organization:read',
+      ]);
+      expect(treasurer.grants(Permission.of('finance:approve'))).toBe(false);
+      expect(treasurer.grants(Permission.of('members:read'))).toBe(false);
+    });
+
+    it('Diretoria: aprova e acompanha, mas NÃO lança', () => {
+      const board = Role.board(input);
+
+      expect(board.name.value).toBe('Diretoria');
+      expect(board.isSystem).toBe(true);
+      expect(permissionsOf(board)).toEqual([
+        'finance:approve',
+        'finance:read',
+        'finance:read-individual',
+        'members:read',
+        'organization:read',
+      ]);
+      expect(board.grants(Permission.of('finance:write'))).toBe(false);
+    });
+
+    it('quem lança nunca é quem aprova: nenhum papel padrão (fora o Administrador) junta as duas permissões', () => {
+      for (const role of [
+        Role.secretary(input),
+        Role.leader(input),
+        Role.treasurer(input),
+        Role.board(input),
+      ]) {
+        const both =
+          role.grants(Permission.of('finance:write')) &&
+          role.grants(Permission.of('finance:approve'));
+        expect(both).toBe(false);
+      }
+    });
+
     it('os textos das permissões batem com as constantes dos módulos dono delas', () => {
       // Único lugar em que o identity-access olha as constantes de outros módulos: o domain usa texto para não
       // importar o módulo inteiro (ciclo + Nest no domain). Se alguém renomear uma permissão, este teste falha.
       const granted = new Set(
-        [Role.secretary(input), Role.leader(input)].flatMap((role) =>
-          role.permissions.map((p) => p.value),
-        ),
+        [
+          Role.secretary(input),
+          Role.leader(input),
+          Role.treasurer(input),
+          Role.board(input),
+        ].flatMap((role) => role.permissions.map((p) => p.value)),
       );
 
       expect(granted).toEqual(
@@ -124,6 +180,10 @@ describe('Role', () => {
           MEMBERS_WRITE,
           MEMBERS_ANONYMIZE,
           ORGANIZATION_READ,
+          FINANCE_READ,
+          FINANCE_WRITE,
+          FINANCE_APPROVE,
+          FINANCE_READ_INDIVIDUAL,
         ]),
       );
     });

@@ -37,14 +37,14 @@ afterAll(async () => {
 });
 
 describe('papéis padrão (PostgreSQL real)', () => {
-  it('várias chamadas SIMULTÂNEAS terminam com exatamente 3 papéis, e todas recebem os mesmos', async () => {
+  it('várias chamadas SIMULTÂNEAS terminam com exatamente 5 papéis, e todas recebem os mesmos', async () => {
     const results = await Promise.all(
       Array.from({ length: 8 }, () => ensureDefaultRoles(roles, ids, orgId(1))),
     );
 
     expect(
       await prisma.role.count({ where: { organizationId: orgId(1) } }),
-    ).toBe(3);
+    ).toBe(5);
     const administrators = new Set(results.map((r) => r.administrator.id));
     const secretaries = new Set(results.map((r) => r.secretary.id));
     expect(administrators.size).toBe(1);
@@ -80,8 +80,10 @@ describe('papéis padrão (PostgreSQL real)', () => {
 
     expect(result.map((r) => r.name)).toEqual([
       'Administrador',
+      'Diretoria',
       'Dirigente',
       'Secretário',
+      'Tesoureiro',
     ]);
   });
 });

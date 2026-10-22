@@ -1,7 +1,8 @@
 import type { OrganizationId } from '../../../../shared/domain/identifiers.js';
 import { RoleNameAlreadyInUseError } from '../errors.js';
 import type { RoleId } from '../ids.js';
-import { ADMINISTRATOR_ROLE_NAME, type Role } from '../role.js';
+import type { Permission } from '../permission.js';
+import { ADMINISTRATOR_ROLE_NAME, Role } from '../role.js';
 import type { RoleRepository } from '../role.repository.js';
 
 /** Repositório em memória para testes. `Role` é imutável, então pode ser guardado e devolvido diretamente. */
@@ -45,6 +46,26 @@ export class InMemoryRoleRepository implements RoleRepository {
       return Promise.reject(new RoleNameAlreadyInUseError(role.name.value));
     }
     this.#store.set(role.id, role);
+    return Promise.resolve();
+  }
+
+  replacePermissions(
+    roleId: RoleId,
+    permissions: readonly Permission[],
+  ): Promise<void> {
+    const role = this.#store.get(roleId);
+    if (role) {
+      this.#store.set(
+        roleId,
+        Role.restore({
+          id: role.id,
+          organizationId: role.organizationId,
+          name: role.name,
+          isSystem: role.isSystem,
+          permissions,
+        }),
+      );
+    }
     return Promise.resolve();
   }
 }

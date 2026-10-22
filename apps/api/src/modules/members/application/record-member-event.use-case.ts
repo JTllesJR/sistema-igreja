@@ -3,7 +3,7 @@ import type { Clock } from '../../../shared/application/clock.js';
 import type { IdGenerator } from '../../../shared/application/id-generator.js';
 import type { RequestContext } from '../../../shared/application/request-context.js';
 import { ValidationError } from '../../../shared/domain/domain-error.js';
-import { CalendarDate } from '../domain/calendar-date.js';
+import { CalendarDate } from '../../../shared/domain/calendar-date.js';
 import { MemberEventId } from '../domain/ids.js';
 import type { MemberRepository } from '../domain/member.repository.js';
 import { isManualEventType } from '../domain/member-history-event.js';
