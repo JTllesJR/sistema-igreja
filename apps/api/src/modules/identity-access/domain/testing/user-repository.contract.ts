@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ConcurrencyConflictError } from '../../../../shared/domain/concurrency-conflict.error.js';
 import { Email } from '../email.js';
-import { EmailAlreadyRegisteredError, UserNotFoundError } from '../errors.js';
+import {
+  EmailAlreadyRegisteredError,
+  LastAdministratorError,
+  UserNotFoundError,
+} from '../errors.js';
 import { LOGIN_LOCK, User } from '../user.js';
 import type { UserRepository } from '../user.repository.js';
 import { PasswordHash } from '../password-hash.js';
@@ -41,7 +45,8 @@ function snapshot(user: User) {
 /**
  * Contrato que TODA implementação de `UserRepository` precisa cumprir (em memória e PostgreSQL).
  *
- * Requisitos do ambiente (por causa de chaves estrangeiras no banco real): devem existir a organização `orgId(1)`,
+ * Requisitos do ambiente (por causa de chaves estrangeiras no banco real): devem existir as organizações `orgId(1)` e
+ * `orgId(2)`,
  * os papéis `roleId(1)` e `roleId(2)` dessa organização e as congregações `congId(1)` e `congId(2)` dela.
  * `makeRepository` deve devolver um repositório SEM usuários a cada chamada.
  */
@@ -173,6 +178,228 @@ export function describeUserRepositoryContract(
         EmailAlreadyRegisteredError,
       );
       await expect(repository.findById(userId(2))).resolves.toBeNull();
+    });
+
+    describe('listByOrganization', () => {
+      it('devolve os usuários DA organização, com as atribuições, e nenhum de outra', async () => {
+        const first = aUser(1);
+        first.assignRole(roleId(1));
+        first.assignRole(roleId(2), congId(1));
+        await repository.add(first);
+        await repository.add(aUser(2));
+        await repository.add(
+          User.register({
+            id: userId(3),
+            organizationId: orgId(2),
+            email: anEmail('outra-igreja@igreja.com'),
+            passwordHash: PasswordHash.of(A_PASSWORD_HASH),
+          }),
+        );
+
+        const found = await repository.listByOrganization(orgId(1));
+
+        expect(found.map((u) => u.id).sort()).toEqual([userId(1), userId(2)]);
+        const loaded = found.find((u) => u.id === userId(1)) as User;
+        expect(snapshot(loaded).assignments).toEqual(
+          snapshot(first).assignments,
+        );
+        await expect(
+          repository.listByOrganization(orgId(2)),
+        ).resolves.toHaveLength(1);
+      });
+
+      it('organização sem usuários devolve lista vazia', async () => {
+        await expect(repository.listByOrganization(orgId(1))).resolves.toEqual(
+          [],
+        );
+      });
+    });
+
+    it('save grava a revogação de uma atribuição e a desativação do usuário', async () => {
+      const user = aUser(1);
+      user.assignRole(roleId(1));
+      user.assignRole(roleId(2), congId(1));
+      await repository.add(user);
+      const loaded = (await repository.findById(userId(1))) as User;
+
+      loaded.revokeRole(roleId(2), congId(1));
+      loaded.disable();
+      await repository.save(loaded);
+
+      const again = (await repository.findById(userId(1))) as User;
+      expect(again.status).toBe('DISABLED');
+      expect(
+        again.assignments.map((a) => [a.roleId, a.congregationId]),
+      ).toEqual([[roleId(1), null]]);
+      expect(again.version).toBe(1);
+    });
+
+    describe('saveGuardingLastAdministrator (a igreja nunca fica sem Administrador ativo)', () => {
+      const ADMIN = roleId(1);
+      const anAdmin = (n: number) => {
+        const user = aUser(n);
+        user.assignRole(ADMIN);
+        return user;
+      };
+      const load = async (n: number) =>
+        (await repository.findById(userId(n))) as User;
+
+      it('recusa tirar o papel do ÚNICO administrador ativo e não grava nada', async () => {
+        await repository.add(anAdmin(1));
+        const user = await load(1);
+        user.revokeRole(ADMIN, null);
+
+        await expect(
+          repository.saveGuardingLastAdministrator(user, ADMIN),
+        ).rejects.toBeInstanceOf(LastAdministratorError);
+
+        const stored = await load(1);
+        expect(stored.assignments).toHaveLength(1);
+        expect(stored.version).toBe(0);
+      });
+
+      it('recusa desativar o único administrador ativo', async () => {
+        await repository.add(anAdmin(1));
+        const user = await load(1);
+        user.disable();
+
+        await expect(
+          repository.saveGuardingLastAdministrator(user, ADMIN),
+        ).rejects.toBeInstanceOf(LastAdministratorError);
+        expect((await load(1)).status).toBe('ACTIVE');
+      });
+
+      it('permite quando OUTRO administrador ativo continua existindo', async () => {
+        await repository.add(anAdmin(1));
+        await repository.add(anAdmin(2));
+        const user = await load(1);
+        user.revokeRole(ADMIN, null);
+
+        await repository.saveGuardingLastAdministrator(user, ADMIN);
+
+        expect((await load(1)).assignments).toHaveLength(0);
+        expect((await load(1)).version).toBe(1);
+      });
+
+      it('um administrador DESATIVADO não conta como o "outro"', async () => {
+        const disabled = anAdmin(2);
+        disabled.disable();
+        await repository.add(anAdmin(1));
+        await repository.add(disabled);
+        const user = await load(1);
+        user.revokeRole(ADMIN, null);
+
+        await expect(
+          repository.saveGuardingLastAdministrator(user, ADMIN),
+        ).rejects.toBeInstanceOf(LastAdministratorError);
+      });
+
+      it('um Administrador só de uma congregação NÃO conta como o "outro"', async () => {
+        const scoped = aUser(2);
+        scoped.assignRole(ADMIN, congId(1));
+        await repository.add(anAdmin(1));
+        await repository.add(scoped);
+        const user = await load(1);
+        user.disable();
+
+        await expect(
+          repository.saveGuardingLastAdministrator(user, ADMIN),
+        ).rejects.toBeInstanceOf(LastAdministratorError);
+      });
+
+      it('uma alteração que mantém o usuário administrador passa mesmo sendo o único', async () => {
+        await repository.add(anAdmin(1));
+        const user = await load(1);
+        user.assignRole(roleId(2), congId(1));
+
+        await repository.saveGuardingLastAdministrator(user, ADMIN);
+
+        expect((await load(1)).assignments).toHaveLength(2);
+      });
+
+      it('mantém o travamento otimista: versão desatualizada é conflito e usuário inexistente é NotFound', async () => {
+        await repository.add(anAdmin(1));
+        await repository.add(anAdmin(2));
+        const stale = await load(1);
+        const fresh = await load(1);
+        fresh.assignRole(roleId(2), congId(1));
+        await repository.save(fresh);
+        stale.revokeRole(ADMIN, null);
+
+        await expect(
+          repository.saveGuardingLastAdministrator(stale, ADMIN),
+        ).rejects.toBeInstanceOf(ConcurrencyConflictError);
+        await expect(
+          repository.saveGuardingLastAdministrator(aUser(9), ADMIN),
+        ).rejects.toBeInstanceOf(UserNotFoundError);
+      });
+
+      it('um papel comum na igreja toda NÃO conta como o "outro" administrador', async () => {
+        const secretary = aUser(2);
+        secretary.assignRole(roleId(2));
+        await repository.add(anAdmin(1));
+        await repository.add(secretary);
+        const user = await load(1);
+        user.revokeRole(ADMIN, null);
+
+        await expect(
+          repository.saveGuardingLastAdministrator(user, ADMIN),
+        ).rejects.toBeInstanceOf(LastAdministratorError);
+      });
+
+      it('versão desatualizada vence a regra: o erro é de conflito mesmo quando a regra também recusaria', async () => {
+        await repository.add(anAdmin(1));
+        const stale = await load(1);
+        const fresh = await load(1);
+        fresh.assignRole(roleId(2), congId(1));
+        await repository.save(fresh);
+        stale.revokeRole(ADMIN, null);
+
+        await expect(
+          repository.saveGuardingLastAdministrator(stale, ADMIN),
+        ).rejects.toBeInstanceOf(ConcurrencyConflictError);
+      });
+
+      it('DUAS remoções simultâneas dos dois únicos administradores: uma passa e a outra é recusada', async () => {
+        await repository.add(anAdmin(1));
+        await repository.add(anAdmin(2));
+
+        // Repetido: uma única tentativa pode, por sorte, rodar uma transação inteira antes da outra e passar mesmo sem
+        // a proteção. Em vários rounds o entrelaçamento acontece e a ausência da trava é pega.
+        for (let round = 0; round < 20; round++) {
+          const first = await load(1);
+          const second = await load(2);
+          first.revokeRole(ADMIN, null);
+          second.revokeRole(ADMIN, null);
+
+          const results = await Promise.allSettled([
+            repository.saveGuardingLastAdministrator(first, ADMIN),
+            repository.saveGuardingLastAdministrator(second, ADMIN),
+          ]);
+
+          expect(results.map((r) => r.status).sort()).toEqual([
+            'fulfilled',
+            'rejected',
+          ]);
+          const rejected = results.find((r) => r.status === 'rejected');
+          expect((rejected as PromiseRejectedResult).reason).toBeInstanceOf(
+            LastAdministratorError,
+          );
+          const stillAdmin = [await load(1), await load(2)].filter((u) =>
+            u.isActiveAdministrator(ADMIN),
+          );
+          expect(stillAdmin).toHaveLength(1);
+
+          // Devolve o papel a quem o perdeu, para o próximo round começar com dois administradores.
+          for (const n of [1, 2]) {
+            const user = await load(n);
+            if (!user.isActiveAdministrator(ADMIN)) {
+              user.assignRole(ADMIN);
+              await repository.save(user);
+            }
+          }
+        }
+      });
     });
   });
 }

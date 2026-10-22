@@ -132,6 +132,9 @@ describe('AuthenticateUseCase (UC-01, entrar)', () => {
       const flaky: UserRepository = {
         findById: (id) => bed.users.findById(id),
         findByEmail: (email) => bed.users.findByEmail(email),
+        listByOrganization: (id) => bed.users.listByOrganization(id),
+        saveGuardingLastAdministrator: (user, roleId) =>
+          bed.users.saveGuardingLastAdministrator(user, roleId),
         add: (user) => bed.users.add(user),
         save: async (user) => {
           if (conflicts < 1) {

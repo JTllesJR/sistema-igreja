@@ -1,4 +1,7 @@
-import type { OrganizationId } from '../../../shared/domain/identifiers.js';
+import type {
+  CongregationId,
+  OrganizationId,
+} from '../../../shared/domain/identifiers.js';
 
 /**
  * Porta para perguntar ao módulo `organization` se uma igreja existe. O `identity-access` não consulta as tabelas
@@ -6,4 +9,10 @@ import type { OrganizationId } from '../../../shared/domain/identifiers.js';
  */
 export interface OrganizationDirectory {
   exists(organizationId: OrganizationId): Promise<boolean>;
+
+  /** A congregação existe NESTA igreja e está ativa? Congregação de outra igreja conta como inexistente. */
+  isCongregationActive(
+    organizationId: OrganizationId,
+    congregationId: CongregationId,
+  ): Promise<boolean>;
 }

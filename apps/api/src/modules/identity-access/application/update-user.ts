@@ -14,6 +14,8 @@ export async function updateUser(
   users: UserRepository,
   id: UserId,
   change: (user: User) => void,
+  /** Como gravar; o padrão é `users.save`. Ações que podem tirar o último administrador passam a versão protegida. */
+  save: (user: User) => Promise<void> = (user) => users.save(user),
 ): Promise<User> {
   for (let attempt = 1; ; attempt++) {
     const user = await users.findById(id);
@@ -21,7 +23,7 @@ export async function updateUser(
 
     change(user);
     try {
-      await users.save(user);
+      await save(user);
       return user;
     } catch (error) {
       if (

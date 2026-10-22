@@ -4,10 +4,12 @@ import { DatabaseModule } from '../../platform/database/database.module.js';
 import { PrismaService } from '../../platform/database/prisma.service.js';
 import { ENV } from '../../platform/config/config.module.js';
 import type { Env } from '../../platform/config/env.js';
+import type { AuditLog } from '../../shared/application/audit-log.js';
 import type { Clock } from '../../shared/application/clock.js';
 import type { IdGenerator } from '../../shared/application/id-generator.js';
 import { SystemClock } from '../../shared/infrastructure/system-clock.js';
 import { UuidV7IdGenerator } from '../../shared/infrastructure/uuid-v7-id-generator.js';
+import { AUDIT_LOG, AuditModule } from '../audit/index.js';
 import {
   ORGANIZATION_QUERIES,
   OrganizationModule,
@@ -19,7 +21,12 @@ import { ChangeOwnPasswordUseCase } from './application/change-own-password.use-
 import { CreateAdministratorUseCase } from './application/create-administrator.use-case.js';
 import { GetAccessPolicyUseCase } from './application/get-access-policy.use-case.js';
 import { GetCurrentUserUseCase } from './application/get-current-user.use-case.js';
+import { AssignRoleUseCase } from './application/assign-role.use-case.js';
+import { DisableUserUseCase } from './application/disable-user.use-case.js';
+import { EnableUserUseCase } from './application/enable-user.use-case.js';
 import { ListRolesUseCase } from './application/list-roles.use-case.js';
+import { ListUsersUseCase } from './application/list-users.use-case.js';
+import { RevokeRoleUseCase } from './application/revoke-role.use-case.js';
 import { LogoutUseCase } from './application/logout.use-case.js';
 import type { OrganizationDirectory } from './application/organization-directory.js';
 import type { PasswordHasher } from './application/password-hasher.js';
@@ -42,6 +49,7 @@ import { Sha256RefreshTokenCodec } from './infrastructure/sha256-refresh-token-c
 import { AuthController } from './presentation/http/auth.controller.js';
 import { AuthGuard } from './presentation/http/auth.guard.js';
 import { RolesController } from './presentation/http/roles.controller.js';
+import { UsersController } from './presentation/http/users.controller.js';
 import {
   ACCESS_TOKEN_SIGNER,
   ACCESS_TOKEN_VERIFIER,
@@ -61,8 +69,8 @@ const DAY_MS = 24 * 60 * 60_000;
 // Raiz de composição: os casos de uso não têm decorators do Nest (a camada application é pura); aqui cada porta é
 // ligada à sua implementação e as configurações vêm do ambiente já validado.
 @Module({
-  imports: [DatabaseModule, OrganizationModule],
-  controllers: [AuthController, RolesController],
+  imports: [DatabaseModule, OrganizationModule, AuditModule],
+  controllers: [AuthController, RolesController, UsersController],
   providers: [
     // Guard global que nega por padrão (ADR 0011): vale para TODAS as rotas de TODOS os módulos.
     { provide: APP_GUARD, useClass: AuthGuard },
@@ -238,6 +246,62 @@ const DAY_MS = 24 * 60 * 60_000;
       useFactory: (roles: RoleRepository, ids: IdGenerator) =>
         new ListRolesUseCase(roles, ids),
       inject: [ROLE_REPOSITORY, ID_GENERATOR],
+    },
+    {
+      provide: ListUsersUseCase,
+      useFactory: (users: UserRepository, roles: RoleRepository) =>
+        new ListUsersUseCase(users, roles),
+      inject: [USER_REPOSITORY, ROLE_REPOSITORY],
+    },
+    {
+      provide: AssignRoleUseCase,
+      useFactory: (
+        users: UserRepository,
+        roles: RoleRepository,
+        organizations: OrganizationDirectory,
+        audit: AuditLog,
+      ) => new AssignRoleUseCase(users, roles, organizations, audit),
+      inject: [
+        USER_REPOSITORY,
+        ROLE_REPOSITORY,
+        ORGANIZATION_DIRECTORY,
+        AUDIT_LOG,
+      ],
+    },
+    {
+      provide: RevokeRoleUseCase,
+      useFactory: (
+        users: UserRepository,
+        roles: RoleRepository,
+        audit: AuditLog,
+      ) => new RevokeRoleUseCase(users, roles, audit),
+      inject: [USER_REPOSITORY, ROLE_REPOSITORY, AUDIT_LOG],
+    },
+    {
+      provide: DisableUserUseCase,
+      useFactory: (
+        users: UserRepository,
+        roles: RoleRepository,
+        sessions: SessionRepository,
+        clock: Clock,
+        audit: AuditLog,
+      ) => new DisableUserUseCase(users, roles, sessions, clock, audit),
+      inject: [
+        USER_REPOSITORY,
+        ROLE_REPOSITORY,
+        SESSION_REPOSITORY,
+        CLOCK,
+        AUDIT_LOG,
+      ],
+    },
+    {
+      provide: EnableUserUseCase,
+      useFactory: (
+        users: UserRepository,
+        roles: RoleRepository,
+        audit: AuditLog,
+      ) => new EnableUserUseCase(users, roles, audit),
+      inject: [USER_REPOSITORY, ROLE_REPOSITORY, AUDIT_LOG],
     },
     {
       provide: ChangeOwnPasswordUseCase,

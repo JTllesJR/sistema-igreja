@@ -28,6 +28,43 @@ export function toRoleView(role: Role): RoleView {
   };
 }
 
+/** Um usuário na tela de administração. Sem hash de senha nem dados de bloqueio. */
+export interface UserSummaryView {
+  id: string;
+  email: string;
+  status: 'ACTIVE' | 'DISABLED';
+  /** ISO 8601, ou null se nunca entrou. */
+  lastLoginAt: string | null;
+  roles: { roleId: string; roleName: string; congregationId: string | null }[];
+}
+
+/** `roles` são os papéis DA igreja; atribuição de papel que não está na lista (apagado) simplesmente não aparece. */
+export function toUserSummaryView(
+  user: User,
+  roles: readonly Role[],
+): UserSummaryView {
+  const byId = new Map(roles.map((role) => [role.id, role]));
+
+  return {
+    id: user.id,
+    email: user.email.value,
+    status: user.status,
+    lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
+    roles: user.assignments.flatMap((assignment) => {
+      const role = byId.get(assignment.roleId);
+      return role
+        ? [
+            {
+              roleId: role.id,
+              roleName: role.name.value,
+              congregationId: assignment.congregationId,
+            },
+          ]
+        : [];
+    }),
+  };
+}
+
 /** Quem é o usuário logado. Nunca inclui hash de senha nem dados de segurança. */
 export interface CurrentUserView {
   id: string;

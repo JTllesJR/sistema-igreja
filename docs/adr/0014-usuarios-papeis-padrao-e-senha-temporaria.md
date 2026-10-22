@@ -62,7 +62,7 @@ Toda ação administrativa grava na trilha **depois** de salvar, como em `member
 ## Etapas
 
 1. **Papéis padrão e `GET /roles`** — **implementado** (veja "Como a etapa 1 ficou").
-2. Usuários e atribuições, com a regra do último Administrador.
+2. Usuários e atribuições, com a regra do último Administrador — **implementado** (veja "Como a etapa 2 ficou").
 3. Senha temporária e troca obrigatória.
 4. Telas na web.
 
@@ -81,3 +81,30 @@ Convite por link, editor de papéis, catálogo de permissões, papel Tesoureiro 
 - Verificado: 8 chamadas simultâneas no PostgreSQL real terminam com exatamente 3 papéis. Mutação manual: 24 mutantes
   mortos e 1 equivalente (`existing[0].organizationId`, que vale sempre o mesmo que `organizationId`, porque a lista só
   tem papéis da própria igreja).
+
+## Como a etapa 2 ficou (implementado)
+
+- **Rotas** (todas exigem `access:manage-users` na igreja toda): `GET /users`, `POST /users/:id/assignments`,
+  `POST /users/:id/assignments/revoke`, `POST /users/:id/disable` e `POST /users/:id/enable`. As ações devolvem o usuário
+  atualizado. Revogar é POST porque a congregação pode ser nula (igreja toda) e uma chave composta com nulo não cabe bem
+  na URL. Criar usuário não está aqui: depende da senha temporária (etapa 3).
+- **Domínio:** `User.revokeRole`, `disable`, `enable` e `isActiveAdministrator` (ativo e com o papel na igreja toda).
+  Erros novos e seus status: `last_administrator` 409, `assignment_not_found` e `role_not_found` 404,
+  `administrator_scope_invalid` e `congregation_unavailable` 422.
+- **A regra do último Administrador** vive em `UserRepository.saveGuardingLastAdministrator`. No PostgreSQL, a transação
+  trava a linha do papel Administrador da igreja (`SELECT ... FOR UPDATE`), grava e então conta os administradores ativos
+  na igreja toda; zero desfaz tudo. Sem a trava, dois administradores se removendo ao mesmo tempo passariam os dois (a
+  versão otimista é por usuário). Os casos de uso só usam a gravação protegida quando o alvo É um administrador ativo,
+  então revogar um papel comum numa igreja sem administrador não é barrado.
+- **Alternativas descartadas:** isolamento `SERIALIZABLE` (mais geral, mas exige repetir transações e é mais difícil de
+  explicar) e `pg_advisory_lock` (funciona, mas é um mecanismo à parte do modelo). Travar uma linha que já existe e já
+  representa "os administradores desta igreja" é o menor mecanismo que resolve.
+- **Desativar** revoga todas as sessões; reativar não as ressuscita. A auditoria grava depois de salvar (`user.role_assigned`,
+  `user.role_revoked`, `user.disabled`, `user.enabled`), só com ids.
+- **Porta nova:** `OrganizationDirectory.isCongregationActive`, implementada sobre `OrganizationQueries.findCongregation`
+  (o `identity-access` continua sem tocar nas tabelas do `organization`).
+- **Verificado:** o teste de corrida roda 20 rodadas no PostgreSQL real (uma só pode, por sorte, serializar sozinha e deixar
+  passar a ausência da trava; a mutação "sem `FOR UPDATE`" só morreu depois disso). Mutação manual: 44 mutantes, os 6 que
+  sobreviveram à primeira rodada foram fechados com testes novos, e restam 0 vivos. Equivalente conhecido: o filtro por
+  `organizationId` dentro da contagem em memória, porque cada igreja tem o seu próprio papel Administrador (id diferente).
+- **Limite conhecido:** desativar a si mesmo é permitido (só o último administrador é protegido).

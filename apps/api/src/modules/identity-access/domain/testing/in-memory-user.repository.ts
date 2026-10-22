@@ -1,7 +1,12 @@
 import { ConcurrencyConflictError } from '../../../../shared/domain/concurrency-conflict.error.js';
 import type { Email } from '../email.js';
-import { EmailAlreadyRegisteredError, UserNotFoundError } from '../errors.js';
-import type { UserId } from '../ids.js';
+import type { OrganizationId } from '../../../../shared/domain/identifiers.js';
+import {
+  EmailAlreadyRegisteredError,
+  LastAdministratorError,
+  UserNotFoundError,
+} from '../errors.js';
+import type { RoleId, UserId } from '../ids.js';
 import { User } from '../user.js';
 import type { UserRepository } from '../user.repository.js';
 
@@ -25,6 +30,39 @@ export class InMemoryUserRepository implements UserRepository {
     }
     this.#store.set(user.id, copyOf(user, user.version));
     return Promise.resolve();
+  }
+
+  listByOrganization(organizationId: OrganizationId): Promise<User[]> {
+    return Promise.resolve(
+      [...this.#store.values()]
+        .filter((u) => u.organizationId === organizationId)
+        .map((u) => copyOf(u, u.version)),
+    );
+  }
+
+  /** Sem `await` entre conferir e gravar, o JavaScript já serializa: a operação é atômica por construção. */
+  saveGuardingLastAdministrator(
+    user: User,
+    administratorRoleId: RoleId,
+  ): Promise<void> {
+    const stored = this.#store.get(user.id);
+    if (!stored) return Promise.reject(new UserNotFoundError());
+    if (stored.version !== user.version) {
+      return Promise.reject(new ConcurrencyConflictError());
+    }
+
+    const stillHasAdministrator =
+      user.isActiveAdministrator(administratorRoleId) ||
+      [...this.#store.values()].some(
+        (other) =>
+          other.id !== user.id &&
+          other.organizationId === user.organizationId &&
+          other.isActiveAdministrator(administratorRoleId),
+      );
+    if (!stillHasAdministrator) {
+      return Promise.reject(new LastAdministratorError());
+    }
+    return this.save(user);
   }
 
   save(user: User): Promise<void> {

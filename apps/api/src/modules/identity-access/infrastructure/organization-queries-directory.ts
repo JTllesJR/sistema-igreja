@@ -1,4 +1,7 @@
-import type { OrganizationId } from '../../../shared/domain/identifiers.js';
+import type {
+  CongregationId,
+  OrganizationId,
+} from '../../../shared/domain/identifiers.js';
 // Só a API pública do módulo `organization` (ADR 0001): nunca suas tabelas nem suas entidades.
 import type { OrganizationQueries } from '../../organization/index.js';
 import type { OrganizationDirectory } from '../application/organization-directory.js';
@@ -12,5 +15,16 @@ export class OrganizationQueriesDirectory implements OrganizationDirectory {
 
   exists(organizationId: OrganizationId): Promise<boolean> {
     return this.queries.organizationExists(organizationId);
+  }
+
+  async isCongregationActive(
+    organizationId: OrganizationId,
+    congregationId: CongregationId,
+  ): Promise<boolean> {
+    const congregation = await this.queries.findCongregation(
+      organizationId,
+      congregationId,
+    );
+    return congregation?.status === 'ACTIVE';
   }
 }

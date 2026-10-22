@@ -2,6 +2,7 @@ import type { Type } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test, type TestingModuleBuilder } from '@nestjs/testing';
 import type request from 'supertest';
+import { AUDIT_LOG } from '../../../../audit/index.js';
 import {
   ConfigModule,
   ENV,
@@ -14,6 +15,7 @@ import {
   OrganizationId,
 } from '../../../../../shared/domain/identifiers.js';
 import { FixedClock } from '../../../../../shared/testing/fixed-clock.js';
+import { InMemoryAuditLog } from '../../../../../shared/testing/in-memory-audit-log.js';
 import { uuidFor } from '../../../../../shared/testing/uuid-for.js';
 import type { AccessTokenSigner } from '../../../application/access-token-signer.js';
 import { CreateAdministratorUseCase } from '../../../application/create-administrator.use-case.js';
@@ -69,6 +71,7 @@ export async function startHttpTestApp(options: HttpTestAppOptions = {}) {
   directory.add(TEST_ORGANIZATION);
   const users = new InMemoryUserRepository();
   const roles = new InMemoryRoleRepository();
+  const audit = new InMemoryAuditLog();
 
   let builder = Test.createTestingModule({
     imports: [
@@ -97,7 +100,9 @@ export async function startHttpTestApp(options: HttpTestAppOptions = {}) {
     .overrideProvider(ORGANIZATION_DIRECTORY)
     .useValue(directory)
     .overrideProvider(CLOCK)
-    .useValue(clock);
+    .useValue(clock)
+    .overrideProvider(AUDIT_LOG)
+    .useValue(audit);
   builder = options.overrides ? options.overrides(builder, { clock }) : builder;
 
   const moduleRef = await builder.compile();
@@ -128,14 +133,17 @@ export async function startHttpTestApp(options: HttpTestAppOptions = {}) {
       status?: 'ACTIVE' | 'DISABLED';
       /** Restringe o papel a uma congregação (padrão: a igreja toda). */
       congregationId?: CongregationId;
+      /** Igreja do usuário (padrão: a igreja de teste). */
+      organizationId?: OrganizationId;
     } = {},
   ) {
     const email = Email.create(`usuario${n}@igreja.com`);
     const hash = await hasher.hash(PlainPassword.create(TEST_PASSWORD, email));
     const id = UserId.of(uuidFor(500 + n));
+    const organizationId = userOptions.organizationId ?? TEST_ORGANIZATION;
     const user = User.restore({
       id,
-      organizationId: TEST_ORGANIZATION,
+      organizationId,
       email,
       passwordHash: hash,
       status: userOptions.status ?? 'ACTIVE',
@@ -148,7 +156,7 @@ export async function startHttpTestApp(options: HttpTestAppOptions = {}) {
     if (userOptions.permissions) {
       const role = Role.restore({
         id: RoleId.of(uuidFor(600 + n)),
-        organizationId: TEST_ORGANIZATION,
+        organizationId,
         name: RoleName.create(`Papel ${n}`),
         isSystem: false,
         permissions: userOptions.permissions.map((p) => Permission.of(p)),
@@ -165,6 +173,8 @@ export async function startHttpTestApp(options: HttpTestAppOptions = {}) {
     moduleRef,
     clock,
     admin,
+    directory,
+    audit,
     addUser,
     signer,
     close: () => app.close(),

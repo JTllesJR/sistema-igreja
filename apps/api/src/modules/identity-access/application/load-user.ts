@@ -5,6 +5,24 @@ import type { User } from '../domain/user.js';
 import type { UserRepository } from '../domain/user.repository.js';
 
 /**
+ * Carrega o usuário-ALVO de uma ação administrativa. Usuário de outra igreja é tratado como inexistente: o isolamento
+ * entre igrejas (ADR 0003) não pode revelar nem que o id existe. Diferente de `loadActiveUser`, aceita desativados
+ * (é preciso poder reativá-los).
+ */
+export async function loadUserOfOrganization(
+  users: UserRepository,
+  context: RequestContext,
+  userId: string,
+): Promise<User> {
+  const user = await users.findById(UserId.of(userId));
+
+  if (!user || user.organizationId !== context.organizationId) {
+    throw new UserNotFoundError();
+  }
+  return user;
+}
+
+/**
  * Carrega o usuário do contexto, garantindo que pertence à igreja do contexto e que está ativo.
  *
  * - Usuário de OUTRA igreja é tratado como inexistente (não revela que existe): isolamento entre igrejas (ADR 0003).

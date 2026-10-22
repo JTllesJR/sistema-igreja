@@ -51,7 +51,7 @@ afterAll(async () => {
 // A MESMA bateria que os repositórios em memória cumprem: o fake dos testes dos casos de uso se comporta como o banco.
 describeUserRepositoryContract('Prisma/PostgreSQL', async () => {
   await cleanDatabase(prisma);
-  await seedOrganizations(prisma, [1]);
+  await seedOrganizations(prisma, [1, 2]);
   await seedCongregations(prisma, 1, [1, 2]);
   await seedRoles(prisma, 1, [1, 2]);
   return new PrismaUserRepository(prisma);

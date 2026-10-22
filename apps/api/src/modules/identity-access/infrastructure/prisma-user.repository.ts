@@ -8,6 +8,7 @@ import {
 import { Email } from '../domain/email.js';
 import {
   EmailAlreadyRegisteredError,
+  LastAdministratorError,
   UserNotFoundError,
 } from '../domain/errors.js';
 import { RoleId, UserId } from '../domain/ids.js';
@@ -77,31 +78,66 @@ export class PrismaUserRepository implements UserRepository {
     });
   }
 
+  async listByOrganization(organizationId: OrganizationId): Promise<User[]> {
+    const rows = await this.prisma.userAccount.findMany({
+      where: { organizationId },
+      include: { assignments: true },
+    });
+    return rows.map(toDomain);
+  }
+
   async save(user: User): Promise<void> {
+    await this.prisma.$transaction((tx) => write(tx, user));
+  }
+
+  async saveGuardingLastAdministrator(
+    user: User,
+    administratorRoleId: RoleId,
+  ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      const updated = await tx.userAccount.updateMany({
-        where: { id: user.id, version: user.version },
-        data: {
-          passwordHash: user.passwordHash.value,
-          status: user.status,
-          failedLoginAttempts: user.failedLoginAttempts,
-          lockedUntil: user.lockedUntil,
-          lastLoginAt: user.lastLoginAt,
-          version: { increment: 1 },
+      // Trava a linha do papel Administrador DA igreja. Quem chega depois espera aqui até a primeira transação
+      // confirmar e só então conta: sem isso, dois administradores se removendo ao mesmo tempo passariam os dois,
+      // porque a versão otimista é por usuário e não enxerga essa corrida.
+      await tx.$queryRaw`SELECT id FROM "role" WHERE id = ${administratorRoleId}::uuid FOR UPDATE`;
+
+      await write(tx, user);
+
+      const remaining = await tx.userRoleAssignment.count({
+        where: {
+          organizationId: user.organizationId,
+          roleId: administratorRoleId,
+          congregationId: null,
+          user: { status: 'ACTIVE' },
         },
       });
-
-      if (updated.count === 0) {
-        const exists = await tx.userAccount.findUnique({
-          where: { id: user.id },
-          select: { id: true },
-        });
-        throw exists ? new ConcurrencyConflictError() : new UserNotFoundError();
-      }
-
-      await syncAssignments(tx, user);
+      if (remaining === 0) throw new LastAdministratorError();
     });
   }
+}
+
+/** Grava o agregado inteiro (dados + atribuições) com travamento otimista, dentro da transação recebida. */
+async function write(tx: Prisma.TransactionClient, user: User): Promise<void> {
+  const updated = await tx.userAccount.updateMany({
+    where: { id: user.id, version: user.version },
+    data: {
+      passwordHash: user.passwordHash.value,
+      status: user.status,
+      failedLoginAttempts: user.failedLoginAttempts,
+      lockedUntil: user.lockedUntil,
+      lastLoginAt: user.lastLoginAt,
+      version: { increment: 1 },
+    },
+  });
+
+  if (updated.count === 0) {
+    const exists = await tx.userAccount.findUnique({
+      where: { id: user.id },
+      select: { id: true },
+    });
+    throw exists ? new ConcurrencyConflictError() : new UserNotFoundError();
+  }
+
+  await syncAssignments(tx, user);
 }
 
 /** Compara o que está gravado com o agregado: apaga o que saiu e cria o que entrou. */

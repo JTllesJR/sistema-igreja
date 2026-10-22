@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto';
-import type { OrganizationId } from '../../../../shared/domain/identifiers.js';
+import type {
+  CongregationId,
+  OrganizationId,
+} from '../../../../shared/domain/identifiers.js';
 import { PasswordHash } from '../../domain/password-hash.js';
 import type { PlainPassword } from '../../domain/plain-password.js';
 import type {
@@ -81,12 +84,32 @@ export class FakeRefreshTokenCodec implements RefreshTokenCodec {
 
 export class FakeOrganizationDirectory implements OrganizationDirectory {
   readonly #known = new Set<string>();
+  readonly #congregations = new Map<string, 'ACTIVE' | 'INACTIVE'>();
 
   add(id: OrganizationId): void {
     this.#known.add(id);
   }
 
+  /** Congregação DE uma igreja; o isolamento entre igrejas vem da chave (igreja + congregação). */
+  addCongregation(
+    organizationId: OrganizationId,
+    congregationId: CongregationId,
+    status: 'ACTIVE' | 'INACTIVE' = 'ACTIVE',
+  ): void {
+    this.#congregations.set(`${organizationId}/${congregationId}`, status);
+  }
+
   exists(id: OrganizationId): Promise<boolean> {
     return Promise.resolve(this.#known.has(id));
+  }
+
+  isCongregationActive(
+    organizationId: OrganizationId,
+    congregationId: CongregationId,
+  ): Promise<boolean> {
+    return Promise.resolve(
+      this.#congregations.get(`${organizationId}/${congregationId}`) ===
+        'ACTIVE',
+    );
   }
 }

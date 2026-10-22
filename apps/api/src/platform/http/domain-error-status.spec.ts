@@ -60,6 +60,11 @@ describe('statusForDomainError (código de domínio -> status HTTP)', () => {
       'identity.unknown_organization': 404,
       'identity.role_name_taken': 409,
       'identity.role_already_assigned': 409,
+      'identity.last_administrator': 409,
+      'identity.assignment_not_found': 404,
+      'identity.role_not_found': 404,
+      'identity.administrator_scope_invalid': 422,
+      'identity.congregation_unavailable': 422,
     });
   });
 

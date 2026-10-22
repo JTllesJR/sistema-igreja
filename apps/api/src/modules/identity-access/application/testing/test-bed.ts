@@ -1,12 +1,18 @@
 import type { RequestContext } from '../../../../shared/application/request-context.js';
 import {
   ActorId,
+  CongregationId,
   OrganizationId,
 } from '../../../../shared/domain/identifiers.js';
 import { FixedClock } from '../../../../shared/testing/fixed-clock.js';
+import { InMemoryAuditLog } from '../../../../shared/testing/in-memory-audit-log.js';
 import { SequentialIdGenerator } from '../../../../shared/testing/sequential-id-generator.js';
 import { uuidFor } from '../../../../shared/testing/uuid-for.js';
-import type { UserId } from '../../domain/ids.js';
+import { Email } from '../../domain/email.js';
+import { type RoleId, UserId } from '../../domain/ids.js';
+import { PlainPassword } from '../../domain/plain-password.js';
+import type { Role } from '../../domain/role.js';
+import { User } from '../../domain/user.js';
 import { InMemoryRoleRepository } from '../../domain/testing/in-memory-role.repository.js';
 import { InMemorySessionRepository } from '../../domain/testing/in-memory-session.repository.js';
 import { InMemoryUserRepository } from '../../domain/testing/in-memory-user.repository.js';
@@ -28,7 +34,12 @@ import {
 
 export const ADMIN_EMAIL = 'admin@igreja.com';
 export const ADMIN_PASSWORD = 'senha-super-segura-1';
+export const USER_PASSWORD = 'senha-do-usuario-1';
 export const ORGANIZATION = OrganizationId.of(uuidFor(1));
+/** Duas congregações DA igreja de teste: uma ativa e uma inativa. */
+export const CONGREGATION = CongregationId.of(uuidFor(1001));
+export const INACTIVE_CONGREGATION = CongregationId.of(uuidFor(1002));
+export const OTHER_CONGREGATION = CongregationId.of(uuidFor(1003));
 
 /**
  * Cenário padrão: uma igreja conhecida, um administrador já criado (pelo próprio caso de uso, como no uso real)
@@ -45,7 +56,15 @@ export async function anAuthBed() {
   const clock = new FixedClock(NOW);
   const organizations = new FakeOrganizationDirectory();
   organizations.add(ORGANIZATION);
+  organizations.addCongregation(ORGANIZATION, CONGREGATION);
+  organizations.addCongregation(ORGANIZATION, OTHER_CONGREGATION);
+  organizations.addCongregation(
+    ORGANIZATION,
+    INACTIVE_CONGREGATION,
+    'INACTIVE',
+  );
   const policy = DEFAULT_SESSION_POLICY;
+  const audit = new InMemoryAuditLog();
 
   const createAdministrator = new CreateAdministratorUseCase(
     users,
@@ -87,6 +106,7 @@ export async function anAuthBed() {
     ids,
     clock,
     organizations,
+    audit,
     policy,
     admin,
     adminContext: contextOf(admin.userId),
@@ -113,5 +133,39 @@ export async function anAuthBed() {
     ),
     login: (password = ADMIN_PASSWORD, email = ADMIN_EMAIL) =>
       authenticate.execute({ email, password }),
+    /** O papel padrão da igreja de teste com este nome (`Secretário`, `Dirigente`, `Administrador`). */
+    roleNamed: async (name: string): Promise<Role> => {
+      const found = (await roles.listByOrganization(ORGANIZATION)).find(
+        (role) => role.name.value === name,
+      );
+      if (!found) throw new Error(`Papel de teste ausente: ${name}`);
+      return found;
+    },
+    /** Usuário comum da igreja de teste, com a senha `USER_PASSWORD` e (opcional) uma atribuição. */
+    addUser: async (
+      email: string,
+      options: {
+        organizationId?: OrganizationId;
+        roleId?: RoleId;
+        congregationId?: CongregationId;
+        status?: 'ACTIVE' | 'DISABLED';
+      } = {},
+    ): Promise<User> => {
+      const parsed = Email.create(email);
+      const user = User.register({
+        id: UserId.of(ids.next()),
+        organizationId: options.organizationId ?? ORGANIZATION,
+        email: parsed,
+        passwordHash: await hasher.hash(
+          PlainPassword.create(USER_PASSWORD, parsed),
+        ),
+      });
+      if (options.roleId) {
+        user.assignRole(options.roleId, options.congregationId ?? null);
+      }
+      if (options.status === 'DISABLED') user.disable();
+      await users.add(user);
+      return user;
+    },
   };
 }

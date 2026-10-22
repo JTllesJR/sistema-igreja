@@ -85,3 +85,50 @@ export class UnknownOrganizationError extends DomainError {
     super('identity.unknown_organization', 'Igreja não encontrada.');
   }
 }
+
+/** O usuário não tem esta atribuição (papel + escopo). */
+export class AssignmentNotFoundError extends DomainError {
+  constructor() {
+    super(
+      'identity.assignment_not_found',
+      'Este usuário não possui este papel neste escopo.',
+    );
+  }
+}
+
+/** A igreja ficaria sem nenhum Administrador ativo, e ninguém mais conseguiria administrar o sistema. */
+export class LastAdministratorError extends DomainError {
+  constructor() {
+    super(
+      'identity.last_administrator',
+      'A igreja precisa ter ao menos um Administrador ativo. Atribua o papel a outra pessoa antes.',
+    );
+  }
+}
+
+/** O papel não existe NESTA igreja (inclusive se existir em outra: o isolamento não revela qual dos casos ocorreu). */
+export class RoleNotFoundError extends DomainError {
+  constructor() {
+    super('identity.role_not_found', 'Papel não encontrado.');
+  }
+}
+
+/** O Administrador vale para a igreja toda: "Administrador de uma congregação" seria ambíguo (ADR 0014). */
+export class AdministratorScopeError extends DomainError {
+  constructor() {
+    super(
+      'identity.administrator_scope_invalid',
+      'O papel Administrador só pode ser atribuído para a igreja toda.',
+    );
+  }
+}
+
+/** A congregação não existe nesta igreja ou está inativa: não dá para atribuir um papel nela. */
+export class CongregationUnavailableError extends DomainError {
+  constructor() {
+    super(
+      'identity.congregation_unavailable',
+      'A congregação não existe ou está inativa.',
+    );
+  }
+}

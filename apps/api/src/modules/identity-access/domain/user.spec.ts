@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PasswordHash } from './password-hash.js';
-import { RoleAlreadyAssignedError } from './errors.js';
+import { thrownBy } from '../../../shared/testing/thrown-by.js';
+import { AssignmentNotFoundError, RoleAlreadyAssignedError } from './errors.js';
 import { LOGIN_LOCK, User } from './user.js';
 import {
   A_PASSWORD_HASH,
@@ -175,6 +176,119 @@ describe('User', () => {
       user.changePasswordHash(newHash);
 
       expect(user.passwordHash.equals(newHash)).toBe(true);
+    });
+  });
+
+  describe('revogação de papéis', () => {
+    it('remove a atribuição indicada e mantém as outras', () => {
+      const user = aUser();
+      user.assignRole(roleId(1));
+      user.assignRole(roleId(2), congId(1));
+      user.assignRole(roleId(2), congId(2));
+
+      user.revokeRole(roleId(2), congId(1));
+
+      expect(user.assignments.map((a) => [a.roleId, a.congregationId])).toEqual(
+        [
+          [roleId(1), null],
+          [roleId(2), congId(2)],
+        ],
+      );
+    });
+
+    it('a atribuição da igreja toda e a de uma congregação são distintas', () => {
+      const user = aUser();
+      user.assignRole(roleId(2));
+      user.assignRole(roleId(2), congId(1));
+
+      user.revokeRole(roleId(2), null);
+
+      expect(user.assignments.map((a) => a.congregationId)).toEqual([
+        congId(1),
+      ]);
+    });
+
+    it('revogar o que o usuário não tem lança AssignmentNotFoundError e não muda nada', () => {
+      const user = aUser();
+      user.assignRole(roleId(1));
+
+      const error = thrownBy(() => user.revokeRole(roleId(1), congId(1)));
+
+      expect(error).toBeInstanceOf(AssignmentNotFoundError);
+      expect(user.assignments).toHaveLength(1);
+    });
+
+    it('depois de revogar, o mesmo papel pode ser atribuído de novo', () => {
+      const user = aUser();
+      user.assignRole(roleId(1));
+      user.revokeRole(roleId(1), null);
+
+      expect(() => user.assignRole(roleId(1))).not.toThrow();
+    });
+  });
+
+  describe('desativar e reativar', () => {
+    it('desativar muda a situação e impede autenticar', () => {
+      const user = aUser();
+
+      user.disable();
+
+      expect(user.status).toBe('DISABLED');
+      expect(user.canAuthenticateAt(NOW)).toBe(false);
+    });
+
+    it('reativar volta a ativo e permite autenticar', () => {
+      const user = aUser();
+      user.disable();
+
+      user.enable();
+
+      expect(user.status).toBe('ACTIVE');
+      expect(user.canAuthenticateAt(NOW)).toBe(true);
+    });
+
+    it('repetir a operação é inofensivo', () => {
+      const user = aUser();
+
+      user.enable();
+      expect(user.status).toBe('ACTIVE');
+      user.disable();
+      user.disable();
+      expect(user.status).toBe('DISABLED');
+    });
+  });
+
+  describe('administrador ativo (base da regra do último Administrador)', () => {
+    const admin = roleId(1);
+
+    it('ativo com o papel na igreja toda: é administrador ativo', () => {
+      const user = aUser();
+      user.assignRole(admin);
+
+      expect(user.isActiveAdministrator(admin)).toBe(true);
+    });
+
+    it('desativado: não é', () => {
+      const user = aUser();
+      user.assignRole(admin);
+      user.disable();
+
+      expect(user.isActiveAdministrator(admin)).toBe(false);
+    });
+
+    it('com o papel só em uma congregação: não é', () => {
+      const user = aUser();
+      user.assignRole(admin, congId(1));
+
+      expect(user.isActiveAdministrator(admin)).toBe(false);
+    });
+
+    it('com outro papel, ou sem papel: não é', () => {
+      const user = aUser();
+      expect(user.isActiveAdministrator(admin)).toBe(false);
+      user.assignRole(roleId(2));
+
+      expect(user.isActiveAdministrator(admin)).toBe(false);
     });
   });
 

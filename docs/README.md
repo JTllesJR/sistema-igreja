@@ -80,9 +80,9 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
   nunca guarda dado pessoal. Testado com repositórios em memória (inclusive duas igrejas e a falha da trilha) e com
   mutação manual; **a migration, o repositório Prisma e o gatilho só serão exercitados no CI** (sem Docker nesta máquina).
 
-- 🔄 **Usuários e papéis, versão enxuta** ([ADR 0014](adr/0014-usuarios-papeis-padrao-e-senha-temporaria.md)): etapa 1 pronta
-  (papéis padrão Administrador/Dirigente/Secretário e `GET /roles`). Faltam (2) usuários e atribuições com a regra do último
-  Administrador, (3) senha temporária e troca obrigatória e (4) as telas.
+- 🔄 **Usuários e papéis, versão enxuta** ([ADR 0014](adr/0014-usuarios-papeis-padrao-e-senha-temporaria.md)): etapas 1 e 2 prontas
+  (papéis padrão e `GET /roles`; listar, atribuir, revogar, desativar e reativar usuários, com a regra do último
+  Administrador travada no banco). Faltam (3) criar usuário com senha temporária e troca obrigatória e (4) as telas.
 
 ## Próximos passos
 Em fatias verticais, para que o primeiro resultado visual chegue cedo (cada módulo novo entrega backend e tela):

@@ -37,6 +37,12 @@ export const DOMAIN_ERROR_STATUS: Readonly<Record<string, number>> = {
   'identity.unknown_organization': 404,
   'identity.role_name_taken': 409,
   'identity.role_already_assigned': 409,
+  'identity.last_administrator': 409,
+  'identity.assignment_not_found': 404,
+  'identity.role_not_found': 404,
+  // 422: o pedido está bem formado, mas a regra do sistema o recusa (igual a validation.invalid_value).
+  'identity.administrator_scope_invalid': 422,
+  'identity.congregation_unavailable': 422,
 };
 
 /** Código sem entrada vira 500: um erro visível é melhor do que um palpite de 4xx. */

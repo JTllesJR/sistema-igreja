@@ -3,7 +3,7 @@ import type {
   OrganizationId,
 } from '../../../shared/domain/identifiers.js';
 import type { Email } from './email.js';
-import { RoleAlreadyAssignedError } from './errors.js';
+import { AssignmentNotFoundError, RoleAlreadyAssignedError } from './errors.js';
 import type { RoleId, UserId } from './ids.js';
 import type { PasswordHash } from './password-hash.js';
 import { RoleAssignment } from './role-assignment.js';
@@ -21,6 +21,7 @@ export const LOGIN_LOCK = { maxAttempts: 5, durationMs: 15 * 60_000 } as const;
  */
 export class User {
   readonly #assignments: RoleAssignment[];
+  #status: UserStatus;
   #passwordHash: PasswordHash;
   #failedLoginAttempts: number;
   #lockedUntil: Date | null;
@@ -31,13 +32,14 @@ export class User {
     readonly organizationId: OrganizationId,
     readonly email: Email,
     passwordHash: PasswordHash,
-    readonly status: UserStatus,
+    status: UserStatus,
     failedLoginAttempts: number,
     lockedUntil: Date | null,
     lastLoginAt: Date | null,
     assignments: readonly RoleAssignment[],
     readonly version: number,
   ) {
+    this.#status = status;
     this.#passwordHash = passwordHash;
     this.#failedLoginAttempts = failedLoginAttempts;
     this.#lockedUntil = lockedUntil;
@@ -91,6 +93,9 @@ export class User {
     );
   }
 
+  get status(): UserStatus {
+    return this.#status;
+  }
   get passwordHash(): PasswordHash {
     return this.#passwordHash;
   }
@@ -120,6 +125,36 @@ export class User {
     }
     this.#assignments.push(assignment);
     return assignment;
+  }
+
+  /** Remove a atribuição exata (papel + escopo). Lança `AssignmentNotFoundError` se o usuário não a tem. */
+  revokeRole(roleId: RoleId, congregationId: CongregationId | null): void {
+    const target = RoleAssignment.create({ roleId, congregationId });
+    const index = this.#assignments.findIndex((a) => a.equals(target));
+    if (index === -1) throw new AssignmentNotFoundError();
+    this.#assignments.splice(index, 1);
+  }
+
+  /** Desativa a conta (não entra mais). Idempotente. Quem chama revoga as sessões abertas. */
+  disable(): void {
+    this.#status = 'DISABLED';
+  }
+
+  enable(): void {
+    this.#status = 'ACTIVE';
+  }
+
+  /**
+   * Conta como Administrador da igreja: está ATIVO e tem o papel de Administrador para a igreja TODA. É o que a
+   * regra "a igreja nunca fica sem Administrador" (ADR 0014) conta.
+   */
+  isActiveAdministrator(administratorRoleId: RoleId): boolean {
+    return (
+      this.#status === 'ACTIVE' &&
+      this.#assignments.some(
+        (a) => a.roleId === administratorRoleId && a.isOrganizationWide,
+      )
+    );
   }
 
   isLockedAt(now: Date): boolean {
