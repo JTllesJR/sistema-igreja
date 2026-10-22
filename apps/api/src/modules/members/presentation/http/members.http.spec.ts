@@ -193,6 +193,7 @@ describe('POST /members (cadastro)', () => {
       fullName: 'Maria da Silva',
       congregationId: C1,
       status: 'ACTIVE',
+      position: 'MEMBER',
       birthDate: '1990-05-10',
       phone: '81999998888',
       email: 'maria@exemplo.com',
@@ -200,6 +201,34 @@ describe('POST /members (cadastro)', () => {
       capabilities: { canEdit: true, canAnonymize: true },
     });
     expect(parsed.history.map((e) => e.type)).toEqual(['REGISTERED']);
+  });
+
+  it('o cargo entra no cadastro e muda pelo PATCH; cargo inexistente é recusado (400) sem alterar nada', async () => {
+    const started = await start();
+    const { admin } = await users(started.app);
+    const { app } = started;
+
+    const created = await create(started, admin, { position: 'DEACON' });
+    const read = async () =>
+      (await request(app.server).get(`/members/${created.body.id}`).set(admin))
+        .body.position;
+
+    expect(await read()).toBe('DEACON');
+    await request(app.server)
+      .patch(`/members/${created.body.id}`)
+      .set(admin)
+      .send({ position: 'PASTOR' })
+      .expect(204);
+    expect(await read()).toBe('PASTOR');
+    await request(app.server)
+      .patch(`/members/${created.body.id}`)
+      .set(admin)
+      .send({ position: 'BISPO' })
+      .expect(400);
+    expect((await create(started, admin, { position: 'BISPO' })).status).toBe(
+      400,
+    );
+    expect(await read()).toBe('PASTOR');
   });
 
   it('a igreja vem do TOKEN: o que o cliente manda sobre igreja, versão ou anonimização é ignorado', async () => {

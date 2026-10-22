@@ -8,6 +8,7 @@ import {
   MemberAlreadyInStatusError,
   MemberAnonymizedError,
 } from './errors.js';
+import { MEMBER_POSITIONS, isMemberPosition } from './member-position.js';
 import { Member } from './member.js';
 import { ANONYMIZED_NAME, PersonName } from './person-name.js';
 import { Phone } from './phone.js';
@@ -105,6 +106,7 @@ describe('Member.restore', () => {
       email: null,
       address: null,
       status: 'AWAY',
+      position: 'DEACON',
       anonymizedAt: null,
       version: 7,
     });
@@ -112,6 +114,49 @@ describe('Member.restore', () => {
     expect(restored.pendingEvents).toEqual([]);
     expect(restored.version).toBe(7);
     expect(restored.status).toBe('AWAY');
+    expect(restored.position).toBe('DEACON');
+  });
+});
+
+describe('cargo (position)', () => {
+  it('quem se cadastra é membro, sem cargo, a menos que se diga outro', () => {
+    expect(aMember(1).position).toBe('MEMBER');
+  });
+
+  it('o cargo muda pelo cadastro e aparece entre os campos alterados (só o nome do campo)', () => {
+    const member = aMember(1);
+
+    const changed = member.updateProfile({ position: 'PRESBYTER' }, NOW);
+
+    expect(changed).toEqual(['position']);
+    expect(member.position).toBe('PRESBYTER');
+  });
+
+  it('repetir o cargo atual não é mudança', () => {
+    const member = aMember(1);
+
+    expect(member.updateProfile({ position: 'MEMBER' }, NOW)).toEqual([]);
+  });
+
+  it('os sete cargos da igreja existem', () => {
+    expect(MEMBER_POSITIONS).toEqual([
+      'MEMBER',
+      'AUXILIARY',
+      'DEACON',
+      'DEACONESS',
+      'PRESBYTER',
+      'EVANGELIST',
+      'PASTOR',
+    ]);
+    expect(isMemberPosition('PASTOR')).toBe(true);
+    expect(isMemberPosition('BISPO')).toBe(false);
+  });
+
+  it('o membro anonimizado não muda de cargo', () => {
+    const member = aMember(1);
+    member.anonymize(eventId(2), NOW);
+
+    expect(() => member.updateProfile({ position: 'PASTOR' }, NOW)).toThrow();
   });
 });
 

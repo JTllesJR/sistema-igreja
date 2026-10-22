@@ -23,6 +23,7 @@ export interface MemberDetailView {
   fullName: string;
   congregationId: string;
   status: Member['status'];
+  position: Member['position'];
   birthDate: string | null;
   phone: string | null;
   email: string | null;
@@ -59,6 +60,7 @@ export function toMemberDetailView(
     fullName: member.fullName.value,
     congregationId: member.congregationId,
     status: member.status,
+    position: member.position,
     birthDate: member.birthDate?.value ?? null,
     phone: member.phone?.value ?? null,
     email: member.email?.value ?? null,

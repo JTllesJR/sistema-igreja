@@ -17,6 +17,7 @@ import type {
   ManualEventType,
   MemberHistoryEvent,
 } from './member-history-event.js';
+import type { MemberPosition } from './member-position.js';
 import type { MemberStatus } from './member-status.js';
 import { PersonName } from './person-name.js';
 import type { Phone } from './phone.js';
@@ -33,6 +34,7 @@ export interface MemberProps {
   email: ContactEmail | null;
   address: Address | null;
   status: MemberStatus;
+  position: MemberPosition;
   anonymizedAt: Date | null;
   version: number;
 }
@@ -44,6 +46,7 @@ export interface ProfileChanges {
   phone?: Phone | null;
   email?: ContactEmail | null;
   address?: Address | null;
+  position?: MemberPosition;
 }
 
 interface Equatable<T> {
@@ -84,6 +87,7 @@ export class Member {
     email?: ContactEmail | null;
     address?: Address | null;
     status?: MemberStatus;
+    position?: MemberPosition;
     eventId: MemberEventId;
     now: Date;
   }): Member {
@@ -106,6 +110,7 @@ export class Member {
       email: input.email ?? null,
       address: input.address ?? null,
       status: input.status ?? 'ACTIVE',
+      position: input.position ?? 'MEMBER',
       anonymizedAt: null,
       version: 0,
     });
@@ -151,6 +156,9 @@ export class Member {
   }
   get status(): MemberStatus {
     return this.#props.status;
+  }
+  get position(): MemberPosition {
+    return this.#props.position;
   }
   get anonymizedAt(): Date | null {
     return this.#props.anonymizedAt;
@@ -209,6 +217,10 @@ export class Member {
     if (changes.address !== undefined && !same(changes.address, next.address)) {
       next.address = changes.address;
       changed.push('address');
+    }
+    if (changes.position !== undefined && changes.position !== next.position) {
+      next.position = changes.position;
+      changed.push('position');
     }
 
     this.#props = next;

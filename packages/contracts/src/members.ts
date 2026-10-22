@@ -18,6 +18,18 @@ export const MEMBER_STATUSES = [
 export const memberStatusSchema = z.enum(MEMBER_STATUSES);
 export type MemberStatus = z.infer<typeof memberStatusSchema>;
 
+export const MEMBER_POSITIONS = [
+  'MEMBER',
+  'AUXILIARY',
+  'DEACON',
+  'DEACONESS',
+  'PRESBYTER',
+  'EVANGELIST',
+  'PASTOR',
+] as const;
+export const memberPositionSchema = z.enum(MEMBER_POSITIONS);
+export type MemberPosition = z.infer<typeof memberPositionSchema>;
+
 export const MANUAL_EVENT_TYPES = ['BAPTISM', 'RECEPTION'] as const;
 export const manualEventTypeSchema = z.enum(MANUAL_EVENT_TYPES);
 export type ManualEventType = z.infer<typeof manualEventTypeSchema>;
@@ -44,6 +56,7 @@ export const registerMemberRequestSchema = z.object({
   email: text(300).nullish(),
   address: addressSchema.nullish(),
   status: memberStatusSchema.optional(),
+  position: memberPositionSchema.optional(),
 });
 export type RegisterMemberRequest = z.infer<typeof registerMemberRequestSchema>;
 
@@ -54,6 +67,7 @@ export const updateMemberRequestSchema = z.object({
   phone: text(40).nullable().optional(),
   email: text(300).nullable().optional(),
   address: addressSchema.nullable().optional(),
+  position: memberPositionSchema.optional(),
 });
 export type UpdateMemberRequest = z.infer<typeof updateMemberRequestSchema>;
 
@@ -124,6 +138,7 @@ export const memberDetailSchema = z.object({
   fullName: z.string(),
   congregationId: z.string(),
   status: memberStatusSchema,
+  position: memberPositionSchema,
   birthDate: z.string().nullable(),
   phone: z.string().nullable(),
   email: z.string().nullable(),

@@ -136,3 +136,4 @@ function snapshot(member: Member): MemberProps {
     version: member.version,
   };
 }
+    position: member.position,

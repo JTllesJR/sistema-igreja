@@ -7,6 +7,7 @@ import { ContactEmail } from '../domain/contact-email.js';
 import type { ProfileChanges } from '../domain/member.js';
 import type { MemberRepository } from '../domain/member.repository.js';
 import { PersonName } from '../domain/person-name.js';
+import { isMemberPosition } from '../domain/member-position.js';
 import { Phone } from '../domain/phone.js';
 import { optionalInput } from './inputs.js';
 import type { MemberAccess } from './member-access.js';
@@ -21,6 +22,8 @@ export interface UpdateMemberCommand {
   email?: string | null;
   address?: AddressInput | null;
 }
+  /** Ausente = manter. O cargo nunca é apagado: é sempre um dos valores da lista. */
+  position?: string;
 
 /** UC-06: altera o cadastro. Exige poder ESCREVER na congregação atual do membro. */
 export class UpdateMemberUseCase {
@@ -63,6 +66,13 @@ export class UpdateMemberUseCase {
     }
 
     const changed = member.updateProfile(changes, this.clock.now());
+    if (command.position !== undefined) {
+      if (!isMemberPosition(command.position)) {
+        throw new ValidationError('position', 'O cargo informado não existe.');
+      }
+      changes.position = command.position;
+    }
+
     // Nada mudou de verdade: não há o que gravar nem o que auditar.
     if (changed.length === 0) return;
 

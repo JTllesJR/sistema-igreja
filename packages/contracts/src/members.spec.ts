@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MEMBER_POSITIONS,
   changeMemberStatusRequestSchema,
   listMembersQuerySchema,
   recordMemberEventRequestSchema,
@@ -38,6 +39,26 @@ describe('registerMemberRequestSchema', () => {
     ['nome gigante', { congregationId, fullName: 'a'.repeat(301) }],
   ])('recusa %s', (_nome, corpo) => {
     expect(registerMemberRequestSchema.safeParse(corpo).success).toBe(false);
+  });
+
+  it('aceita um dos sete cargos da igreja e recusa um que não existe', () => {
+    for (const position of MEMBER_POSITIONS) {
+      expect(
+        registerMemberRequestSchema.safeParse({
+          congregationId,
+          fullName: 'Maria',
+          position,
+        }).success,
+      ).toBe(true);
+    }
+    expect(MEMBER_POSITIONS).toHaveLength(7);
+    expect(
+      registerMemberRequestSchema.safeParse({
+        congregationId,
+        fullName: 'Maria',
+        position: 'BISPO',
+      }).success,
+    ).toBe(false);
   });
 
   it('descarta campos que o cliente não deveria mandar (igreja, versão, anonimização)', () => {

@@ -28,6 +28,7 @@ function snapshot(member: Member) {
     email: member.email?.value ?? null,
     address: member.address?.toPrimitives() ?? null,
     status: member.status,
+    position: member.position,
     anonymizedAt: member.anonymizedAt?.toISOString() ?? null,
     version: member.version,
   };
@@ -83,6 +84,19 @@ export function describeMemberRepositoryContract(
         expect(
           (await repository.findById(org, memberId(1)))?.birthDate?.value,
         ).toBe('1990-05-10');
+      });
+
+      it('o cargo é gravado e alterado (padrão: MEMBER)', async () => {
+        await repository.add(aMember(1));
+        const stored = (await repository.findById(org, memberId(1)))!;
+        expect(stored.position).toBe('MEMBER');
+
+        stored.updateProfile({ position: 'EVANGELIST' }, NOW);
+        await repository.save(stored);
+
+        expect((await repository.findById(org, memberId(1)))?.position).toBe(
+          'EVANGELIST',
+        );
       });
 
       it('devolve null para membro inexistente', async () => {

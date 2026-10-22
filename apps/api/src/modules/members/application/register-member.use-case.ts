@@ -11,6 +11,7 @@ import { MemberAccessDeniedError } from '../domain/errors.js';
 import { MemberEventId, MemberId } from '../domain/ids.js';
 import { Member } from '../domain/member.js';
 import type { MemberRepository } from '../domain/member.repository.js';
+import { isMemberPosition } from '../domain/member-position.js';
 import { isMemberStatus } from '../domain/member-status.js';
 import { PersonName } from '../domain/person-name.js';
 import { Phone } from '../domain/phone.js';
@@ -28,6 +29,8 @@ export interface RegisterMemberCommand {
   address?: AddressInput | null;
   /** Padrão: ativo. Útil ao migrar membros que já estão afastados. */
   status?: string;
+  /** Padrão: membro (sem cargo). */
+  position?: string;
 }
 
 /** UC-06: cadastra um membro. Exige poder ESCREVER na congregação de destino, que precisa estar ativa. */
@@ -54,6 +57,10 @@ export class RegisterMemberUseCase {
     if (!isMemberStatus(status)) {
       throw new ValidationError('status', 'A situação informada não existe.');
     }
+    const position = command.position ?? 'MEMBER';
+    if (!isMemberPosition(position)) {
+      throw new ValidationError('position', 'O cargo informado não existe.');
+    }
     const member = Member.register({
       id: MemberId.of(this.ids.next()),
       organizationId: context.organizationId,
@@ -68,6 +75,7 @@ export class RegisterMemberUseCase {
       ),
       address: command.address ? Address.create(command.address) : null,
       status,
+      position,
       eventId: MemberEventId.of(this.ids.next()),
       now: this.clock.now(),
     });

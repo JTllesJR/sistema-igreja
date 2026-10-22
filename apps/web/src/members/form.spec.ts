@@ -128,6 +128,7 @@ describe('conversão para a API', () => {
         state: 'PE',
         postalCode: null,
       },
+      position: 'MEMBER',
       anonymized: false,
       capabilities: { canEdit: true, canAnonymize: false },
       history: [],

@@ -97,6 +97,26 @@ describe('RegisterMemberUseCase (UC-06)', () => {
     expect(invalid).toBeInstanceOf(ValidationError);
   });
 
+  it('o cargo é membro por padrão; aceita um dos cargos da igreja e recusa um que não existe', async () => {
+    const bed = aMembersBed();
+    const register = (position?: string) =>
+      bed.register.execute(bed.context, everything(), {
+        congregationId: congId(1),
+        fullName: 'João Souza',
+        ...(position === undefined ? {} : { position }),
+      });
+
+    const byDefault = await register();
+    const deacon = await register('DEACON');
+    const invalid = await rejectionOf(() => register('BISPO'));
+
+    const positionOf = async (id: string) =>
+      (await bed.repository.findById(orgId(1), id as never))?.position;
+    expect(await positionOf(byDefault.id)).toBe('MEMBER');
+    expect(await positionOf(deacon.id)).toBe('DEACON');
+    expect(invalid).toBeInstanceOf(ValidationError);
+  });
+
   it('só quem pode ESCREVER na congregação cadastra: leitura não basta, nem escrever em outra', async () => {
     const bed = aMembersBed();
     const readOnly = new FakeMemberAccess({ read: 'ALL' });
@@ -253,6 +273,34 @@ describe('UpdateMemberUseCase (UC-06)', () => {
       }),
     ]);
     expect(JSON.stringify(bed.audit.entries)).not.toMatch(/Souza|3333/);
+  });
+
+  it('muda o cargo e audita só o NOME do campo; cargo inexistente é recusado e nada muda', async () => {
+    const bed = aMembersBed();
+    const id = await bed.seed('Maria da Silva');
+
+    await bed.update.execute(bed.context, everything(), {
+      memberId: id,
+      position: 'DEACONESS',
+    });
+    const invalid = await rejectionOf(() =>
+      bed.update.execute(bed.context, everything(), {
+        memberId: id,
+        position: 'BISPO',
+      }),
+    );
+
+    expect(
+      (await bed.repository.findById(orgId(1), id as never))?.position,
+    ).toBe('DEACONESS');
+    expect(invalid).toBeInstanceOf(ValidationError);
+    expect(bed.audit.entries).toEqual([
+      expect.objectContaining({
+        action: 'member.updated',
+        metadata: { fields: 'position' },
+      }),
+    ]);
+    expect(JSON.stringify(bed.audit.entries)).not.toContain('DEACONESS');
   });
 
   it('apaga um campo opcional com null ou texto em branco', async () => {

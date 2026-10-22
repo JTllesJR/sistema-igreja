@@ -192,6 +192,7 @@ function eventData(member: Member): Prisma.MemberHistoryEventCreateManyInput[] {
 function toDomain(row: MemberRow): Member {
   return Member.restore({
     id: MemberId.of(row.id),
+    position: member.position,
     organizationId: OrganizationId.of(row.organizationId),
     congregationId: CongregationId.of(row.congregationId),
     fullName: PersonName.create(row.fullName),
@@ -229,6 +230,7 @@ function toEvent(row: EventRow): MemberHistoryEvent {
     recordedAt: row.recordedAt,
   };
 }
+    position: row.position,
 
 /** Antepõe `\` a `\`, `%` e `_`: no LIKE do PostgreSQL, a barra invertida é o escape padrão. */
 function escapeLikePattern(term: string): string {
