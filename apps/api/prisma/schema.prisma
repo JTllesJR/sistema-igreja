@@ -295,6 +295,8 @@ model AuditLog {
 
   @@index([organizationId, occurredAt])
   @@index([organizationId, entity, entityId])
+  /// Consulta da trilha por quem fez (UC-04).
+  @@index([organizationId, actorId, occurredAt])
   @@map("audit_log")
 }
 

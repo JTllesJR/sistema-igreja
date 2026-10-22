@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
+import { AuditTrailModule } from '../../modules/audit/trail.js';
 import { FinanceModule } from '../../modules/finance/index.js';
 import { HealthModule } from '../../modules/health/health.module.js';
 import {
@@ -24,6 +25,7 @@ async function start(enabled: boolean) {
     imports: [
       OrganizationModule,
       MembersModule,
+      AuditTrailModule,
       FinanceModule,
       HealthModule,
       OpenApiModule,
@@ -102,7 +104,7 @@ describe('GET /openapi.json', () => {
     expect(doc.openapi).toBe('3.1.0');
     // Se alguém criar um controller novo e não o incluir aqui (ou esquecer o @ApiDoc), esta conta (ou o boot) falha.
     expect(operations(doc)).toHaveLength(routesInSource());
-    expect(operations(doc).length).toBeGreaterThanOrEqual(51);
+    expect(operations(doc).length).toBeGreaterThanOrEqual(52);
   });
 
   it('toda operação tem resumo e id único; toda resposta de erro aponta para o formato de problema', async () => {

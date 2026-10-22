@@ -1,4 +1,5 @@
 export * from './access.js';
+export * from './audit.js';
 export * from './auth.js';
 export * from './finance.js';
 export * from './health.js';

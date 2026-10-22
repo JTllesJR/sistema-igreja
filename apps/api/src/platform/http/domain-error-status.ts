@@ -50,6 +50,9 @@ export const DOMAIN_ERROR_STATUS: Readonly<Record<string, number>> = {
   'finance.transfer_same_congregation': 422,
   'finance.transfer_requires_headquarters': 422,
 
+  // 403: o usuário está autenticado, mas a trilha exige `audit:read` para a igreja toda.
+  'audit.access_denied': 403,
+
   'identity.invalid_credentials': 401,
   'identity.session_invalid': 401,
   'identity.session_reuse_detected': 401,

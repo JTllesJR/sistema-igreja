@@ -69,6 +69,7 @@ describe('statusForDomainError (código de domínio -> status HTTP)', () => {
       'finance.not_reversible': 422,
       'finance.transfer_same_congregation': 422,
       'finance.transfer_requires_headquarters': 422,
+      'audit.access_denied': 403,
       'identity.invalid_credentials': 401,
       'identity.session_invalid': 401,
       'identity.session_reuse_detected': 401,

@@ -88,7 +88,7 @@ export class Role {
   }
 
   /**
-   * Diretoria: acompanha e APROVA o financeiro, vê quem contribuiu e consulta membros. Não lança. Atribuída na igreja
+   * Diretoria: acompanha e APROVA o financeiro, vê quem contribuiu, consulta membros e a trilha de auditoria. Não lança. Atribuída na igreja
    * toda, alcança a sede e decide os pedidos de todas as congregações.
    */
   static board(input: { id: RoleId; organizationId: OrganizationId }): Role {
@@ -98,6 +98,8 @@ export class Role {
       'finance:read-individual',
       'members:read',
       'organization:read',
+      // Trilha de auditoria (ADR 0017): a Diretoria fiscaliza quem leu e fez o quê, na igreja toda.
+      'audit:read',
     ]);
   }
 

@@ -12,6 +12,7 @@ import {
   FINANCE_READ_INDIVIDUAL,
   FINANCE_WRITE,
 } from '../../finance/finance.permissions.js';
+import { AUDIT_READ } from '../../audit/audit.permissions.js';
 import { ORGANIZATION_READ } from '../../organization/organization.permissions.js';
 import { Permission } from './permission.js';
 import { Role } from './role.js';
@@ -139,6 +140,7 @@ describe('Role', () => {
       expect(board.name.value).toBe('Diretoria');
       expect(board.isSystem).toBe(true);
       expect(permissionsOf(board)).toEqual([
+        'audit:read',
         'finance:approve',
         'finance:read',
         'finance:read-individual',
@@ -184,6 +186,7 @@ describe('Role', () => {
           FINANCE_WRITE,
           FINANCE_APPROVE,
           FINANCE_READ_INDIVIDUAL,
+          AUDIT_READ,
         ]),
       );
     });
