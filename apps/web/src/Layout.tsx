@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router';
 import { StatusDaApi } from './andamento/StatusDaApi';
 import { consultarSaude, type EstadoApi } from './api/health';
-import { hasPermissionAnywhere } from './auth/permissions';
+import { hasPermission, hasPermissionAnywhere } from './auth/permissions';
 import { useSession } from './auth/SessionProvider';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -57,6 +57,11 @@ export function Layout() {
                 {hasPermissionAnywhere(session.user, 'members:read') && (
                   <NavLink to="/membros" className={linkClass}>
                     Membros
+                  </NavLink>
+                )}
+                {hasPermission(session.user, 'access:manage-users') && (
+                  <NavLink to="/usuarios" className={linkClass}>
+                    Usuários
                   </NavLink>
                 )}
                 <NavLink to="/congregacoes" className={linkClass}>

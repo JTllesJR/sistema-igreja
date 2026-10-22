@@ -9,8 +9,10 @@ import { createAuthClient } from './auth/client';
 import { createHttp, ApiError } from './auth/http';
 import { SessionProvider } from './auth/SessionProvider';
 import { SessionManager } from './auth/session';
+import { createAccountApi } from './account/api';
 import { createCongregationsApi } from './congregations/api';
 import { createMembersApi } from './members/api';
+import { createUsersApi } from './users/api';
 import './index.css';
 
 const root = document.getElementById('root');
@@ -43,6 +45,8 @@ clearCacheOnLogout(session, queryClient);
 const apis = {
   congregations: createCongregationsApi(authorized),
   members: createMembersApi(authorized),
+  users: createUsersApi(authorized),
+  account: createAccountApi(authorized),
 };
 
 createRoot(root).render(

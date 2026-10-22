@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useSession, useSessionManager } from '../auth/SessionProvider';
 
 export function ContaPage() {
@@ -53,6 +53,12 @@ export function ContaPage() {
           </dd>
         </div>
       </dl>
+      <Link
+        to="/trocar-senha"
+        className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg border border-slate-400 bg-white px-4 text-base font-medium text-slate-900 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+      >
+        Trocar a senha
+      </Link>
       <button
         type="button"
         onClick={() => void sair()}

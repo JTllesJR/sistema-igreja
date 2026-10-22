@@ -20,7 +20,13 @@ export function LoginPage() {
     (location.state as { from?: unknown } | null)?.from,
   );
   if (session.status === 'authenticated') {
-    return <Navigate to={destination} replace />;
+    // Com senha temporária, o único destino possível é a troca da senha.
+    return (
+      <Navigate
+        to={session.user.mustChangePassword ? '/trocar-senha' : destination}
+        replace
+      />
+    );
   }
 
   async function submit(event: FormEvent) {

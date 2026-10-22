@@ -87,6 +87,22 @@ export class SessionManager {
     );
   }
 
+  /**
+   * Relê o usuário no servidor (ex.: depois de trocar a senha temporária, para saber que a troca obrigatória acabou).
+   * Falha de rede deixa o estado como está.
+   */
+  async reloadUser(): Promise<void> {
+    const current = this.#state;
+    if (current.status !== 'authenticated') return;
+
+    const user = await this.client.me(current.accessToken);
+    // Saiu, entrou de novo ou o token foi renovado enquanto isso: só vale se ainda é a mesma sessão.
+    const latest = this.#state;
+    if (latest.status === 'authenticated' && latest.user.id === user.id) {
+      this.#set({ ...latest, user });
+    }
+  }
+
   /** Sempre termina deslogado, mesmo que o servidor não responda: sair não pode depender da rede. */
   async logout(): Promise<void> {
     this.#cancelRenewal();

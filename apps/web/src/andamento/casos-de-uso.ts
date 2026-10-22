@@ -33,13 +33,13 @@ export const casosDeUso: readonly CasoDeUso[] = [
     id: 'UC-03',
     titulo: 'Convidar usuário e atribuir papel',
     modulo: 'Identidade e acesso',
-    status: 'backend',
+    status: 'entregue',
   },
   {
     id: 'UC-18',
     titulo: 'Trocar a própria senha',
     modulo: 'Identidade e acesso',
-    status: 'backend',
+    status: 'entregue',
   },
   {
     id: 'UC-04',

@@ -360,3 +360,66 @@ describe('getAccessToken e renewAccessToken (usados pelo cliente autenticado)', 
     expect(client.refresh).not.toHaveBeenCalled();
   });
 });
+
+describe('reloadUser (depois de trocar a senha temporária)', () => {
+  const must = { ...user, mustChangePassword: true };
+
+  it('relê o usuário e atualiza o estado, mantendo o token', async () => {
+    const { session, client } = setup({
+      login: vi.fn(() =>
+        Promise.resolve({ ...tokens('login-token'), user: must }),
+      ),
+      me: vi.fn(() => Promise.resolve({ ...must, mustChangePassword: false })),
+    });
+    await session.login('maria@igreja.com', 'senha-segura-1');
+    expect(session.getState()).toMatchObject({
+      user: { mustChangePassword: true },
+    });
+
+    await session.reloadUser();
+
+    expect(client.me).toHaveBeenCalledWith('login-token');
+    expect(session.getState()).toMatchObject({
+      status: 'authenticated',
+      accessToken: 'login-token',
+      user: { mustChangePassword: false },
+    });
+  });
+
+  it('sem sessão, não faz nada', async () => {
+    const { session, client } = setup();
+
+    await session.reloadUser();
+
+    expect(client.me).not.toHaveBeenCalled();
+    expect(session.getState()).toEqual({ status: 'restoring' });
+  });
+
+  it('se a pessoa saiu durante a leitura, não ressuscita a sessão', async () => {
+    let finish!: (u: CurrentUser) => void;
+    const { session } = setup({
+      me: vi.fn(
+        () => new Promise<CurrentUser>((resolve) => (finish = resolve)),
+      ),
+    });
+    await session.login('maria@igreja.com', 'senha-segura-1');
+
+    const reloading = session.reloadUser();
+    await session.logout();
+    finish(user);
+    await reloading;
+
+    expect(session.getState()).toEqual({ status: 'anonymous' });
+  });
+
+  it('falha da API sobe o erro e não muda o estado', async () => {
+    const error = apiError(0, 'network');
+    const { session } = setup({ me: vi.fn(() => Promise.reject(error)) });
+    await session.login('maria@igreja.com', 'senha-segura-1');
+    const before = session.getState();
+
+    await expect(session.reloadUser()).rejects.toBe(error);
+
+    expect(session.getState()).toBe(before);
+  });
+});

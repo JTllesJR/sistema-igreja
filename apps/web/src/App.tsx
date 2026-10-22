@@ -10,6 +10,9 @@ import { MembroFichaPage } from './pages/MembroFichaPage';
 import { MembroFormPage } from './pages/MembroFormPage';
 import { MembrosPage } from './pages/MembrosPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { TrocarSenhaPage } from './pages/TrocarSenhaPage';
+import { UsuarioNovoPage } from './pages/UsuarioNovoPage';
+import { UsuariosPage } from './pages/UsuariosPage';
 
 export function App() {
   return (
@@ -18,7 +21,12 @@ export function App() {
         <Route element={<Layout />}>
           <Route index element={<AndamentoPage />} />
           <Route path="entrar" element={<LoginPage />} />
+          <Route element={<RequireAuth allowPasswordChangePending />}>
+            <Route path="trocar-senha" element={<TrocarSenhaPage />} />
+          </Route>
           <Route element={<RequireAuth />}>
+            <Route path="usuarios" element={<UsuariosPage />} />
+            <Route path="usuarios/novo" element={<UsuarioNovoPage />} />
             <Route path="conta" element={<ContaPage />} />
             <Route path="membros" element={<MembrosPage />} />
             <Route path="membros/novo" element={<MembroFormPage />} />
