@@ -50,6 +50,7 @@ Escopo do MVP no PRD: **login, permissões, cadastro de membros, finanças bási
 
 > **Implementados no backend** ([ADR 0015](adr/0015-modulo-finance.md)): UC-11 a UC-15 e a parte financeira do UC-16, além
 > do repasse com a sede, do saldo inicial e do extrato de contribuição por membro. Sem telas ainda (fase de front-end).
+> A parte de membros do UC-16 é `GET /members/stats` ([ADR 0018](adr/0018-painel-consolidado-composto-no-cliente.md)).
 
 | ID | Caso de uso | Ator | Observações |
 |---|---|---|---|
