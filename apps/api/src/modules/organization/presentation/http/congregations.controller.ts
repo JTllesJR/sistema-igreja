@@ -17,6 +17,7 @@ import {
   registerCongregationRequestSchema,
   type UpdateCongregationRequest,
   updateCongregationRequestSchema,
+  congregationSchema,
 } from '@igreja/contracts';
 import { z } from 'zod';
 import {
@@ -35,6 +36,7 @@ import {
   ORGANIZATION_MANAGE,
   ORGANIZATION_READ,
 } from '../../organization.permissions.js';
+import { ApiDoc } from '../../../../platform/openapi/api-doc.decorator.js';
 
 /** Identificador na URL: texto fora do formato é 400, sem chegar ao domínio. */
 const idPipe = new ZodValidationPipe(z.uuid());
@@ -63,6 +65,10 @@ export class CongregationsController {
   ) {}
 
   @RequirePermission(ORGANIZATION_READ)
+  @ApiDoc({
+    summary: 'Lista as congregações da igreja.',
+    response: z.array(congregationSchema),
+  })
   @Get()
   findAll(
     @CurrentContext() context: RequestContext,
@@ -73,6 +79,10 @@ export class CongregationsController {
   }
 
   @RequirePermission(ORGANIZATION_MANAGE, MANAGE)
+  @ApiDoc({
+    summary: 'Cadastra uma congregação.',
+    response: congregationSchema,
+  })
   @Post()
   create(
     @CurrentContext() context: RequestContext,
@@ -83,6 +93,10 @@ export class CongregationsController {
   }
 
   @RequirePermission(ORGANIZATION_MANAGE, MANAGE)
+  @ApiDoc({
+    summary: 'Edita nome, endereço e horários de culto.',
+    response: congregationSchema,
+  })
   @Patch(':id')
   edit(
     @CurrentContext() context: RequestContext,
@@ -96,6 +110,11 @@ export class CongregationsController {
   // Ações de estado são POST em sub-recurso (e não PATCH de um campo `status`): cada uma tem regra própria
   // (a sede não pode ser desativada, só congregação ativa vira sede) e devolve a congregação já atualizada.
   @RequirePermission(ORGANIZATION_MANAGE, MANAGE)
+  @ApiDoc({
+    summary: 'Desativa a congregação (nunca se exclui).',
+    description: 'A sede não pode ser desativada.',
+    response: congregationSchema,
+  })
   @Post(':id/deactivate')
   @HttpCode(200)
   deactivateOne(
@@ -106,6 +125,10 @@ export class CongregationsController {
   }
 
   @RequirePermission(ORGANIZATION_MANAGE, MANAGE)
+  @ApiDoc({
+    summary: 'Reativa a congregação.',
+    response: congregationSchema,
+  })
   @Post(':id/reactivate')
   @HttpCode(200)
   reactivateOne(
@@ -116,6 +139,11 @@ export class CongregationsController {
   }
 
   @RequirePermission(ORGANIZATION_MANAGE, MANAGE)
+  @ApiDoc({
+    summary: 'Designa a congregação como sede.',
+    description: 'A sede antiga deixa de ser sede; a nova precisa estar ativa.',
+    response: congregationSchema,
+  })
   @Post(':id/designate-headquarters')
   @HttpCode(200)
   designateOne(

@@ -3,6 +3,7 @@ import {
   type Organization,
   type RenameOrganizationRequest,
   renameOrganizationRequestSchema,
+  organizationSchema,
 } from '@igreja/contracts';
 import {
   CurrentContext,
@@ -16,6 +17,7 @@ import {
   ORGANIZATION_MANAGE,
   ORGANIZATION_READ,
 } from '../../organization.permissions.js';
+import { ApiDoc } from '../../../../platform/openapi/api-doc.decorator.js';
 
 /**
  * Adaptador HTTP da igreja do usuário logado. Não há `:id` na rota: a igreja vem SEMPRE do token (ADR 0003), então
@@ -31,12 +33,20 @@ export class OrganizationController {
   ) {}
 
   @RequirePermission(ORGANIZATION_READ)
+  @ApiDoc({
+    summary: 'Devolve a igreja do usuário.',
+    response: organizationSchema,
+  })
   @Get()
   get(@CurrentContext() context: RequestContext): Promise<Organization> {
     return this.getOrganization.execute(context);
   }
 
   @RequirePermission(ORGANIZATION_MANAGE, { organizationWide: true })
+  @ApiDoc({
+    summary: 'Renomeia a igreja.',
+    response: organizationSchema,
+  })
   @Patch()
   rename(
     @CurrentContext() context: RequestContext,

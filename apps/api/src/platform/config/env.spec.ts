@@ -23,6 +23,7 @@ describe('parseEnv', () => {
       CORS_ORIGINS: [],
       THROTTLE_LIMIT: 100,
       THROTTLE_TTL_SECONDS: 60,
+      OPENAPI_ENABLED: false,
     });
   });
 
@@ -104,6 +105,27 @@ describe('parseEnv', () => {
         /CORS_ORIGINS/,
       );
     });
+  });
+
+  describe('documentação da API (OPENAPI_ENABLED)', () => {
+    it('é DESLIGADA por padrão e só liga com "true"', () => {
+      expect(parseEnv(validSource).OPENAPI_ENABLED).toBe(false);
+      expect(
+        parseEnv({ ...validSource, OPENAPI_ENABLED: 'true' }).OPENAPI_ENABLED,
+      ).toBe(true);
+      expect(
+        parseEnv({ ...validSource, OPENAPI_ENABLED: 'false' }).OPENAPI_ENABLED,
+      ).toBe(false);
+    });
+
+    it.each(['1', 'sim', 'TRUE', ''])(
+      'rejeita OPENAPI_ENABLED=%j (só true ou false)',
+      (value) => {
+        expect(() =>
+          parseEnv({ ...validSource, OPENAPI_ENABLED: value }),
+        ).toThrow(/OPENAPI_ENABLED/);
+      },
+    );
   });
 
   describe('limite de taxa', () => {

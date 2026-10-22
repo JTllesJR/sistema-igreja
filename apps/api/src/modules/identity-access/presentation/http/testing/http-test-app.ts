@@ -53,6 +53,8 @@ export interface HttpTestAppOptions {
   controllers?: Type<unknown>[];
   /** Módulos extras a incluir (ex.: o módulo que está sendo testado). */
   imports?: Type<unknown>[];
+  /** Variáveis de ambiente extras (ex.: `OPENAPI_ENABLED: 'true'`). */
+  env?: Record<string, string>;
   /** Troca de provedores (ex.: o repositório de outro módulo por um em memória). Recebe o relógio de teste. */
   overrides?: (
     builder: TestingModuleBuilder,
@@ -89,6 +91,7 @@ export async function startHttpTestApp(options: HttpTestAppOptions = {}) {
         DATABASE_URL: 'postgresql://nao:usado@localhost:5432/nenhum',
         JWT_SECRET: 'segredo-somente-para-testes-http-0123456789-abc',
         CORS_ORIGINS: 'http://localhost:5173',
+        ...options.env,
       }),
     )
     .overrideProvider(USER_REPOSITORY)

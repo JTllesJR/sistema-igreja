@@ -8,6 +8,8 @@ allowBuilds:
   # Baixam o motor de migrations do Prisma (schema-engine), necessário para `prisma migrate`.
   '@prisma/engines': true
   prisma: true
+  # Dependência do swagger-ui-dist: o postinstall só envia telemetria de uso. Recusado de propósito (ADR 0016).
+  '@scarf/scarf': false
 
 # Versões declaradas uma única vez; os pacotes usam "catalog:" em vez de repetir o número.
 catalog:

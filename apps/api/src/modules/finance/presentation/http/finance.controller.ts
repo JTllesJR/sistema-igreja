@@ -57,6 +57,16 @@ import {
   updateAccountRequestSchema,
   type UpdateCategoryRequest,
   updateCategoryRequestSchema,
+  accountSchema,
+  categorySchema,
+  contributorSchema,
+  dashboardSchema,
+  defaultCategoriesResultSchema,
+  entryListResponseSchema,
+  financeCreatedSchema,
+  memberContributionsSchema,
+  transferCreatedSchema,
+  transferDestinationSchema,
 } from '@igreja/contracts';
 import { z } from 'zod';
 import {
@@ -110,6 +120,7 @@ import {
   FINANCE_WRITE,
 } from '../../finance.permissions.js';
 import { financeAccessFrom } from './finance-access.factory.js';
+import { ApiDoc } from '../../../../platform/openapi/api-doc.decorator.js';
 
 const idPipe = new ZodValidationPipe(z.uuid());
 
@@ -177,6 +188,10 @@ export class FinanceController {
 
   @RequirePermission(FINANCE_READ)
   @Throttle(READ_LIMIT)
+  @ApiDoc({
+    summary: 'Lista as contas (caixa e banco) com o saldo confirmado.',
+    response: z.array(accountSchema),
+  })
   @Get('accounts')
   accounts(
     @CurrentContext() context: RequestContext,
@@ -188,6 +203,10 @@ export class FinanceController {
   }
 
   @RequirePermission(FINANCE_WRITE)
+  @ApiDoc({
+    summary: 'Cria uma conta numa congregação.',
+    response: financeCreatedSchema,
+  })
   @Post('accounts')
   newAccount(
     @CurrentContext() context: RequestContext,
@@ -199,6 +218,11 @@ export class FinanceController {
   }
 
   @RequirePermission(FINANCE_WRITE)
+  @ApiDoc({
+    summary: 'Renomeia, arquiva ou reativa uma conta.',
+    description: 'Conta nunca é apagada.',
+    response: null,
+  })
   @Patch('accounts/:id')
   @HttpCode(204)
   async editAccount(
@@ -216,6 +240,10 @@ export class FinanceController {
 
   @RequirePermission(FINANCE_READ)
   @Throttle(READ_LIMIT)
+  @ApiDoc({
+    summary: 'Lista as categorias de entrada e de saída.',
+    response: z.array(categorySchema),
+  })
   @Get('categories')
   categories(
     @CurrentContext() context: RequestContext,
@@ -227,6 +255,10 @@ export class FinanceController {
 
   // Categorias são da igreja toda: criar e alterar exigem escrita na igreja toda (o guard confere antes de tudo).
   @RequirePermission(FINANCE_WRITE, ORGANIZATION_WIDE)
+  @ApiDoc({
+    summary: 'Cria uma categoria.',
+    response: financeCreatedSchema,
+  })
   @Post('categories')
   newCategory(
     @CurrentContext() context: RequestContext,
@@ -242,6 +274,12 @@ export class FinanceController {
   }
 
   @RequirePermission(FINANCE_WRITE, ORGANIZATION_WIDE)
+  @ApiDoc({
+    summary:
+      'Cria as categorias padrão que faltam (dízimo, oferta, aluguel...).',
+    description: 'Idempotente: nunca duplica nem mexe nas que a igreja já tem.',
+    response: defaultCategoriesResultSchema,
+  })
   @Post('categories/defaults')
   @HttpCode(200)
   defaultCategories(
@@ -252,6 +290,10 @@ export class FinanceController {
   }
 
   @RequirePermission(FINANCE_WRITE, ORGANIZATION_WIDE)
+  @ApiDoc({
+    summary: 'Renomeia, arquiva ou reativa uma categoria.',
+    response: null,
+  })
   @Patch('categories/:id')
   @HttpCode(204)
   async editCategory(
@@ -271,6 +313,12 @@ export class FinanceController {
 
   @RequirePermission(FINANCE_READ)
   @Throttle(READ_LIMIT)
+  @ApiDoc({
+    summary: 'Lista os lançamentos das congregações que o usuário vê.',
+    description:
+      'Quem contribuiu só aparece com `finance:read-individual`; essa leitura é auditada antes de devolver.',
+    response: entryListResponseSchema,
+  })
   @Get('entries')
   entries(
     @CurrentContext() context: RequestContext,
@@ -282,6 +330,12 @@ export class FinanceController {
   }
 
   @RequirePermission(FINANCE_WRITE)
+  @ApiDoc({
+    summary: 'Registra uma entrada (dízimo, oferta...).',
+    description:
+      'Vale na hora: entrada não precisa de aprovação. Ligar um membro exige `finance:read-individual`.',
+    response: financeCreatedSchema,
+  })
   @Post('entries/income')
   income(
     @CurrentContext() context: RequestContext,
@@ -293,6 +347,11 @@ export class FinanceController {
   }
 
   @RequirePermission(FINANCE_WRITE)
+  @ApiDoc({
+    summary: 'Pede uma saída.',
+    description: 'Nasce PENDENTE: só vale quando outra pessoa da sede aprovar.',
+    response: financeCreatedSchema,
+  })
   @Post('entries/expenses')
   expense(
     @CurrentContext() context: RequestContext,
@@ -308,6 +367,11 @@ export class FinanceController {
   }
 
   @RequirePermission(FINANCE_WRITE)
+  @ApiDoc({
+    summary: 'Pede o saldo inicial de uma conta.',
+    description: 'Nasce PENDENTE e espera a sede, como uma saída.',
+    response: financeCreatedSchema,
+  })
   @Post('entries/opening-balances')
   openingBalance(
     @CurrentContext() context: RequestContext,
@@ -323,6 +387,11 @@ export class FinanceController {
   }
 
   @RequirePermission(FINANCE_WRITE)
+  @ApiDoc({
+    summary: 'Pede um repasse entre a sede e uma congregação.',
+    description: 'Cria duas pernas pendentes que a sede decide juntas.',
+    response: transferCreatedSchema,
+  })
   @Post('entries/transfers')
   transfer(
     @CurrentContext() context: RequestContext,
@@ -339,6 +408,11 @@ export class FinanceController {
 
   @RequirePermission(FINANCE_WRITE)
   @Throttle(READ_LIMIT)
+  @ApiDoc({
+    summary: 'Lista as contas que podem receber um repasse da conta informada.',
+    description: 'Mostra só nome e tipo, sem saldo.',
+    response: z.array(transferDestinationSchema),
+  })
   @Get('transfer-destinations')
   destinations(
     @CurrentContext() context: RequestContext,
@@ -354,6 +428,12 @@ export class FinanceController {
   }
 
   @RequirePermission(FINANCE_WRITE)
+  @ApiDoc({
+    summary: 'Pede o estorno de um lançamento confirmado.',
+    description:
+      'Cria um lançamento de sentido oposto, ligado ao original (uma vez só), que nasce PENDENTE.',
+    response: financeCreatedSchema,
+  })
   @Post('entries/:id/reversal')
   reversal(
     @CurrentContext() context: RequestContext,
@@ -369,6 +449,11 @@ export class FinanceController {
   }
 
   @RequirePermission(FINANCE_WRITE)
+  @ApiDoc({
+    summary: 'Desiste de um pedido pendente.',
+    description: 'Quem pediu, ou quem tem escrita na congregação.',
+    response: null,
+  })
   @Post('entries/:id/cancel')
   @HttpCode(204)
   async cancel(
@@ -385,6 +470,11 @@ export class FinanceController {
 
   @RequirePermission(FINANCE_APPROVE)
   @Throttle(READ_LIMIT)
+  @ApiDoc({
+    summary:
+      'Lista a fila da sede: pedidos pendentes de todas as congregações.',
+    response: entryListResponseSchema,
+  })
   @Get('approvals')
   approvals(
     @CurrentContext() context: RequestContext,
@@ -400,6 +490,12 @@ export class FinanceController {
   }
 
   @RequirePermission(FINANCE_APPROVE)
+  @ApiDoc({
+    summary: 'Aprova um pedido pendente.',
+    description:
+      'Outra pessoa que não quem pediu. Num repasse, aprova as duas pernas. O saldo da conta nunca fica negativo.',
+    response: null,
+  })
   @Post('entries/:id/approve')
   @HttpCode(204)
   async approve(
@@ -413,6 +509,11 @@ export class FinanceController {
   }
 
   @RequirePermission(FINANCE_APPROVE)
+  @ApiDoc({
+    summary: 'Recusa um pedido pendente, com motivo.',
+    description: 'Num repasse, recusa as duas pernas.',
+    response: null,
+  })
   @Post('entries/:id/reject')
   @HttpCode(204)
   async reject(
@@ -432,6 +533,13 @@ export class FinanceController {
 
   @RequirePermission(FINANCE_READ)
   @Throttle(READ_LIMIT)
+  @ApiDoc({
+    summary:
+      'Painel financeiro: receita, despesa, saldos, repasses e pedidos pendentes.',
+    description:
+      'Sem `congregationId`, soma tudo o que o usuário pode ver (visão consolidada para quem vê a igreja toda).',
+    response: dashboardSchema,
+  })
   @Get('dashboard')
   summary(
     @CurrentContext() context: RequestContext,
@@ -446,6 +554,12 @@ export class FinanceController {
 
   @RequirePermission(FINANCE_READ_INDIVIDUAL)
   @Throttle(SENSITIVE_READ_LIMIT)
+  @ApiDoc({
+    summary: 'Busca mínima de membro para ligar a uma contribuição.',
+    description:
+      'Só id, nome e congregação; a leitura é auditada (sem o termo).',
+    response: z.array(contributorSchema),
+  })
   @Get('members/search')
   contributors(
     @CurrentContext() context: RequestContext,
@@ -462,6 +576,12 @@ export class FinanceController {
 
   @RequirePermission(FINANCE_READ_INDIVIDUAL)
   @Throttle(SENSITIVE_READ_LIMIT)
+  @ApiDoc({
+    summary: 'Extrato de contribuição de um membro.',
+    description:
+      'DADO SENSÍVEL: leitura auditada ANTES de devolver (falha fechada).',
+    response: memberContributionsSchema,
+  })
   @Get('members/:id/contributions')
   contributions(
     @CurrentContext() context: RequestContext,

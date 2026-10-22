@@ -18,6 +18,9 @@ import {
   type LoginRequest,
   loginRequestSchema,
   type LoginResponse,
+  accessTokenResponseSchema,
+  currentUserSchema,
+  loginResponseSchema,
 } from '@igreja/contracts';
 import type { Request, Response } from 'express';
 import { ENV } from '../../../../platform/config/config.module.js';
@@ -45,6 +48,7 @@ import {
   readRefreshToken,
   setRefreshCookie,
 } from './refresh-cookie.js';
+import { ApiDoc } from '../../../../platform/openapi/api-doc.decorator.js';
 
 const MINUTE_MS = 60_000;
 // Limites por IP e por rota, MAIS APERTADOS que o global (ADR 0011, seção 7); somam-se ao bloqueio por conta
@@ -79,6 +83,12 @@ export class AuthController {
   // `no-store`: resposta com token nunca deve ficar em cache de navegador ou proxy.
   @Public()
   @Throttle(LOGIN_LIMIT)
+  @ApiDoc({
+    summary: 'Entra no sistema com e-mail e senha.',
+    description:
+      'Devolve o token de acesso (curto) e grava o token de renovação em cookie `httpOnly`. Bloqueia a conta após 5 falhas.',
+    response: loginResponseSchema,
+  })
   @Post('login')
   @HttpCode(200)
   @Header('Cache-Control', 'no-store')
@@ -103,6 +113,12 @@ export class AuthController {
 
   @Public()
   @Throttle(REFRESH_LIMIT)
+  @ApiDoc({
+    summary: 'Renova o token de acesso usando o cookie de renovação.',
+    description:
+      'Cada renovação troca o cookie (rotação). Reusar um cookie antigo revoga a sessão inteira.',
+    response: accessTokenResponseSchema,
+  })
   @Post('refresh')
   @HttpCode(200)
   @Header('Cache-Control', 'no-store')
@@ -140,6 +156,12 @@ export class AuthController {
   // Pública porque quem sai pode estar com o token de acesso vencido; a prova de quem é está no cookie.
   // Idempotente: sem cookie ou com cookie desconhecido, responde 204 do mesmo jeito.
   @Public()
+  @ApiDoc({
+    summary: 'Encerra a sessão atual.',
+    description:
+      'Idempotente: sem cookie ou com cookie desconhecido, responde 204 do mesmo jeito.',
+    response: null,
+  })
   @Post('logout')
   @HttpCode(204)
   async logout(
@@ -153,6 +175,10 @@ export class AuthController {
 
   // Liberada com a troca pendente: a web precisa saber quem é e que a troca é obrigatória.
   @AllowWhenPasswordChangePending()
+  @ApiDoc({
+    summary: 'Devolve quem está logado, com papéis e permissões.',
+    response: currentUserSchema,
+  })
   @Get('me')
   me(@CurrentContext() context: RequestContext): Promise<CurrentUser> {
     return this.currentUser.execute(context);
@@ -161,6 +187,11 @@ export class AuthController {
   // Liberada com a troca pendente: é justamente o que a pessoa precisa fazer.
   @AllowWhenPasswordChangePending()
   @Throttle(PASSWORD_LIMIT)
+  @ApiDoc({
+    summary: 'Troca a própria senha.',
+    description: 'Exige a senha atual e encerra as outras sessões.',
+    response: null,
+  })
   @Post('change-password')
   @HttpCode(204)
   async changeOwnPassword(

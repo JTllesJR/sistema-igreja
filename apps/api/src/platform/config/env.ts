@@ -47,6 +47,13 @@ export const envSchema = z.object({
       ),
     ),
 
+  // Documentação da API (ADR 0016): /openapi.json e /docs. DESLIGADA por padrão: expor o mapa completo da API é
+  // reconhecimento grátis para um atacante; ligue em desenvolvimento e, se quiser, em um ambiente interno.
+  OPENAPI_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
+
   // Limite de taxa por IP (ADR 0011): no máximo THROTTLE_LIMIT requisições a cada THROTTLE_TTL_SECONDS.
   THROTTLE_LIMIT: z.coerce.number().int().positive().default(100),
   THROTTLE_TTL_SECONDS: z.coerce.number().int().positive().default(60),

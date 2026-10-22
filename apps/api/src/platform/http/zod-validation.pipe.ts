@@ -7,7 +7,8 @@ import { RequestValidationError } from './request-validation.error.js';
  * Uso: `@Body(new ZodValidationPipe(loginRequestSchema)) body: LoginRequest`.
  */
 export class ZodValidationPipe<T> implements PipeTransform<unknown, T> {
-  constructor(private readonly schema: ZodType<T>) {}
+  /** Público para a documentação OpenAPI ler o MESMO schema que valida a entrada (ADR 0016). */
+  constructor(readonly schema: ZodType<T>) {}
 
   transform(value: unknown): T {
     const result = this.schema.safeParse(value);

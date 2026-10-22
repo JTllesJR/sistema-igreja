@@ -26,6 +26,9 @@ import {
   transferMemberRequestSchema,
   type UpdateMemberRequest,
   updateMemberRequestSchema,
+  memberCreatedSchema,
+  memberDetailSchema,
+  memberListResponseSchema,
 } from '@igreja/contracts';
 import { z } from 'zod';
 import {
@@ -54,6 +57,7 @@ import {
   MEMBERS_WRITE,
 } from '../../members.permissions.js';
 import { memberAccessFrom } from './member-access.factory.js';
+import { ApiDoc } from '../../../../platform/openapi/api-doc.decorator.js';
 
 const idPipe = new ZodValidationPipe(z.uuid());
 
@@ -90,6 +94,12 @@ export class MembersController {
 
   @RequirePermission(MEMBERS_READ)
   @Throttle(READ_LIMIT)
+  @ApiDoc({
+    summary: 'Lista e busca membros das congregações que o usuário vê.',
+    description:
+      'Registra a leitura na trilha de auditoria antes de devolver (sem o termo buscado).',
+    response: memberListResponseSchema,
+  })
   @Get()
   async list(
     @CurrentContext() context: RequestContext,
@@ -101,6 +111,10 @@ export class MembersController {
   }
 
   @RequirePermission(MEMBERS_WRITE)
+  @ApiDoc({
+    summary: 'Cadastra um membro.',
+    response: memberCreatedSchema,
+  })
   @Post()
   create(
     @CurrentContext() context: RequestContext,
@@ -114,6 +128,12 @@ export class MembersController {
   // Ficha completa: leitura auditada, com limite mais apertado.
   @RequirePermission(MEMBERS_READ)
   @Throttle(READ_LIMIT)
+  @ApiDoc({
+    summary: 'Devolve a ficha completa do membro.',
+    description:
+      'DADO SENSÍVEL: a leitura é registrada na trilha ANTES de devolver; se o registro falhar, a ficha não sai.',
+    response: memberDetailSchema,
+  })
   @Get(':id')
   async detail(
     @CurrentContext() context: RequestContext,
@@ -131,6 +151,11 @@ export class MembersController {
   }
 
   @RequirePermission(MEMBERS_WRITE)
+  @ApiDoc({
+    summary: 'Altera o cadastro do membro (nome, contato, endereço, cargo).',
+    description: 'Situação e congregação têm rotas próprias.',
+    response: null,
+  })
   @Patch(':id')
   @HttpCode(204)
   async update(
@@ -148,6 +173,11 @@ export class MembersController {
 
   // Situação e transferência NÃO passam pelo PATCH: cada uma tem regra, evento de história e auditoria próprios.
   @RequirePermission(MEMBERS_WRITE)
+  @ApiDoc({
+    summary: 'Muda a situação do membro (ativo, afastado...).',
+    description: 'Gera um evento na história do membro.',
+    response: null,
+  })
   @Post(':id/status')
   @HttpCode(204)
   async status(
@@ -164,6 +194,11 @@ export class MembersController {
   }
 
   @RequirePermission(MEMBERS_WRITE)
+  @ApiDoc({
+    summary: 'Transfere o membro para outra congregação.',
+    description: 'Gera um evento na história do membro.',
+    response: null,
+  })
   @Post(':id/transfer')
   @HttpCode(204)
   async transfer(
@@ -180,6 +215,10 @@ export class MembersController {
   }
 
   @RequirePermission(MEMBERS_WRITE)
+  @ApiDoc({
+    summary: 'Registra um fato na história do membro (batismo, recepção).',
+    response: null,
+  })
   @Post(':id/history')
   @HttpCode(204)
   async history(
@@ -197,6 +236,12 @@ export class MembersController {
 
   // IRREVERSÍVEL: só quem tem a permissão para a igreja toda (o guard confere antes de qualquer coisa).
   @RequirePermission(MEMBERS_ANONYMIZE, ORGANIZATION_WIDE)
+  @ApiDoc({
+    summary: 'Anonimiza o membro (LGPD).',
+    description:
+      'IRREVERSÍVEL: apaga os dados pessoais e mantém a linha, a congregação, a situação e a história.',
+    response: null,
+  })
   @Post(':id/anonymize')
   @HttpCode(204)
   async anonymize(
