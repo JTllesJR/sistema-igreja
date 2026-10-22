@@ -40,18 +40,22 @@ Escopo do MVP no PRD: **login, permissões, cadastro de membros, finanças bási
 > anonimização (LGPD). **UC-08 (documentos e foto) fica de fora** por exigir armazenamento privado.
 | ID | Caso de uso | Ator | Observações |
 |---|---|---|---|
-| UC-06 | Cadastrar e editar membro | Secretário, Dirigente | Dados pessoais, cargo/função, foto. |
+| UC-06 | Cadastrar e editar membro | Secretário, Dirigente | Dados pessoais e **cargo** (lista da igreja: membro, auxiliar, diácono, diaconisa, presbítero, evangelista, pastor). Foto fica para o UC-08. |
 | UC-07 | Registrar histórico do membro | Secretário, Dirigente | Batismo, recepção, transferência. |
 | UC-08 | Anexar documentos ao membro | Secretário, Dirigente | Storage privado; acesso auditado. |
 | UC-09 | Listar e buscar membros | Secretário, Dirigente, Diretoria | Resultado filtrado pelo escopo do usuário. |
 | UC-10 | Transferir membro entre congregações | Secretário, Dirigente | Gera evento de histórico. |
 
 ### Finanças
+
+> **Implementados no backend** ([ADR 0015](adr/0015-modulo-finance.md)): UC-11 a UC-15 e a parte financeira do UC-16, além
+> do repasse com a sede, do saldo inicial e do extrato de contribuição por membro. Sem telas ainda (fase de front-end).
+
 | ID | Caso de uso | Ator | Observações |
 |---|---|---|---|
 | UC-11 | Gerenciar contas (caixa e bancos) e categorias | Tesoureiro | Categorias personalizáveis. |
 | UC-12 | Registrar entrada | Tesoureiro | Dízimo pode ser vinculado a um membro. |
-| UC-13 | Registrar saída | Tesoureiro | Acima do limite, exige aprovação (pós-MVP). |
+| UC-13 | Registrar saída | Tesoureiro | A congregação paga e a **sede aprova TODA saída** (resposta da igreja, 2026-10-22); entra no MVP. |
 | UC-14 | Estornar lançamento | Tesoureiro | Nunca edita nem apaga; gera novo lançamento (ADR 0005). |
 | UC-15 | Ver dashboard financeiro da congregação | Tesoureiro, Dirigente | Entradas, saídas e saldo; filtros por período e categoria. |
 
@@ -76,10 +80,28 @@ Escopo do MVP no PRD: **login, permissões, cadastro de membros, finanças bási
 Carteirinha e certificados · frequência · agenda · atas · comunicação interna · relatórios avançados e
 exportação · fluxo de caixa · aprovações · push/e-mail · app mobile · PIX · portal do membro.
 
-## ⚠ Perguntas para validar com a igreja
-1. Quais são os cargos e ministérios reais? E os valores de "situação espiritual"?
-2. Quem pode ver a **contribuição individual** de um membro? Só o Tesoureiro? O próprio membro?
-3. Qual o **limite** de valor que exige aprovação da Diretoria?
-4. O dízimo é sempre identificado por membro, ou também anônimo?
-5. Uma saída pode ser paga por uma congregação e aprovada pela sede? Há repasse entre congregação e sede?
-6. Os dados atuais estão em planilhas? Será necessário importar?
+## Perguntas para validar com a igreja
+
+Respostas recebidas em 2026-10-22 (✅ respondida, ⚠ ainda em aberto):
+
+1. ✅ **Cargos:** Membro, Auxiliar, Diácono, Diaconisa, Presbítero, Evangelista e Pastor. ⚠ Ministérios e a lista de
+   "situação espiritual" **ainda não foram informados** (a lista de situações do `members` segue provisória, ADR 0013).
+2. ✅ **Contribuição individual:** o **próprio membro** vê a sua dos **últimos 12 meses**; **Tesoureiro, Dirigente e
+   Diretoria** veem **todo o período**. (O acesso do próprio membro exige o portal do membro, v2.0; o MVP entrega o
+   extrato de todo o período para quem tem a permissão, com a janela de 12 meses já prevista no desenho. ADR 0015.)
+3. ✅ **Aprovação:** **toda saída** precisa de aprovação da sede (não há valor de corte).
+4. ✅ **Dízimo:** pode ser identificado por membro **ou** anônimo (cada lançamento tem ou não membro).
+5. ✅ **Uma saída pode ser paga pela congregação, com aprovação da sede. Há repasse entre congregação e sede.**
+6. ✅ **Não há planilhas: o sistema começa do zero** (nenhum importador é necessário).
+
+### O que isso muda no código
+
+- **Cargo do membro (resposta 1):** `members` ganha o campo `position` com os 7 valores ("Membro" é o padrão). Mandatos
+  (período no cargo) continuam fora do MVP.
+- **Aprovação da sede (respostas 3 e 5):** a saída entra no `finance` do MVP como fluxo (pendente, aprovada, recusada,
+  cancelada), com aprovador diferente de quem pediu.
+- **Repasse (resposta 5):** par de lançamentos ligados (sai da conta de uma congregação, entra na da outra), aprovado pela
+  sede como um só ato.
+- **Extrato individual (resposta 2):** permissão própria (`finance:read-individual`, ADR 0004) e leitura auditada
+  (ADR 0006 e 0013).
+- **Sem importação (resposta 6):** o sistema precisa registrar o **saldo inicial** de cada conta.

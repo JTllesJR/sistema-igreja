@@ -46,7 +46,7 @@ erDiagram
 
 Estas são as duas tabelas do módulo `organization`, criadas pelas migrations `20261019000000_init` e `20261020120000_organization_congregations`. O ID é UUID v7 **gerado pela aplicação** (sem default no banco). As restrições de `congregation` estão descritas na seção "Integridade da congregação" abaixo e foram exercitadas contra PostgreSQL 17.
 
-As cinco tabelas do `identity-access` (`user_account`, `role`, `role_permission`, `user_role_assignment` e `session`) vieram na migration `20261020150000_identity_access` e estão na seção seguinte. O [schema Prisma](../../apps/api/prisma/schema.prisma) é a fonte da verdade. Os demais módulos (`members`, `finance`, `audit`) ainda não têm tabelas.
+As cinco tabelas do `identity-access` (`user_account`, `role`, `role_permission`, `user_role_assignment` e `session`) vieram na migration `20261020150000_identity_access` e estão na seção seguinte. O [schema Prisma](../../apps/api/prisma/schema.prisma) é a fonte da verdade. Os módulos `members`, `audit` e `finance` vieram depois, em migrations próprias (`finance`: `20261022120000_finance`; cargo do membro: `20261022130000_member_position`).
 
 ## Organização e acesso — implementado (migration `20261020150000`)
 
@@ -213,7 +213,7 @@ erDiagram
 
 O vínculo opcional entre usuário e membro é conceitual: a coluna e a restrição que o implementarão ainda devem ser definidas. Documentos e fotos guardam chaves de storage; o conteúdo dos arquivos fica no storage privado planejado. Os valores finais de status e tipos de histórico aguardam validação com a igreja.
 
-## Finanças — planejado
+## Finanças — implementado no backend (ADR 0015)
 
 ```mermaid
 erDiagram
@@ -230,6 +230,7 @@ erDiagram
         uuid congregation_id FK
         string name
         string kind
+        string status
     }
     FINANCE_CATEGORY {
         uuid id PK
@@ -244,12 +245,19 @@ erDiagram
         uuid account_id FK
         uuid category_id FK
         uuid member_id FK
+        string kind
         string direction
+        string status
         bigint amount_cents
         date occurred_on
+        uuid transfer_id
         uuid reverses_entry_id FK
+        uuid requested_by
+        uuid decided_by
     }
 ```
+
+`status` (`PENDING`, `CONFIRMED`, `REJECTED`, `CANCELLED`) e `kind` (`ORDINARY`, `OPENING_BALANCE`, `TRANSFER`, `REVERSAL`) dizem em que ponto do fluxo de aprovação o lançamento está; só o `CONFIRMED` entra no saldo. `requested_by` e `decided_by` registram quem pediu e quem decidiu e **nunca são iguais** (`CHECK`). `transfer_id` liga as duas pernas de um repasse. Um gatilho recusa `DELETE` e qualquer `UPDATE` de lançamento já decidido. A chave estrangeira composta `(organization_id, account_id, congregation_id)` impede apontar para conta de outra congregação.
 
 `member_id` é opcional, permitindo oferta anônima. `reverses_entry_id` é opcional e identifica o lançamento original; cada original pode ter no máximo um estorno. O saldo é calculado pelos lançamentos, sem coluna de saldo neste modelo.
 

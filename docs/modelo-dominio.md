@@ -40,14 +40,14 @@ erDiagram
     ROLE { uuid id string name bool is_system }
     ROLE_PERMISSION { uuid role_id string permission }
     ROLE_ASSIGNMENT { uuid user_id uuid role_id uuid congregation_id }
-    MEMBER { uuid id uuid congregation_id string full_name date birth_date string status string photo_key }
+    MEMBER { uuid id uuid congregation_id string full_name date birth_date string status string position string photo_key }
     MEMBER_HISTORY_EVENT { uuid id uuid member_id string type date occurred_on string notes }
     MEMBER_DOCUMENT { uuid id uuid member_id string kind string storage_key }
     POSITION { uuid id string name string kind }
     MANDATE { uuid id uuid member_id uuid position_id date starts_on date ends_on }
     FINANCIAL_ACCOUNT { uuid id uuid congregation_id string name string kind }
     FINANCE_CATEGORY { uuid id string name string direction }
-    FINANCIAL_ENTRY { uuid id uuid congregation_id uuid account_id uuid category_id uuid member_id string direction bigint amount_cents date occurred_on uuid reverses_entry_id }
+    FINANCIAL_ENTRY { uuid id uuid congregation_id uuid account_id uuid category_id uuid member_id string kind string direction string status bigint amount_cents date occurred_on uuid transfer_id uuid reverses_entry_id uuid requested_by uuid decided_by }
     AUDIT_LOG { uuid id uuid actor_id string action string entity string entity_id json before json after datetime at }
 ```
 
@@ -63,6 +63,8 @@ erDiagram
 8. **`AUDIT_LOG` não pertence a nenhum módulo de negócio**: é escrito por um interceptor transversal e é somente-anexação.
 9. `MEMBER_HISTORY_EVENT.type` e `MEMBER.status` são enumerações; os valores finais dependem da validação com a igreja (ver casos de uso, perguntas 1 a 6).
 10. **`Organization` é a raiz do agregado que contém as `Congregation`**, para que o domínio garanta "uma sede por organização". Congregação tem `status` (`ACTIVE`/`INACTIVE`) em vez de `deleted_at` e nunca é excluída; `organization.version` dá o travamento otimista. Detalhes, restrições de banco e alternativas no [ADR 0009](adr/0009-modulo-organization.md).
+11. **`FINANCIAL_ENTRY` tem `status`** (`PENDING`, `CONFIRMED`, `REJECTED`, `CANCELLED`) e `kind` (`ORDINARY`, `OPENING_BALANCE`, `TRANSFER`, `REVERSAL`). Entrada comum nasce confirmada; saída, saldo inicial, repasse e estorno nascem pendentes e só entram no saldo depois que **outra pessoa da sede** os aprova. As duas pernas de um repasse compartilham `transfer_id`. Ver o [ADR 0015](adr/0015-modulo-finance.md).
+12. **`MEMBER.position`** é o cargo (enumeração com os sete valores da igreja), distinto da situação (`status`). O modelo de `POSITION`/`MANDATE` com período continua como evolução futura.
 
 ## Mapeamento módulo → tabelas
 

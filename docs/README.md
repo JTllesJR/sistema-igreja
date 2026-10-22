@@ -28,6 +28,7 @@ casos de uso, modelo ER, sequências, atividades e estados, distinguindo impleme
 | [0012](adr/0012-web-react-vite-tailwind.md) | Web: React, Vite e Tailwind | aceita |
 | [0013](adr/0013-modulo-members-e-auditoria.md) | Módulo `members` e a trilha de auditoria | aceita |
 | [0014](adr/0014-usuarios-papeis-padrao-e-senha-temporaria.md) | Usuários, papéis padrão e senha temporária (UC-02/03 enxuto) | aceita |
+| [0015](adr/0015-modulo-finance.md) | Módulo `finance`: contas, lançamentos imutáveis, aprovação da sede e repasse | aceita |
 
 ## Como usar os ADRs
 Toda decisão estrutural nova vira um ADR curto (contexto, decisão, alternativas, consequências). Se uma decisão mudar,
@@ -86,15 +87,34 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
   novo usuário com senha temporária mostrada uma vez, atribuir e remover papel, desativar, redefinir senha e a troca
   obrigatória no primeiro acesso. Verificado contra uma API simulada; falta só o banco real (CI).
 
+- ✅ **Módulo `finance`, backend** ([ADR 0015](adr/0015-modulo-finance.md)): contas e categorias, entrada (vale na hora),
+  saída, saldo inicial, repasse com a sede e estorno (todos **pendentes** até outra pessoa da sede aprovar), painel
+  financeiro (UC-15/16) e extrato de contribuição por membro. Dinheiro em centavos inteiros; lançamento imutável depois
+  de decidido (gatilho no banco); **quem pede nunca aprova** (domínio e `CHECK`); o saldo nunca fica negativo, nem com
+  aprovações simultâneas (linhas de conta travadas); quem contribuiu só aparece com `finance:read-individual` e toda
+  leitura que o revela é auditada antes de devolver (falha fechada). Papéis padrão novos **Tesoureiro** e **Diretoria**
+  (e o Dirigente ganha o financeiro da congregação); os papéis de sistema já existentes são sincronizados com o código.
+  **Backend apenas, sem telas** (veja "Front-end" abaixo). Testado com repositórios em memória (duas igrejas, escopo,
+  trilha, falha da trilha) e com mutação manual; **a migration, o gatilho, o `FOR UPDATE` e os repositórios Prisma só
+  serão exercitados no CI** (sem Docker nesta máquina).
+- ✅ **Cargo do membro** (backend): `MEMBER`, `AUXILIARY`, `DEACON`, `DEACONESS`, `PRESBYTER`, `EVANGELIST` e `PASTOR`
+  (lista da igreja), no cadastro e na ficha; fica fora da lista de busca (dado sensível).
+
+## Front-end: as telas atuais são só uma AMOSTRA
+Decisão do dono do projeto (2026-10-22): **o backend de todos os módulos vem primeiro**, e o front-end será uma fase
+própria, para todos os módulos de uma vez. As telas que existem hoje (login, congregações, membros, usuários e papéis)
+foram feitas para provar a arquitetura de ponta a ponta e podem ser refeitas; não há telas de finanças. Isso também deixa
+o desenho visual mais consistente, porque será pensado sobre a API completa.
+
 ## Próximos passos
-Em fatias verticais, para que o primeiro resultado visual chegue cedo (cada módulo novo entrega backend e tela):
-1. Camada HTTP (ADR 0011): passos (a), (b) e (c) feitos; segue (d) OpenAPI (Swagger UI).
-2. Web: login, congregações, membros, **usuários e papéis** e a troca de senha prontos, verificados contra uma API
-   simulada. **Conferir o CI**: é o que valida as migrations, os repositórios Prisma e o gatilho da trilha com o PostgreSQL real.
-3. **`finance`** (dinheiro em centavos, lançamentos imutáveis, ADR 0005; papel Tesoureiro), já com tela. Antes, levar à igreja
-   as perguntas do `casos-de-uso-mvp.md` (limite de aprovação, dízimo identificado ou anônimo, repasse à sede).
-4. Dashboard consolidado da Diretoria (UC-16), documentos e foto dos membros (UC-08, com armazenamento privado), consulta à
-   trilha de auditoria (UC-04), editor de papéis e convite por link (adiados no ADR 0014) e o OpenAPI.
+Backend primeiro, em fatias verticais grossas e sem abrir mão da segurança (cada fatia traz domínio, banco, API e testes):
+1. **Conferir o CI**: é o que valida as migrations (inclusive `finance` e o cargo), os repositórios Prisma, o gatilho da
+   trilha e do livro-razão e a trava de saldo com o PostgreSQL real.
+2. Camada HTTP (ADR 0011), passo (d): OpenAPI (Swagger UI), que também alimenta o front-end.
+3. Backend que falta: consulta à trilha de auditoria (UC-04), dashboard consolidado da Diretoria com membros ativos
+   (UC-16 completo, hoje só a parte financeira), documentos e foto dos membros (UC-08, com armazenamento privado), editor
+   de papéis e convite por link (adiados no ADR 0014).
+4. **Fase de front-end** para todos os módulos (veja acima).
 
 Em paralelo:
 - Validar com a igreja as perguntas ao final de [casos-de-uso-mvp.md](casos-de-uso-mvp.md).

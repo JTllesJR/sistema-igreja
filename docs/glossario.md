@@ -13,7 +13,7 @@ Linguagem comum entre a igreja, o PRD e o código. **Os nomes das entidades no c
 | **Congregação inativa** | Congregação desativada, mas preservada: seus membros e lançamentos continuam existindo. Não se exclui congregação. A sede nunca fica inativa. | `status = INACTIVE` |
 | **Operador** | Quem instala e mantém o sistema, por linha de comando. Não é um usuário da igreja. | — |
 | **Diretoria** | Grupo gestor com visão consolidada de todas as congregações. Não é um conjunto de dados à parte: é um *papel com escopo global*. | `Role` + `RoleAssignment` (escopo organização) |
-| **Cargo / Função** | Posição eclesiástica ou administrativa de um membro (ex.: diácono, presbítero, tesoureiro). ⚠ lista de cargos | `Position` |
+| **Cargo / Função** | Posição eclesiástica de um membro. Lista da igreja (2026-10-22): membro, auxiliar, diácono, diaconisa, presbítero, evangelista e pastor. Dado sensível. | `Member.position` (`MemberPosition`) |
 | **Mandato** | Período em que um membro ocupa um cargo (início e fim). | `Mandate` |
 | **Ministério / Departamento** | Grupo de atuação (ex.: louvor, jovens, EBD). ⚠ lista | `Ministry` |
 
@@ -42,13 +42,17 @@ Linguagem comum entre a igreja, o PRD e o código. **Os nomes das entidades no c
 |---|---|---|
 | **Dízimo / Oferta / Contribuição específica / Doação** | Tipos de entrada. Podem ser categorias personalizáveis. | `FinanceCategory` |
 | **Lançamento** | Registro de uma entrada ou saída. **Imutável** depois de confirmado. | `FinancialEntry` |
-| **Estorno** | Lançamento que corrige outro, referenciando-o. Substitui "editar/excluir". | `FinancialEntry.reversesEntryId` |
+| **Estorno** | Lançamento que corrige outro, referenciando-o. Substitui "editar/excluir". Uma vez só por lançamento, e pendente até a sede aprovar. | `FinancialEntry.reversesEntryId` |
+| **Saldo inicial** | Lançamento que traz para a conta o dinheiro que ela já tinha quando o sistema começou (a igreja não tem dados anteriores para importar). Espera a sede, como uma saída. | `FinancialEntry.kind = OPENING_BALANCE` |
+| **Repasse** | Dinheiro que passa da congregação para a sede (ou o contrário): duas pernas ligadas (saída e entrada) que a sede aprova juntas. Não é receita nem despesa. | `FinancialEntry.kind = TRANSFER`, `transferId` |
+| **Pedido pendente** | Lançamento que ainda não é dinheiro: espera a sede. Vale (confirmado), é recusado ou é cancelado por quem pediu. | `FinancialEntry.status` |
+| **Separação de funções** | Quem faz o pedido nunca o aprova. Imposta no domínio e por uma restrição do banco. | `maker_is_not_checker` |
 | **Conta** | Onde o dinheiro está: caixa ou conta bancária. | `FinancialAccount` |
 | **Categoria** | Classificação do lançamento (personalizável). | `FinanceCategory` |
 | **Saldo** | Resultado da soma dos lançamentos. Calculado, não armazenado. | — |
 | **Fluxo de caixa** | Previsão de despesas futuras e projeção de saldo. (MVP: não inclui) | — |
 | **Prestação de contas** | Relatório financeiro formal apresentado à igreja. | `reporting` |
-| **Aprovação** | Autorização da Diretoria para compra, projeto ou movimentação acima de um limite. ⚠ valor do limite | `ApprovalRequest` |
+| **Aprovação** | Decisão da **sede** sobre um pedido financeiro. A igreja respondeu que TODA saída é aprovada (não há limite de valor). Quem decide é outra pessoa que não quem pediu. | `ApproveEntryUseCase` |
 
 ## Atividades
 

@@ -93,7 +93,7 @@ Os itens 1 a 5 são domínio puro; 6 e 7 exigem PostgreSQL; 8 exige autenticaç�
 | UC-04         | audit                | Registros de auditoria                  | Acesso restrito e impossibilidade de alteração pela API    |
 | UC-05, UC-17  | organization         | Organização e congregações              | Sede única, nome único e isolamento entre organizações     |
 | UC-06 a UC-10 | members              | Membros, histórico e documentos         | Escopo, privacidade e transferência consistente            |
-| UC-11 a UC-15 | finance              | Contas, categorias e lançamentos        | Valores exatos, estorno único e ausência de acesso cruzado |
+| UC-11 a UC-15 | finance              | Contas, categorias e lançamentos        | Valores exatos, estorno único, quem pede não aprova (a sede decide), saldo nunca negativo e ausência de acesso cruzado |
 | UC-16         | Composição a definir | Consultas públicas de members e finance | Consolidação limitada à organização autorizada             |
 
 O dashboard consolidado não autoriza acesso direto às tabelas de outros módulos. O desenho de sua composição deve preservar as interfaces públicas dos módulos.

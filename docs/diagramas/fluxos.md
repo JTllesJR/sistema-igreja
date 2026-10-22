@@ -99,16 +99,25 @@ flowchart TD
 
 A atualização e o histórico precisam ser consistentes: não pode existir transferência sem rastro. Ainda é necessário decidir se um usuário precisa de acesso às duas congregações ou se haverá outro procedimento de autorização. Transferência entre organizações não está definida neste caso de uso.
 
-## 5. Lançamento e estorno, UC-12 a UC-14 — planejado
+## 5. Lançamento, aprovação e estorno, UC-12 a UC-14 — implementado no backend (ADR 0015)
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Confirmado: Registro aceito
-    Confirmado --> Estornado: Novo lançamento de estorno referencia o original
-    Estornado --> [*]
+    [*] --> Confirmado: Entrada comum
+    [*] --> Pendente: Saída, saldo inicial, repasse ou estorno
+    Pendente --> Confirmado: Outra pessoa da sede aprova
+    Pendente --> Recusado: A sede recusa, com motivo
+    Pendente --> Cancelado: Quem pediu desiste
+    Confirmado --> [*]
+    Recusado --> [*]
+    Cancelado --> [*]
 ```
 
-Este é um **estado lógico**, calculado pela existência de um estorno; não propõe uma coluna de status. O original continua armazenado e imutável. O encerramento no desenho não significa exclusão. Rascunhos, aprovações e estorno de estorno não estão especificados aqui.
+O `status` é uma coluna do lançamento; só o **confirmado** entra no saldo. Depois de decidido, o lançamento não muda mais
+(gatilho no banco), e a correção é um **estorno**: um novo lançamento, de sentido oposto, ligado ao original (uma vez
+só), que também nasce pendente. Quem pediu nunca decide o próprio pedido. Ao confirmar uma saída, o saldo da conta
+(com a linha travada) não pode ficar negativo. Os dois lançamentos de um repasse são decididos juntos. Não se estorna um
+estorno nem uma perna de repasse.
 
 Exemplo: uma entrada de R$ 100,00 é armazenada como `10000` centavos com direção `IN`. Seu estorno gera um novo lançamento de `10000` centavos com direção `OUT`, referenciando o original. O efeito líquido no saldo é zero, e os dois registros preservam a história.
 
