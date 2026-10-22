@@ -63,6 +63,8 @@ sessão. Elas valem aqui, **subordinadas** às regras deste arquivo; em conflito
 
 - Windows 11 com Docker Desktop (WSL 2). O banco local é o PostgreSQL 17 do `docker-compose.yml` (`pnpm db:up`).
 - `pnpm test:integration` aplica as migrations no banco `igreja_test` sozinho (setup global do Vitest).
+- `OPENAPI_ENABLED=true` no `.env` liga `/openapi.json` e `/docs` (Swagger UI); desligado por padrão (ADR 0016). Toda rota nova
+  precisa de `@ApiDoc` (resumo e schema da resposta), senão os testes falham.
 - A API e o `pnpm cli` exigem `JWT_SECRET` (mínimo de 32 caracteres) no `.env`, sem valor padrão de propósito. Nos testes
   de integração e no CI o segredo é um valor fixo de teste, definido em `vitest.config.integration.ts`.
 - Mutação manual: o separador `|` e o prefixo `//` atrapalham em scripts de shell; para trocar trechos que contêm `||`,

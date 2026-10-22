@@ -101,6 +101,9 @@ cliente depender do contrato.
 
 ### 10. OpenAPI por último (passo d)
 
+> **Refinado pelo [ADR 0016](0016-openapi-a-partir-dos-controllers.md):** em vez do `@nestjs/swagger`, o documento sai dos
+> controllers reais com `z.toJSONSchema`; só a interface (`swagger-ui-dist`) é dependência nova.
+
 O Zod 4 gera JSON Schema nativamente (`z.toJSONSchema`, verificado), então a documentação sai dos mesmos schemas do
 contrato, sem duplicar. `@nestjs/swagger` (compatível com o Nest 12) serve a interface. Fica por último para não
 atrasar o login.

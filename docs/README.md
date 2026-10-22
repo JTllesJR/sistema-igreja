@@ -29,6 +29,7 @@ casos de uso, modelo ER, sequências, atividades e estados, distinguindo impleme
 | [0013](adr/0013-modulo-members-e-auditoria.md) | Módulo `members` e a trilha de auditoria | aceita |
 | [0014](adr/0014-usuarios-papeis-padrao-e-senha-temporaria.md) | Usuários, papéis padrão e senha temporária (UC-02/03 enxuto) | aceita |
 | [0015](adr/0015-modulo-finance.md) | Módulo `finance`: contas, lançamentos imutáveis, aprovação da sede e repasse | aceita |
+| [0016](adr/0016-openapi-a-partir-dos-controllers.md) | OpenAPI gerado dos controllers reais, com Swagger UI desligada por padrão | aceita |
 
 ## Como usar os ADRs
 Toda decisão estrutural nova vira um ADR curto (contexto, decisão, alternativas, consequências). Se uma decisão mudar,
@@ -65,7 +66,9 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
   `/auth/refresh`, `/auth/logout`, `/auth/me` e `/auth/change-password`, refresh em cookie `httpOnly`, guard global que
   nega por padrão, `@Public`, `@RequirePermission` e limites de taxa por rota. **(c) Congregações pronto:**
   `/organization` e `/congregations` (listar, criar, editar, desativar, reativar, designar sede), com permissões
-  `organization:read` e `organization:manage` (esta exige a igreja toda). Falta **(d)** OpenAPI.
+  `organization:read` e `organization:manage` (esta exige a igreja toda). **(d) OpenAPI pronto** ([ADR 0016](adr/0016-openapi-a-partir-dos-controllers.md)): `/openapi.json` e a interface `/docs`,
+  geradas dos controllers reais (51 rotas, com permissão, entrada e resposta), **desligadas por padrão** (`OPENAPI_ENABLED=true`
+  em desenvolvimento); rota sem `@ApiDoc` derruba os testes.
 
 - ✅ **Web inicial** ([ADR 0012](adr/0012-web-react-vite-tailwind.md)): `apps/web` (React + Vite + Tailwind) com a
   página **Andamento do sistema**: saúde da API e do banco ao vivo (contrato compartilhado) e o estado dos 18 casos de
@@ -110,11 +113,10 @@ o desenho visual mais consistente, porque será pensado sobre a API completa.
 Backend primeiro, em fatias verticais grossas e sem abrir mão da segurança (cada fatia traz domínio, banco, API e testes):
 1. **Conferir o CI**: é o que valida as migrations (inclusive `finance` e o cargo), os repositórios Prisma, o gatilho da
    trilha e do livro-razão e a trava de saldo com o PostgreSQL real.
-2. Camada HTTP (ADR 0011), passo (d): OpenAPI (Swagger UI), que também alimenta o front-end.
-3. Backend que falta: consulta à trilha de auditoria (UC-04), dashboard consolidado da Diretoria com membros ativos
+2. Backend que falta: consulta à trilha de auditoria (UC-04), dashboard consolidado da Diretoria com membros ativos
    (UC-16 completo, hoje só a parte financeira), documentos e foto dos membros (UC-08, com armazenamento privado), editor
    de papéis e convite por link (adiados no ADR 0014).
-4. **Fase de front-end** para todos os módulos (veja acima).
+3. **Fase de front-end** para todos os módulos (veja acima), já com o OpenAPI como base para gerar o cliente tipado.
 
 Em paralelo:
 - Validar com a igreja as perguntas ao final de [casos-de-uso-mvp.md](casos-de-uso-mvp.md).

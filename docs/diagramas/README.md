@@ -35,7 +35,7 @@ O código atual tem API, configuração, acesso ao banco, `/health`, as tabelas 
 | Prática                       | Registro esperado                                           | Quando usar                                      |
 | ----------------------------- | ----------------------------------------------------------- | ------------------------------------------------ |
 | Critérios de aceite           | Exemplos verificáveis de sucesso e falha ligados ao UC      | Antes de implementar a funcionalidade            |
-| Contrato da API               | Schemas Zod em `packages/contracts`; OpenAPI está planejado | Ao criar ou alterar endpoints                    |
+| Contrato da API               | Schemas Zod em `packages/contracts`; OpenAPI gerado em `/openapi.json` (ADR 0016) | Ao criar ou alterar endpoints                    |
 | Decisões arquiteturais        | ADR com contexto, alternativas e consequências              | Ao mudar arquitetura, isolamento ou persistência |
 | Migrações revisadas           | Schema Prisma e SQL versionados                             | Ao alterar tabelas, índices ou restrições        |
 | Testes proporcionais ao risco | Unitários para regras; integração para banco e autorização  | Durante a implementação                          |

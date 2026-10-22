@@ -81,7 +81,7 @@ presentation ──▶ application ──▶ domain ◀── infrastructure
 ## Próximos passos de arquitetura (fora da Fase 1)
 
 - Pipe de validação com Zod e filtro global de exceções (entram com o primeiro endpoint de negócio).
-- OpenAPI gerado a partir dos schemas Zod.
+- ~~OpenAPI gerado a partir dos schemas Zod.~~ Feito: [ADR 0016](adr/0016-openapi-a-partir-dos-controllers.md).
 - Regra automática de fronteira entre módulos (dependency-cruiser ou regra de lint) quando existirem dois módulos reais.
 - Log estruturado (pino) e identificador de requisição.
 - Autenticação e RBAC com escopo (Fase 2, ADR 0004).
