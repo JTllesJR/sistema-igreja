@@ -23,7 +23,7 @@ Escopo do MVP no PRD: **login, permissões, cadastro de membros, finanças bási
 | ID | Caso de uso | Ator | Observações |
 |---|---|---|---|
 | UC-01 | Entrar e sair do sistema | Todos | Sessão com token curto + refresh; bloqueio após tentativas falhas. |
-| UC-02 | Gerenciar papéis e permissões | Administrador | Papéis semente + personalizados. |
+| UC-02 | Gerenciar papéis e permissões | Administrador | Papéis semente + personalizados. **Editor implementado no backend** ([ADR 0019](adr/0019-editor-de-papeis-e-catalogo-de-permissoes.md)): catálogo de permissões, criar, editar e excluir. |
 | UC-03 | Convidar usuário e atribuir papel com escopo | Administrador | Escopo = organização ou congregação. O **primeiro** administrador é criado pelo Operador com `pnpm cli create-administrator` (implementado); o convite pela interface virá depois. |
 | UC-18 | Trocar a própria senha | Todos | Exige a senha atual; revoga as outras sessões (ADR 0010). |
 | UC-04 | Consultar trilha de auditoria | Administrador, Diretoria | Quem fez o quê, quando; filtros por usuário, dado afetado, ação, módulo e período; página por cursor. **Implementado no backend** ([ADR 0017](adr/0017-consulta-a-trilha-de-auditoria.md)); a consulta também é auditada. |

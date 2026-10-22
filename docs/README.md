@@ -32,6 +32,7 @@ casos de uso, modelo ER, sequências, atividades e estados, distinguindo impleme
 | [0016](adr/0016-openapi-a-partir-dos-controllers.md) | OpenAPI gerado dos controllers reais, com Swagger UI desligada por padrão | aceita |
 | [0017](adr/0017-consulta-a-trilha-de-auditoria.md) | Consulta à trilha de auditoria (UC-04): `audit:read`, cursor e a consulta também auditada | aceita |
 | [0018](adr/0018-painel-consolidado-composto-no-cliente.md) | Painel consolidado (UC-16): contagem de membros no `members`, composição no cliente | aceita |
+| [0019](adr/0019-editor-de-papeis-e-catalogo-de-permissoes.md) | Editor de papéis (UC-02) e catálogo de permissões montado na raiz | aceita |
 
 ## Como usar os ADRs
 Toda decisão estrutural nova vira um ADR curto (contexto, decisão, alternativas, consequências). Se uma decisão mudar,
@@ -113,6 +114,11 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
   `GET /members/stats` conta os membros por situação e congregação (só números, `GROUP BY` no banco), no escopo de
   `members:read`, sem anonimizados e auditado antes de devolver. A parte financeira continua em `GET /finance/dashboard`; o
   painel da Diretoria compõe as duas. Contrato do repositório validado no PostgreSQL local, com mutação manual.
+- ✅ **Editor de papéis, backend (UC-02)** ([ADR 0019](adr/0019-editor-de-papeis-e-catalogo-de-permissoes.md)): catálogo de
+  permissões montado na raiz a partir de cada módulo (`GET /roles/permissions`), e criar, editar e excluir papéis
+  personalizados (`POST`, `PATCH` e `DELETE /roles`). Papel personalizado nunca tem `*` nem `access:manage-users`; papel
+  padrão não muda; papel atribuído não se exclui (o banco garante, sem migration nova). Tudo auditado. Validado no PostgreSQL
+  local, com 19 mutantes mortos.
 
 ## Front-end: as telas atuais são só uma AMOSTRA
 Decisão do dono do projeto (2026-10-22): **o backend de todos os módulos vem primeiro**, e o front-end será uma fase
@@ -124,7 +130,7 @@ o desenho visual mais consistente, porque será pensado sobre a API completa.
 Backend primeiro, em fatias verticais grossas e sem abrir mão da segurança (cada fatia traz domínio, banco, API e testes):
 1. **Conferir o CI**: é o que valida as migrations (inclusive `finance` e o cargo), os repositórios Prisma, o gatilho da
    trilha e do livro-razão e a trava de saldo com o PostgreSQL real.
-2. Backend que falta: editor de papéis e convite por link (adiados no ADR 0014) e documentos e foto dos membros (UC-08,
+2. Backend que falta: convite por link (o resto do UC-03, adiado no ADR 0014) e documentos e foto dos membros (UC-08,
    com armazenamento privado, exige decidir onde guardar os arquivos).
 3. **Fase de front-end** para todos os módulos (veja acima), já com o OpenAPI como base para gerar o cliente tipado.
 

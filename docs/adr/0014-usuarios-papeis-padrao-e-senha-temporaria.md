@@ -68,7 +68,8 @@ Toda ação administrativa grava na trilha **depois** de salvar, como em `member
 
 ## Fora desta decisão (adiado)
 
-Convite por link, editor de papéis, catálogo de permissões, papel Tesoureiro e consulta à trilha (UC-04).
+Convite por link, editor de papéis, catálogo de permissões, papel Tesoureiro e consulta à trilha (UC-04). (Depois: o
+Tesoureiro entrou no ADR 0015, a trilha no 0017 e o editor de papéis com o catálogo no 0019.)
 
 ## Como a etapa 1 ficou (implementado)
 
