@@ -15,6 +15,29 @@ export const roleSchema = z.object({
 });
 export type Role = z.infer<typeof roleSchema>;
 
+/** Uma permissão que um papel personalizado pode receber, com o que ela deixa fazer (ADR 0019). */
+export const permissionDefinitionSchema = z.object({
+  key: z.string(),
+  description: z.string(),
+});
+export type PermissionDefinition = z.infer<typeof permissionDefinitionSchema>;
+
+// Limites só contra abuso; as regras de verdade (tamanho do nome, permissões válidas) ficam no domínio.
+const permissionKeys = z.array(z.string().max(100)).max(100);
+
+export const createRoleRequestSchema = z.object({
+  name: z.string().max(200),
+  permissions: permissionKeys,
+});
+export type CreateRoleRequest = z.infer<typeof createRoleRequestSchema>;
+
+/** Campo ausente = manter. */
+export const updateRoleRequestSchema = z.object({
+  name: z.string().max(200).optional(),
+  permissions: permissionKeys.optional(),
+});
+export type UpdateRoleRequest = z.infer<typeof updateRoleRequestSchema>;
+
 /** Um papel atribuído a um usuário. `congregationId` nulo = vale para a igreja toda. */
 export const userRoleSchema = z.object({
   roleId: z.uuid(),

@@ -18,3 +18,5 @@ export {
 export { AccessPolicy } from './domain/access-policy.js';
 export { CurrentPolicy } from './presentation/http/authenticated-request.js';
 export { Permission } from './domain/permission.js';
+export { ACCESS_PERMISSIONS } from './access.permissions.js';
+export { PERMISSION_CATALOG } from './identity-access.tokens.js';

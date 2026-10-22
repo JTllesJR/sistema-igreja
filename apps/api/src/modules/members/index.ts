@@ -17,6 +17,7 @@ export { MembersModule } from './members.module.js';
 export { MEMBER_QUERIES } from './members.tokens.js';
 export {
   MEMBERS_ANONYMIZE,
+  MEMBERS_PERMISSIONS,
   MEMBERS_READ,
   MEMBERS_WRITE,
 } from './members.permissions.js';

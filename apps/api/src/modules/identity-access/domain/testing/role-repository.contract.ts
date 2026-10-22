@@ -146,5 +146,78 @@ export function describeRoleRepositoryContract(
       ).resolves.toBeUndefined();
       await expect(repository.findByIds([roleId(99)])).resolves.toEqual([]);
     });
+
+    const custom = (id: number, organization: number, name: string) =>
+      Role.custom({
+        id: roleId(id),
+        organizationId: orgId(organization),
+        name: RoleName.create(name),
+        permissions: [Permission.of('members:read')],
+      });
+
+    it('save grava nome e permissões juntos, sem tocar nos outros papéis', async () => {
+      await repository.add(custom(2, 1, 'Missões'));
+      await repository.add(custom(3, 1, 'Louvor'));
+
+      const edited = custom(2, 1, 'Missões').edit({
+        name: RoleName.create('Missões e Evangelismo'),
+        permissions: [
+          Permission.of('members:write'),
+          Permission.of('organization:read'),
+        ],
+      });
+      await repository.save(edited);
+
+      const [changed] = await repository.findByIds([roleId(2)]);
+      const [untouched] = await repository.findByIds([roleId(3)]);
+      expect(changed && snapshot(changed)).toEqual(snapshot(edited));
+      expect(untouched && snapshot(untouched)).toEqual(
+        snapshot(custom(3, 1, 'Louvor')),
+      );
+    });
+
+    it('save com o nome de OUTRO papel da igreja é recusado (sem caixa) e não grava nada; o próprio nome pode', async () => {
+      await repository.add(custom(2, 1, 'Missões'));
+      await repository.add(custom(3, 1, 'Louvor'));
+
+      await expect(
+        repository.save(
+          custom(2, 1, 'Missões').edit({
+            name: RoleName.create('LOUVOR'),
+            permissions: [Permission.of('finance:read')],
+          }),
+        ),
+      ).rejects.toBeInstanceOf(RoleNameAlreadyInUseError);
+      const [kept] = await repository.findByIds([roleId(2)]);
+      expect(kept && snapshot(kept)).toEqual(snapshot(custom(2, 1, 'Missões')));
+
+      await expect(
+        repository.save(custom(2, 1, 'MISSÕES')),
+      ).resolves.toBeUndefined();
+    });
+
+    it('save não alcança papel de OUTRA igreja nem papel inexistente', async () => {
+      await repository.add(custom(2, 1, 'Missões'));
+
+      await repository.save(custom(2, 2, 'Invadido'));
+      await repository.save(custom(99, 1, 'Fantasma'));
+
+      const [kept] = await repository.findByIds([roleId(2)]);
+      expect(kept?.name.value).toBe('Missões');
+      await expect(repository.findByIds([roleId(99)])).resolves.toEqual([]);
+    });
+
+    it('remove exclui o papel daquela igreja; de outra igreja ou inexistente é ignorado', async () => {
+      await repository.add(custom(2, 1, 'Missões'));
+      await repository.add(custom(3, 2, 'Missões'));
+
+      await repository.remove(orgId(2), roleId(2));
+      await expect(repository.findByIds([roleId(2)])).resolves.toHaveLength(1);
+
+      await repository.remove(orgId(1), roleId(2));
+      await repository.remove(orgId(1), roleId(99));
+      await expect(repository.findByIds([roleId(2)])).resolves.toEqual([]);
+      await expect(repository.findByIds([roleId(3)])).resolves.toHaveLength(1);
+    });
   });
 }

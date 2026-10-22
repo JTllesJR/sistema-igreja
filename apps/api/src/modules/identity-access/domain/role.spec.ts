@@ -14,6 +14,7 @@ import {
 } from '../../finance/finance.permissions.js';
 import { AUDIT_READ } from '../../audit/audit.permissions.js';
 import { ORGANIZATION_READ } from '../../organization/organization.permissions.js';
+import { SystemRoleImmutableError } from './errors.js';
 import { Permission } from './permission.js';
 import { Role } from './role.js';
 import { RoleName } from './role-name.js';
@@ -190,5 +191,90 @@ describe('Role', () => {
         ]),
       );
     });
+  });
+});
+
+describe('papel personalizado (UC-02, ADR 0019)', () => {
+  const name = (raw: string) => RoleName.create(raw);
+  const perms = (...raw: string[]) => raw.map((p) => Permission.of(p));
+  const missions = () =>
+    Role.custom({
+      id: roleId(10),
+      organizationId: orgId(1),
+      name: name('Secretário de Missões'),
+      permissions: perms(MEMBERS_READ, MEMBERS_READ, ORGANIZATION_READ),
+    });
+
+  it('não é de sistema, concede só o que foi listado e ignora repetidas', () => {
+    const role = missions();
+
+    expect(role.isSystem).toBe(false);
+    expect(role.permissions.map((p) => p.value)).toEqual([
+      MEMBERS_READ,
+      ORGANIZATION_READ,
+    ]);
+    expect(role.grants(Permission.of(MEMBERS_WRITE))).toBe(false);
+  });
+
+  it('recusa papel sem permissão, com o curinga ou com a gestão de acessos', () => {
+    for (const permissions of [
+      [],
+      perms('*'),
+      perms(MEMBERS_READ, 'access:manage-users'),
+    ]) {
+      expect(
+        thrownBy(() =>
+          Role.custom({
+            id: roleId(10),
+            organizationId: orgId(1),
+            name: name('Ajudante'),
+            permissions,
+          }),
+        ),
+      ).toBeInstanceOf(ValidationError);
+    }
+  });
+
+  it('recusa o nome de um papel padrão, sem diferenciar caixa', () => {
+    expect(
+      thrownBy(() =>
+        Role.custom({
+          id: roleId(10),
+          organizationId: orgId(1),
+          name: name('administrador'),
+          permissions: perms(MEMBERS_READ),
+        }),
+      ),
+    ).toBeInstanceOf(ValidationError);
+  });
+
+  it('edita nome e permissões com as mesmas regras, sem mudar o original', () => {
+    const role = missions();
+
+    const renamed = role.edit({ name: name('Missões') });
+    const regranted = role.edit({ permissions: perms(FINANCE_READ) });
+
+    expect(renamed.name.value).toBe('Missões');
+    expect(renamed.permissions).toEqual(role.permissions);
+    expect(regranted.permissions.map((p) => p.value)).toEqual([FINANCE_READ]);
+    expect(role.name.value).toBe('Secretário de Missões');
+    expect(
+      thrownBy(() => role.edit({ permissions: perms('*') })),
+    ).toBeInstanceOf(ValidationError);
+  });
+
+  it('papel padrão não se edita nem se exclui', () => {
+    const secretary = Role.secretary({
+      id: roleId(1),
+      organizationId: orgId(1),
+    });
+
+    expect(
+      thrownBy(() => secretary.edit({ name: name('Outro') })),
+    ).toBeInstanceOf(SystemRoleImmutableError);
+    expect(thrownBy(() => secretary.assertDeletable())).toBeInstanceOf(
+      SystemRoleImmutableError,
+    );
+    expect(() => missions().assertDeletable()).not.toThrow();
   });
 });

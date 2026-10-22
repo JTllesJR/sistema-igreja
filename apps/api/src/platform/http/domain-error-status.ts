@@ -63,6 +63,9 @@ export const DOMAIN_ERROR_STATUS: Readonly<Record<string, number>> = {
   'identity.user_not_found': 404,
   'identity.unknown_organization': 404,
   'identity.role_name_taken': 409,
+  // 409: o estado do papel impede a ação (é de sistema, ou ainda está atribuído a alguém).
+  'identity.system_role_immutable': 409,
+  'identity.role_in_use': 409,
   'identity.role_already_assigned': 409,
   'identity.last_administrator': 409,
   // 403 (e não 401): a pessoa ESTÁ autenticada; falta trocar a senha. Um 401 faria o cliente achar que a sessão acabou.

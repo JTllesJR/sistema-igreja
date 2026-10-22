@@ -13,3 +13,5 @@ export const SESSION_POLICY = Symbol('SessionPolicy');
 export const TEMPORARY_PASSWORD_GENERATOR = Symbol(
   'TemporaryPasswordGenerator',
 );
+/** As permissões que existem no sistema (`PermissionDefinition[]`), montadas na raiz a partir de cada módulo (ADR 0019). */
+export const PERMISSION_CATALOG = Symbol('PermissionCatalog');

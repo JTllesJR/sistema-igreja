@@ -142,3 +142,23 @@ export class PasswordChangeRequiredError extends DomainError {
     );
   }
 }
+
+/** Papéis de sistema (os padrão) são definidos pelo código: não se editam nem se excluem (ADR 0014 e 0019). */
+export class SystemRoleImmutableError extends DomainError {
+  constructor() {
+    super(
+      'identity.system_role_immutable',
+      'Os papéis padrão não podem ser alterados nem excluídos. Crie um papel personalizado.',
+    );
+  }
+}
+
+/** O papel ainda está atribuído a alguém: excluir tiraria o acesso dessas pessoas sem aviso (ADR 0019). */
+export class RoleInUseError extends DomainError {
+  constructor() {
+    super(
+      'identity.role_in_use',
+      'Este papel ainda está atribuído a usuários. Remova as atribuições antes de excluí-lo.',
+    );
+  }
+}

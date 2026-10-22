@@ -1,7 +1,7 @@
 import { Prisma } from '../../../generated/prisma/client.js';
 import type { PrismaService } from '../../../platform/database/prisma.service.js';
 import { OrganizationId } from '../../../shared/domain/identifiers.js';
-import { RoleNameAlreadyInUseError } from '../domain/errors.js';
+import { RoleInUseError, RoleNameAlreadyInUseError } from '../domain/errors.js';
 import { RoleId } from '../domain/ids.js';
 import { Permission } from '../domain/permission.js';
 import { ADMINISTRATOR_ROLE_NAME, Role } from '../domain/role.js';
@@ -70,6 +70,51 @@ export class PrismaRoleRepository implements RoleRepository {
         })),
       });
     });
+  }
+
+  async save(role: Role): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      try {
+        const updated = await tx.role.updateMany({
+          where: { id: role.id, organizationId: role.organizationId },
+          data: { name: role.name.value },
+        });
+        if (updated.count === 0) return;
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          throw new RoleNameAlreadyInUseError(role.name.value);
+        }
+        throw error;
+      }
+
+      await tx.rolePermission.deleteMany({ where: { roleId: role.id } });
+      await tx.rolePermission.createMany({
+        data: role.permissions.map((permission) => ({
+          roleId: role.id,
+          permission: permission.value,
+        })),
+      });
+    });
+  }
+
+  async remove(organizationId: OrganizationId, roleId: RoleId): Promise<void> {
+    try {
+      // As permissões saem junto (ON DELETE CASCADE); as atribuições, não (ON DELETE RESTRICT).
+      await this.prisma.role.deleteMany({
+        where: { id: roleId, organizationId },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
+        throw new RoleInUseError();
+      }
+      throw error;
+    }
   }
 
   async replacePermissions(

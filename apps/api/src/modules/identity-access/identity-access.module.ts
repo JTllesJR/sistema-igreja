@@ -5,6 +5,7 @@ import { PrismaService } from '../../platform/database/prisma.service.js';
 import { ENV } from '../../platform/config/config.module.js';
 import type { Env } from '../../platform/config/env.js';
 import type { AuditLog } from '../../shared/application/audit-log.js';
+import type { PermissionDefinition } from '../../shared/application/permission-definition.js';
 import type { Clock } from '../../shared/application/clock.js';
 import type { IdGenerator } from '../../shared/application/id-generator.js';
 import { SystemClock } from '../../shared/infrastructure/system-clock.js';
@@ -26,6 +27,11 @@ import { CreateUserUseCase } from './application/create-user.use-case.js';
 import { DisableUserUseCase } from './application/disable-user.use-case.js';
 import { EnableUserUseCase } from './application/enable-user.use-case.js';
 import { ListRolesUseCase } from './application/list-roles.use-case.js';
+import {
+  CreateRoleUseCase,
+  DeleteRoleUseCase,
+  UpdateRoleUseCase,
+} from './application/role-editor.use-cases.js';
 import { ListUsersUseCase } from './application/list-users.use-case.js';
 import { ResetPasswordUseCase } from './application/reset-password.use-case.js';
 import { RevokeRoleUseCase } from './application/revoke-role.use-case.js';
@@ -61,6 +67,7 @@ import {
   ID_GENERATOR,
   ORGANIZATION_DIRECTORY,
   PASSWORD_HASHER,
+  PERMISSION_CATALOG,
   REFRESH_TOKEN_CODEC,
   ROLE_REPOSITORY,
   SESSION_POLICY,
@@ -255,6 +262,34 @@ const DAY_MS = 24 * 60 * 60_000;
       useFactory: (roles: RoleRepository, ids: IdGenerator) =>
         new ListRolesUseCase(roles, ids),
       inject: [ROLE_REPOSITORY, ID_GENERATOR],
+    },
+    {
+      provide: CreateRoleUseCase,
+      useFactory: (
+        roles: RoleRepository,
+        ids: IdGenerator,
+        catalog: readonly PermissionDefinition[],
+        audit: AuditLog,
+      ) => new CreateRoleUseCase(roles, ids, catalog, audit),
+      inject: [ROLE_REPOSITORY, ID_GENERATOR, PERMISSION_CATALOG, AUDIT_LOG],
+    },
+    {
+      provide: UpdateRoleUseCase,
+      useFactory: (
+        roles: RoleRepository,
+        catalog: readonly PermissionDefinition[],
+        audit: AuditLog,
+      ) => new UpdateRoleUseCase(roles, catalog, audit),
+      inject: [ROLE_REPOSITORY, PERMISSION_CATALOG, AUDIT_LOG],
+    },
+    {
+      provide: DeleteRoleUseCase,
+      useFactory: (
+        roles: RoleRepository,
+        users: UserRepository,
+        audit: AuditLog,
+      ) => new DeleteRoleUseCase(roles, users, audit),
+      inject: [ROLE_REPOSITORY, USER_REPOSITORY, AUDIT_LOG],
     },
     {
       provide: ListUsersUseCase,

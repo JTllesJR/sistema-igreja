@@ -1,5 +1,6 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { RoleInUseError } from '../src/modules/identity-access/domain/errors.js';
 import { PasswordHash } from '../src/modules/identity-access/domain/password-hash.js';
 import { Session } from '../src/modules/identity-access/domain/session.js';
 import {
@@ -118,6 +119,26 @@ describe('identity-access: o que só um banco real prova', () => {
           },
         }),
       ).rejects.toMatchObject({ code: 'P2003' });
+    });
+
+    it('remove de um papel ATRIBUÍDO é recusado com RoleInUseError e nada é apagado (ADR 0019)', async () => {
+      await prisma.userRoleAssignment.create({
+        data: {
+          organizationId: orgId(1),
+          userId: userId(1),
+          roleId: roleId(2),
+        },
+      });
+      await prisma.rolePermission.create({
+        data: { roleId: roleId(2), permission: 'members:read' },
+      });
+      const roles = new PrismaRoleRepository(prisma);
+
+      await expect(roles.remove(orgId(1), roleId(2))).rejects.toBeInstanceOf(
+        RoleInUseError,
+      );
+      const [kept] = await roles.findByIds([roleId(2)]);
+      expect(kept?.permissions.map((p) => p.value)).toEqual(['members:read']);
     });
 
     it('recusa escopo em congregação de OUTRA igreja (FK composta)', async () => {

@@ -9,12 +9,14 @@ import { OrganizationModule } from './modules/organization/index.js';
 import { ConfigModule } from './platform/config/config.module.js';
 import { HttpPlatformModule } from './platform/http/http-platform.module.js';
 import { OpenApiModule } from './platform/openapi/openapi.module.js';
+import { PermissionCatalogModule } from './permission-catalog.module.js';
 
 @Module({
   imports: [
     ConfigModule,
     HttpPlatformModule,
     OpenApiModule,
+    PermissionCatalogModule,
     HealthModule,
     OrganizationModule,
     IdentityAccessModule,

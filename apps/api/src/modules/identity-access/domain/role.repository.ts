@@ -12,6 +12,11 @@ import type { Role } from './role.js';
  *  - `add` falha com `RoleNameAlreadyInUseError` se a organização já tem um papel com o mesmo nome.
  *  - `replacePermissions` troca TODO o conjunto de permissões do papel, de uma vez (tudo ou nada). Papel inexistente é
  *    ignorado. Existe para manter os papéis de sistema iguais à definição do código (ADR 0015).
+ *  - `save` grava o nome e TODO o conjunto de permissões de um papel que já existe nesta igreja, de uma vez (tudo ou
+ *    nada). Falha com `RoleNameAlreadyInUseError` se outro papel da igreja já tem o nome. Papel inexistente é ignorado.
+ *  - `remove` exclui o papel e suas permissões; papel inexistente ou de outra igreja é ignorado. No banco, a chave
+ *    estrangeira das atribuições recusa excluir papel atribuído e a implementação traduz para `RoleInUseError` (o fake
+ *    não conhece atribuições: o caso de uso confere antes, e o banco é a rede de segurança para a corrida).
  */
 export interface RoleRepository {
   findByIds(ids: readonly RoleId[]): Promise<Role[]>;
@@ -22,4 +27,6 @@ export interface RoleRepository {
     roleId: RoleId,
     permissions: readonly Permission[],
   ): Promise<void>;
+  save(role: Role): Promise<void>;
+  remove(organizationId: OrganizationId, roleId: RoleId): Promise<void>;
 }

@@ -1,4 +1,7 @@
+import { ValidationError } from '../../../shared/domain/domain-error.js';
 import type { OrganizationId } from '../../../shared/domain/identifiers.js';
+import { ACCESS_MANAGE_USERS } from '../access.permissions.js';
+import { SystemRoleImmutableError } from './errors.js';
 import type { RoleId } from './ids.js';
 import { Permission } from './permission.js';
 import { RoleName } from './role-name.js';
@@ -8,6 +11,20 @@ export const LEADER_ROLE_NAME = 'Dirigente';
 export const SECRETARY_ROLE_NAME = 'Secretário';
 export const TREASURER_ROLE_NAME = 'Tesoureiro';
 export const BOARD_ROLE_NAME = 'Diretoria';
+
+const SYSTEM_ROLE_NAMES = [
+  ADMINISTRATOR_ROLE_NAME,
+  LEADER_ROLE_NAME,
+  SECRETARY_ROLE_NAME,
+  TREASURER_ROLE_NAME,
+  BOARD_ROLE_NAME,
+];
+
+/** Permissões que nenhum papel personalizado recebe (ADR 0019). */
+export const RESERVED_PERMISSIONS: readonly string[] = [
+  Permission.ALL.value,
+  ACCESS_MANAGE_USERS,
+];
 
 /**
  * Papel: um conjunto de permissões, por igreja (ADR 0004). Papéis de sistema não são editáveis pelo usuário.
@@ -101,6 +118,61 @@ export class Role {
       // Trilha de auditoria (ADR 0017): a Diretoria fiscaliza quem leu e fez o quê, na igreja toda.
       'audit:read',
     ]);
+  }
+
+  /**
+   * Papel personalizado (UC-02, ADR 0019). Regras que valem sempre, venha o pedido de onde vier:
+   *  - pelo menos uma permissão (um papel vazio não concede nada e só confunde);
+   *  - nunca o curinga `*` nem `access:manage-users`: quem gere acessos poderia criar um papel com tudo e dá-lo a si mesmo,
+   *    então gerir acessos fica só com o Administrador;
+   *  - não usa o nome de um papel padrão (o código acha os papéis padrão pelo nome).
+   * Que a permissão EXISTA no sistema é conferido pela aplicação, contra o catálogo; o domínio só conhece o formato.
+   */
+  static custom(input: {
+    id: RoleId;
+    organizationId: OrganizationId;
+    name: RoleName;
+    permissions: readonly Permission[];
+  }): Role {
+    if (input.permissions.length === 0) {
+      throw new ValidationError(
+        'permissions',
+        'O papel precisa de pelo menos uma permissão.',
+      );
+    }
+    if (input.permissions.some((p) => RESERVED_PERMISSIONS.includes(p.value))) {
+      throw new ValidationError(
+        'permissions',
+        'Papéis personalizados não podem administrar usuários e papéis: isso fica só com o Administrador.',
+      );
+    }
+    const lowered = input.name.value.toLowerCase();
+    if (SYSTEM_ROLE_NAMES.some((name) => name.toLowerCase() === lowered)) {
+      throw new ValidationError(
+        'name',
+        'Este nome é de um papel padrão. Escolha outro.',
+      );
+    }
+    return Role.restore({ ...input, isSystem: false });
+  }
+
+  /** Muda nome e/ou permissões de um papel personalizado, com as mesmas regras de `custom`. Devolve um papel novo. */
+  edit(changes: {
+    name?: RoleName;
+    permissions?: readonly Permission[];
+  }): Role {
+    if (this.isSystem) throw new SystemRoleImmutableError();
+    return Role.custom({
+      id: this.id,
+      organizationId: this.organizationId,
+      name: changes.name ?? this.name,
+      permissions: changes.permissions ?? this.#permissions,
+    });
+  }
+
+  /** Só papéis personalizados podem ser excluídos; se ainda estão atribuídos, quem decide é a aplicação. */
+  assertDeletable(): void {
+    if (this.isSystem) throw new SystemRoleImmutableError();
   }
 
   private static system(

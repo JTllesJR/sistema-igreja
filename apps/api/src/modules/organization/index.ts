@@ -15,3 +15,4 @@ export { CreateOrganizationUseCase } from './application/create-organization.use
 export { ORGANIZATION_QUERIES } from './organization.tokens.js';
 export { OrganizationModule } from './organization.module.js';
 export { createOrganizationCommand } from './presentation/cli/create-organization.command.js';
+export { ORGANIZATION_PERMISSIONS } from './organization.permissions.js';

@@ -79,6 +79,8 @@ describe('statusForDomainError (código de domínio -> status HTTP)', () => {
       'identity.user_not_found': 404,
       'identity.unknown_organization': 404,
       'identity.role_name_taken': 409,
+      'identity.system_role_immutable': 409,
+      'identity.role_in_use': 409,
       'identity.role_already_assigned': 409,
       'identity.last_administrator': 409,
       'identity.password_change_required': 403,

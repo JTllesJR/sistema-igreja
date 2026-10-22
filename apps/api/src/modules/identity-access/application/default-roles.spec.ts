@@ -130,6 +130,8 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
       findAdministrator: (org) => roles.findAdministrator(org),
       listByOrganization: (org) => roles.listByOrganization(org),
       replacePermissions: (id, p) => roles.replacePermissions(id, p),
+      save: (r) => roles.save(r),
+      remove: (o, id) => roles.remove(o, id),
       add: async (role) => {
         if (role.name.value === 'Secretário') {
           await roles.add(winner);
@@ -152,6 +154,8 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
       findAdministrator: (x) => roles.findAdministrator(x),
       listByOrganization: (x) => roles.listByOrganization(x),
       replacePermissions: (id, p) => roles.replacePermissions(id, p),
+      save: (r) => roles.save(r),
+      remove: (o, id) => roles.remove(o, id),
       add: () => Promise.reject(new Error('banco fora do ar')),
     };
 
@@ -167,6 +171,8 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
       findAdministrator: (x) => roles.findAdministrator(x),
       listByOrganization: (x) => roles.listByOrganization(x),
       replacePermissions: (id, p) => roles.replacePermissions(id, p),
+      save: (r) => roles.save(r),
+      remove: (o, id) => roles.remove(o, id),
       add: async (role) => {
         // Um concorrente criou o MESMO papel E a nossa gravação falhou por outro motivo: não é uma corrida a ignorar.
         await roles.add(
@@ -220,6 +226,8 @@ describe('ensureDefaultRoles (ADR 0014)', () => {
       findAdministrator: (x) => roles.findAdministrator(x),
       listByOrganization: (x) => roles.listByOrganization(x),
       add: (role) => roles.add(role),
+      save: (r) => roles.save(r),
+      remove: (o, id) => roles.remove(o, id),
       replacePermissions: (id, p) => {
         writes += 1;
         return roles.replacePermissions(id, p);

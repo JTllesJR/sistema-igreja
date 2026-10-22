@@ -6,3 +6,4 @@
  */
 export { AuditModule } from './audit.module.js';
 export { AUDIT_LOG } from './audit.tokens.js';
+export { AUDIT_PERMISSIONS } from './audit.permissions.js';

@@ -10,6 +10,7 @@
 export { FinanceModule } from './finance.module.js';
 export {
   FINANCE_APPROVE,
+  FINANCE_PERMISSIONS,
   FINANCE_READ,
   FINANCE_READ_INDIVIDUAL,
   FINANCE_WRITE,

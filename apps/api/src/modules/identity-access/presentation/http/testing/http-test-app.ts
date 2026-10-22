@@ -10,6 +10,7 @@ import {
 import { parseEnv } from '../../../../../platform/config/env.js';
 import { configureHttpApp } from '../../../../../platform/http/configure-http-app.js';
 import { HttpPlatformModule } from '../../../../../platform/http/http-platform.module.js';
+import { PermissionCatalogModule } from '../../../../../permission-catalog.module.js';
 import {
   type CongregationId,
   OrganizationId,
@@ -79,6 +80,7 @@ export async function startHttpTestApp(options: HttpTestAppOptions = {}) {
     imports: [
       ConfigModule,
       HttpPlatformModule,
+      PermissionCatalogModule,
       IdentityAccessModule,
       ...(options.imports ?? []),
     ],

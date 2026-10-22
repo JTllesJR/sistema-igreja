@@ -49,6 +49,31 @@ export class InMemoryRoleRepository implements RoleRepository {
     return Promise.resolve();
   }
 
+  save(role: Role): Promise<void> {
+    const current = this.#store.get(role.id);
+    if (!current || current.organizationId !== role.organizationId) {
+      return Promise.resolve();
+    }
+    const nameTaken = [...this.#store.values()].some(
+      (existing) =>
+        existing.id !== role.id &&
+        existing.organizationId === role.organizationId &&
+        existing.name.value.toLowerCase() === role.name.value.toLowerCase(),
+    );
+    if (nameTaken) {
+      return Promise.reject(new RoleNameAlreadyInUseError(role.name.value));
+    }
+    this.#store.set(role.id, role);
+    return Promise.resolve();
+  }
+
+  remove(organizationId: OrganizationId, roleId: RoleId): Promise<void> {
+    if (this.#store.get(roleId)?.organizationId === organizationId) {
+      this.#store.delete(roleId);
+    }
+    return Promise.resolve();
+  }
+
   replacePermissions(
     roleId: RoleId,
     permissions: readonly Permission[],
