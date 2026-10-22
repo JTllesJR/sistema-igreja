@@ -22,6 +22,7 @@ export const LOGIN_LOCK = { maxAttempts: 5, durationMs: 15 * 60_000 } as const;
 export class User {
   readonly #assignments: RoleAssignment[];
   #status: UserStatus;
+  #mustChangePassword: boolean;
   #passwordHash: PasswordHash;
   #failedLoginAttempts: number;
   #lockedUntil: Date | null;
@@ -33,6 +34,7 @@ export class User {
     readonly email: Email,
     passwordHash: PasswordHash,
     status: UserStatus,
+    mustChangePassword: boolean,
     failedLoginAttempts: number,
     lockedUntil: Date | null,
     lastLoginAt: Date | null,
@@ -40,6 +42,7 @@ export class User {
     readonly version: number,
   ) {
     this.#status = status;
+    this.#mustChangePassword = mustChangePassword;
     this.#passwordHash = passwordHash;
     this.#failedLoginAttempts = failedLoginAttempts;
     this.#lockedUntil = lockedUntil;
@@ -52,6 +55,8 @@ export class User {
     organizationId: OrganizationId;
     email: Email;
     passwordHash: PasswordHash;
+    /** Criado por um administrador com senha temporária: a pessoa escolhe a própria no primeiro acesso (ADR 0014). */
+    mustChangePassword?: boolean;
   }): User {
     return new User(
       input.id,
@@ -59,6 +64,7 @@ export class User {
       input.email,
       input.passwordHash,
       'ACTIVE',
+      input.mustChangePassword ?? false,
       0,
       null,
       null,
@@ -73,6 +79,7 @@ export class User {
     email: Email;
     passwordHash: PasswordHash;
     status: UserStatus;
+    mustChangePassword: boolean;
     failedLoginAttempts: number;
     lockedUntil: Date | null;
     lastLoginAt: Date | null;
@@ -85,6 +92,7 @@ export class User {
       input.email,
       input.passwordHash,
       input.status,
+      input.mustChangePassword,
       input.failedLoginAttempts,
       input.lockedUntil,
       input.lastLoginAt,
@@ -95,6 +103,9 @@ export class User {
 
   get status(): UserStatus {
     return this.#status;
+  }
+  get mustChangePassword(): boolean {
+    return this.#mustChangePassword;
   }
   get passwordHash(): PasswordHash {
     return this.#passwordHash;
@@ -189,8 +200,28 @@ export class User {
     this.#lastLoginAt = now;
   }
 
-  /** Usado na troca de senha e no re-hash após um login (parâmetros do argon2 endurecidos). */
+  /**
+   * Só troca o hash, sem mexer em mais nada: é o re-hash silencioso do login (parâmetros do argon2 endurecidos).
+   * Quem escolhe uma senha usa `choosePassword`; o administrador, `issueTemporaryPassword`.
+   */
   changePasswordHash(passwordHash: PasswordHash): void {
     this.#passwordHash = passwordHash;
+  }
+
+  /** A própria pessoa escolheu a senha: encerra a obrigação de trocar. */
+  choosePassword(passwordHash: PasswordHash): void {
+    this.#passwordHash = passwordHash;
+    this.#mustChangePassword = false;
+  }
+
+  /**
+   * Um administrador definiu uma senha temporária: a pessoa precisa trocá-la no próximo acesso. Também destrava a
+   * conta, pois quem pede uma senha nova costuma ser quem errou a antiga várias vezes.
+   */
+  issueTemporaryPassword(passwordHash: PasswordHash): void {
+    this.#passwordHash = passwordHash;
+    this.#mustChangePassword = true;
+    this.#failedLoginAttempts = 0;
+    this.#lockedUntil = null;
   }
 }

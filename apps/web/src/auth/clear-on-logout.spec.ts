@@ -4,7 +4,13 @@ import type { AuthClient } from './client';
 import { clearCacheOnLogout } from './clear-on-logout';
 import { SessionManager } from './session';
 
-const user = { id: 'u', organizationId: 'o', email: 'a@b.com', roles: [] };
+const user = {
+  id: 'u',
+  organizationId: 'o',
+  email: 'a@b.com',
+  mustChangePassword: false,
+  roles: [],
+};
 const client = (): AuthClient => ({
   login: vi.fn(() =>
     Promise.resolve({

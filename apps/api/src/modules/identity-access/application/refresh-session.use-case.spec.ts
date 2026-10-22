@@ -104,6 +104,7 @@ describe('RefreshSessionUseCase (UC-01, renovar)', () => {
         email: Email.create(stored.email.value),
         passwordHash: stored.passwordHash,
         status: 'DISABLED',
+        mustChangePassword: false,
         failedLoginAttempts: 0,
         lockedUntil: null,
         lastLoginAt: null,

@@ -61,6 +61,7 @@ describe('statusForDomainError (código de domínio -> status HTTP)', () => {
       'identity.role_name_taken': 409,
       'identity.role_already_assigned': 409,
       'identity.last_administrator': 409,
+      'identity.password_change_required': 403,
       'identity.assignment_not_found': 404,
       'identity.role_not_found': 404,
       'identity.administrator_scope_invalid': 422,

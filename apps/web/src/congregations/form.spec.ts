@@ -214,6 +214,7 @@ describe('canManageOrganization', () => {
   const user = (roles: CurrentUser['roles']): CurrentUser => ({
     id: 'u',
     organizationId: 'o',
+    mustChangePassword: false,
     email: 'a@b.com',
     roles,
   });

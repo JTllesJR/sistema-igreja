@@ -13,9 +13,18 @@ import type { RequestContext } from '../../shared/application/request-context.js
  */
 export const IS_PUBLIC_KEY = 'access:public';
 export const REQUIRED_PERMISSION_KEY = 'access:permission';
+export const ALLOW_PASSWORD_CHANGE_PENDING_KEY =
+  'access:allow-password-change-pending';
 
 /** Rota aberta, sem login (ex.: `/health`, `/auth/login`). Use com muito critério. */
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
+
+/**
+ * Rota que quem entrou com SENHA TEMPORÁRIA ainda pode usar (ADR 0014): só o necessário para ver quem é e escolher a
+ * própria senha. Todas as outras respondem 403 `identity.password_change_required` até a troca. Use com muito critério.
+ */
+export const AllowWhenPasswordChangePending = () =>
+  SetMetadata(ALLOW_PASSWORD_CHANGE_PENDING_KEY, true);
 
 export interface PermissionRequirement {
   permission: string;

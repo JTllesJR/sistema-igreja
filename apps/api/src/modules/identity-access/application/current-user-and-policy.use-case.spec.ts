@@ -25,6 +25,7 @@ async function addUser(
     email: Email.create(`usuario${input.n}@igreja.com`),
     passwordHash: PasswordHash.of(A_PASSWORD_HASH),
     status: input.status ?? 'ACTIVE',
+    mustChangePassword: false,
     failedLoginAttempts: 0,
     lockedUntil: null,
     lastLoginAt: null,
@@ -45,6 +46,7 @@ describe('GetCurrentUserUseCase', () => {
       id: bed.admin.userId,
       organizationId: ORGANIZATION,
       email: ADMIN_EMAIL,
+      mustChangePassword: false,
       roles: [
         {
           roleId: bed.admin.roleId,

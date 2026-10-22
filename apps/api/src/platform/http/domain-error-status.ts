@@ -38,6 +38,8 @@ export const DOMAIN_ERROR_STATUS: Readonly<Record<string, number>> = {
   'identity.role_name_taken': 409,
   'identity.role_already_assigned': 409,
   'identity.last_administrator': 409,
+  // 403 (e não 401): a pessoa ESTÁ autenticada; falta trocar a senha. Um 401 faria o cliente achar que a sessão acabou.
+  'identity.password_change_required': 403,
   'identity.assignment_not_found': 404,
   'identity.role_not_found': 404,
   // 422: o pedido está bem formado, mas a regra do sistema o recusa (igual a validation.invalid_value).

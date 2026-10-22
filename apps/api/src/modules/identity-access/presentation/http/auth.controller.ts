@@ -23,6 +23,7 @@ import type { Request, Response } from 'express';
 import { ENV } from '../../../../platform/config/config.module.js';
 import type { Env } from '../../../../platform/config/env.js';
 import {
+  AllowWhenPasswordChangePending,
   CurrentContext,
   Public,
 } from '../../../../platform/http/access-control.js';
@@ -150,11 +151,15 @@ export class AuthController {
     clearRefreshCookie(response, this.secureCookie);
   }
 
+  // Liberada com a troca pendente: a web precisa saber quem é e que a troca é obrigatória.
+  @AllowWhenPasswordChangePending()
   @Get('me')
   me(@CurrentContext() context: RequestContext): Promise<CurrentUser> {
     return this.currentUser.execute(context);
   }
 
+  // Liberada com a troca pendente: é justamente o que a pessoa precisa fazer.
+  @AllowWhenPasswordChangePending()
   @Throttle(PASSWORD_LIMIT)
   @Post('change-password')
   @HttpCode(204)

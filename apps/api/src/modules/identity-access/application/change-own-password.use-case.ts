@@ -42,6 +42,13 @@ export class ChangeOwnPasswordUseCase {
 
     // Política da senha nova primeiro: erro de validação não tem efeito colateral.
     const newPassword = PlainPassword.create(command.newPassword, user.email);
+    // Trocar pela mesma senha não troca nada: com uma senha temporária, anularia o objetivo da troca obrigatória.
+    if (command.newPassword === command.currentPassword) {
+      throw new ValidationError(
+        'newPassword',
+        'A nova senha deve ser diferente da atual.',
+      );
+    }
 
     // Conta bloqueada: nem verifica (a resposta é a mesma de senha errada).
     if (user.isLockedAt(now)) throw new CurrentPasswordIncorrectError();
@@ -59,7 +66,7 @@ export class ChangeOwnPasswordUseCase {
 
     const newHash = await this.hasher.hash(newPassword);
     await updateUser(this.users, user.id, (loaded) =>
-      loaded.changePasswordHash(newHash),
+      loaded.choosePassword(newHash),
     );
 
     await this.sessions.revokeAllForUser(user.id, now, {

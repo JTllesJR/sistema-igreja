@@ -367,6 +367,7 @@ describe('GET /auth/me', () => {
       id: running.admin.userId,
       organizationId: ORGANIZATION,
       email: EMAIL,
+      mustChangePassword: false,
       roles: [
         {
           roleId: running.admin.roleId,
@@ -377,7 +378,7 @@ describe('GET /auth/me', () => {
         },
       ],
     });
-    expect(response.text).not.toMatch(/hash|argon|password/i);
+    expect(response.text).not.toMatch(/hash|argon|"password"|passwordHash/i);
   });
 
   it('sem login, 401', async () => {

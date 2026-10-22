@@ -83,6 +83,7 @@ function copyOf(user: User, version: number): User {
     email: user.email,
     passwordHash: user.passwordHash,
     status: user.status,
+    mustChangePassword: user.mustChangePassword,
     failedLoginAttempts: user.failedLoginAttempts,
     lockedUntil: user.lockedUntil,
     lastLoginAt: user.lastLoginAt,

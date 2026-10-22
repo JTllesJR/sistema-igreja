@@ -10,3 +10,6 @@ export const ORGANIZATION_DIRECTORY = Symbol('OrganizationDirectory');
 export const CLOCK = Symbol('Clock');
 export const ID_GENERATOR = Symbol('IdGenerator');
 export const SESSION_POLICY = Symbol('SessionPolicy');
+export const TEMPORARY_PASSWORD_GENERATOR = Symbol(
+  'TemporaryPasswordGenerator',
+);

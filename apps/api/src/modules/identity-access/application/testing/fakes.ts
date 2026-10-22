@@ -13,6 +13,7 @@ import type {
 import type { OrganizationDirectory } from '../organization-directory.js';
 import type { PasswordHasher } from '../password-hasher.js';
 import type { RefreshTokenCodec } from '../refresh-token-codec.js';
+import type { TemporaryPasswordGenerator } from '../temporary-password-generator.js';
 
 const encode = (text: string): string =>
   Buffer.from(text, 'utf8').toString('base64').replace(/=+$/, '');
@@ -111,5 +112,15 @@ export class FakeOrganizationDirectory implements OrganizationDirectory {
       this.#congregations.get(`${organizationId}/${congregationId}`) ===
         'ACTIVE',
     );
+  }
+}
+
+/** Senhas temporárias previsíveis (Temp-0001-xxxx, Temp-0002-xxxx...), que cumprem a política de senha. */
+export class FakeTemporaryPasswordGenerator implements TemporaryPasswordGenerator {
+  #count = 0;
+
+  generate(): string {
+    this.#count += 1;
+    return `Temp-${String(this.#count).padStart(4, '0')}-xxxx`;
   }
 }

@@ -22,11 +22,14 @@ import { CreateAdministratorUseCase } from './application/create-administrator.u
 import { GetAccessPolicyUseCase } from './application/get-access-policy.use-case.js';
 import { GetCurrentUserUseCase } from './application/get-current-user.use-case.js';
 import { AssignRoleUseCase } from './application/assign-role.use-case.js';
+import { CreateUserUseCase } from './application/create-user.use-case.js';
 import { DisableUserUseCase } from './application/disable-user.use-case.js';
 import { EnableUserUseCase } from './application/enable-user.use-case.js';
 import { ListRolesUseCase } from './application/list-roles.use-case.js';
 import { ListUsersUseCase } from './application/list-users.use-case.js';
+import { ResetPasswordUseCase } from './application/reset-password.use-case.js';
 import { RevokeRoleUseCase } from './application/revoke-role.use-case.js';
+import type { TemporaryPasswordGenerator } from './application/temporary-password-generator.js';
 import { LogoutUseCase } from './application/logout.use-case.js';
 import type { OrganizationDirectory } from './application/organization-directory.js';
 import type { PasswordHasher } from './application/password-hasher.js';
@@ -45,6 +48,7 @@ import { OrganizationQueriesDirectory } from './infrastructure/organization-quer
 import { PrismaRoleRepository } from './infrastructure/prisma-role.repository.js';
 import { PrismaSessionRepository } from './infrastructure/prisma-session.repository.js';
 import { PrismaUserRepository } from './infrastructure/prisma-user.repository.js';
+import { RandomTemporaryPasswordGenerator } from './infrastructure/random-temporary-password-generator.js';
 import { Sha256RefreshTokenCodec } from './infrastructure/sha256-refresh-token-codec.js';
 import { AuthController } from './presentation/http/auth.controller.js';
 import { AuthGuard } from './presentation/http/auth.guard.js';
@@ -61,6 +65,7 @@ import {
   ROLE_REPOSITORY,
   SESSION_POLICY,
   SESSION_REPOSITORY,
+  TEMPORARY_PASSWORD_GENERATOR,
   USER_REPOSITORY,
 } from './identity-access.tokens.js';
 
@@ -94,6 +99,10 @@ const DAY_MS = 24 * 60 * 60_000;
     },
 
     // Segurança
+    {
+      provide: TEMPORARY_PASSWORD_GENERATOR,
+      useFactory: () => new RandomTemporaryPasswordGenerator(),
+    },
     { provide: PASSWORD_HASHER, useFactory: () => new Argon2PasswordHasher() },
     {
       provide: ACCESS_TOKEN_SIGNER,
@@ -302,6 +311,66 @@ const DAY_MS = 24 * 60 * 60_000;
         audit: AuditLog,
       ) => new EnableUserUseCase(users, roles, audit),
       inject: [USER_REPOSITORY, ROLE_REPOSITORY, AUDIT_LOG],
+    },
+    {
+      provide: CreateUserUseCase,
+      useFactory: (
+        users: UserRepository,
+        roles: RoleRepository,
+        hasher: PasswordHasher,
+        passwords: TemporaryPasswordGenerator,
+        organizations: OrganizationDirectory,
+        ids: IdGenerator,
+        audit: AuditLog,
+      ) =>
+        new CreateUserUseCase(
+          users,
+          roles,
+          hasher,
+          passwords,
+          organizations,
+          ids,
+          audit,
+        ),
+      inject: [
+        USER_REPOSITORY,
+        ROLE_REPOSITORY,
+        PASSWORD_HASHER,
+        TEMPORARY_PASSWORD_GENERATOR,
+        ORGANIZATION_DIRECTORY,
+        ID_GENERATOR,
+        AUDIT_LOG,
+      ],
+    },
+    {
+      provide: ResetPasswordUseCase,
+      useFactory: (
+        users: UserRepository,
+        roles: RoleRepository,
+        hasher: PasswordHasher,
+        passwords: TemporaryPasswordGenerator,
+        sessions: SessionRepository,
+        clock: Clock,
+        audit: AuditLog,
+      ) =>
+        new ResetPasswordUseCase(
+          users,
+          roles,
+          hasher,
+          passwords,
+          sessions,
+          clock,
+          audit,
+        ),
+      inject: [
+        USER_REPOSITORY,
+        ROLE_REPOSITORY,
+        PASSWORD_HASHER,
+        TEMPORARY_PASSWORD_GENERATOR,
+        SESSION_REPOSITORY,
+        CLOCK,
+        AUDIT_LOG,
+      ],
     },
     {
       provide: ChangeOwnPasswordUseCase,

@@ -19,12 +19,17 @@ interface Grant {
 
 /** O que um usuário pode fazer, calculado das suas atribuições e dos papéis correspondentes. */
 export class AccessPolicy {
-  private constructor(private readonly grants: readonly Grant[]) {}
+  private constructor(
+    private readonly grants: readonly Grant[],
+    /** Entrou com senha temporária: até trocá-la, o guard só deixa passar o que serve para trocar (ADR 0014). */
+    readonly mustChangePassword: boolean,
+  ) {}
 
   /** Atribuição cujo papel não foi fornecido (ex.: papel removido) não concede nada: falha fechada. */
   static from(
     assignments: readonly RoleAssignment[],
     roles: readonly Role[],
+    options: { passwordChangeRequired?: boolean } = {},
   ): AccessPolicy {
     const byId = new Map(roles.map((role) => [role.id, role]));
 
@@ -35,6 +40,7 @@ export class AccessPolicy {
           ? [{ role, congregationId: assignment.congregationId }]
           : [];
       }),
+      options.passwordChangeRequired ?? false,
     );
   }
 

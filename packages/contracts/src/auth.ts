@@ -39,6 +39,8 @@ export const currentUserSchema = z.object({
   id: z.string(),
   organizationId: z.string(),
   email: z.string(),
+  /** Entrou com senha temporária: até trocá-la, a API só atende `/auth/*` (a web leva à tela de troca). */
+  mustChangePassword: z.boolean(),
   roles: z.array(assignedRoleSchema),
 });
 export type CurrentUser = z.infer<typeof currentUserSchema>;

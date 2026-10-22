@@ -20,6 +20,8 @@ export class GetAccessPolicyUseCase {
       user.assignments.map((a) => a.roleId),
     );
 
-    return AccessPolicy.from(user.assignments, roles);
+    return AccessPolicy.from(user.assignments, roles, {
+      passwordChangeRequired: user.mustChangePassword,
+    });
   }
 }

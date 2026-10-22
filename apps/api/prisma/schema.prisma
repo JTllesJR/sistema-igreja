@@ -91,6 +91,8 @@ model UserAccount {
   /// Hash argon2id em formato PHC. Nunca a senha.
   passwordHash        String     @map("password_hash")
   status              UserStatus @default(ACTIVE)
+  /// Entrou com senha temporária (ADR 0014): até escolher a própria senha, a API só atende /auth/*.
+  mustChangePassword  Boolean    @default(false) @map("must_change_password")
   failedLoginAttempts Int        @default(0) @map("failed_login_attempts")
   lockedUntil         DateTime?  @map("locked_until") @db.Timestamptz(3)
   lastLoginAt         DateTime?  @map("last_login_at") @db.Timestamptz(3)

@@ -31,6 +31,7 @@ describe('AuthenticateUseCase (UC-01, entrar)', () => {
         id: bed.admin.userId,
         organizationId: ORGANIZATION,
         email: ADMIN_EMAIL,
+        mustChangePassword: false,
         roles: [
           {
             roleId: bed.admin.roleId,
@@ -248,6 +249,7 @@ describe('AuthenticateUseCase (UC-01, entrar)', () => {
             PlainPassword.create('senha-do-inativo-123', email),
           ),
           status: 'DISABLED',
+          mustChangePassword: false,
           failedLoginAttempts: 0,
           lockedUntil: null,
           lastLoginAt: null,

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import {
+  ALLOW_PASSWORD_CHANGE_PENDING_KEY,
   IS_PUBLIC_KEY,
   REQUIRED_PERMISSION_KEY,
   type PermissionRequirement,
@@ -17,6 +18,7 @@ import type { AccessTokenVerifier } from '../../application/access-token-verifie
 import { GetAccessPolicyUseCase } from '../../application/get-access-policy.use-case.js';
 import type { AccessPolicy } from '../../domain/access-policy.js';
 import {
+  PasswordChangeRequiredError,
   PermissionDeniedError,
   SessionInvalidError,
 } from '../../domain/errors.js';
@@ -69,6 +71,18 @@ export class AuthGuard implements CanActivate {
       actorId: ActorId.of(claims.userId),
     };
     const policy = await this.loadPolicy(context);
+
+    // Senha temporária ainda não trocada: só as rotas marcadas passam. Vem ANTES da permissão, para o cliente receber o
+    // motivo certo (trocar a senha) em vez de um "sem permissão" que a troca não resolveria.
+    if (
+      policy.mustChangePassword &&
+      !this.reflector.getAllAndOverride<boolean>(
+        ALLOW_PASSWORD_CHANGE_PENDING_KEY,
+        targets,
+      )
+    ) {
+      throw new PasswordChangeRequiredError();
+    }
 
     const required = this.reflector.getAllAndOverride<
       PermissionRequirement | undefined

@@ -32,6 +32,22 @@ const assign = (
   congregationId = null as ReturnType<typeof congId> | null,
 ) => RoleAssignment.create({ roleId: role.id, congregationId });
 
+describe('AccessPolicy: troca de senha pendente (ADR 0014)', () => {
+  it('por padrão não há troca pendente', () => {
+    expect(AccessPolicy.from([], roles).mustChangePassword).toBe(false);
+  });
+
+  it('carrega a pendência de troca de senha do usuário', () => {
+    const policy = AccessPolicy.from([assign(administrator)], roles, {
+      passwordChangeRequired: true,
+    });
+
+    expect(policy.mustChangePassword).toBe(true);
+    // O resto da política continua descrevendo o que o papel concede.
+    expect(policy.hasPermission(read)).toBe(true);
+  });
+});
+
 describe('AccessPolicy', () => {
   describe('sem atribuições', () => {
     const policy = AccessPolicy.from([], roles);

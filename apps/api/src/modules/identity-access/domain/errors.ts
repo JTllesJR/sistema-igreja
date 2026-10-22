@@ -132,3 +132,13 @@ export class CongregationUnavailableError extends DomainError {
     );
   }
 }
+
+/** Senha temporária ainda não trocada: a API só atende o necessário para escolher a própria senha (ADR 0014). */
+export class PasswordChangeRequiredError extends DomainError {
+  constructor() {
+    super(
+      'identity.password_change_required',
+      'Você precisa trocar a senha temporária antes de continuar.',
+    );
+  }
+}

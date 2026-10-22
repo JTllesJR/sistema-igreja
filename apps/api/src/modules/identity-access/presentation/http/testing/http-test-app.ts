@@ -147,6 +147,7 @@ export async function startHttpTestApp(options: HttpTestAppOptions = {}) {
       email,
       passwordHash: hash,
       status: userOptions.status ?? 'ACTIVE',
+      mustChangePassword: false,
       failedLoginAttempts: 0,
       lockedUntil: null,
       lastLoginAt: null,

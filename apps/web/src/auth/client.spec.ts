@@ -5,6 +5,7 @@ const user = {
   id: 'u1',
   organizationId: 'o1',
   email: 'maria@igreja.com',
+  mustChangePassword: false,
   roles: [],
 };
 const loginBody = {

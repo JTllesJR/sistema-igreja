@@ -27,6 +27,7 @@ import { LogoutUseCase } from '../logout.use-case.js';
 import { RefreshSessionUseCase } from '../refresh-session.use-case.js';
 import {
   FakeAccessTokenSigner,
+  FakeTemporaryPasswordGenerator,
   FakeOrganizationDirectory,
   FakePasswordHasher,
   FakeRefreshTokenCodec,
@@ -65,6 +66,7 @@ export async function anAuthBed() {
   );
   const policy = DEFAULT_SESSION_POLICY;
   const audit = new InMemoryAuditLog();
+  const generator = new FakeTemporaryPasswordGenerator();
 
   const createAdministrator = new CreateAdministratorUseCase(
     users,
@@ -107,6 +109,7 @@ export async function anAuthBed() {
     clock,
     organizations,
     audit,
+    generator,
     policy,
     admin,
     adminContext: contextOf(admin.userId),
@@ -149,6 +152,7 @@ export async function anAuthBed() {
         roleId?: RoleId;
         congregationId?: CongregationId;
         status?: 'ACTIVE' | 'DISABLED';
+        mustChangePassword?: boolean;
       } = {},
     ): Promise<User> => {
       const parsed = Email.create(email);
@@ -159,6 +163,7 @@ export async function anAuthBed() {
         passwordHash: await hasher.hash(
           PlainPassword.create(USER_PASSWORD, parsed),
         ),
+        mustChangePassword: options.mustChangePassword ?? false,
       });
       if (options.roleId) {
         user.assignRole(options.roleId, options.congregationId ?? null);

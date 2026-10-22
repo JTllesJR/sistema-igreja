@@ -154,6 +154,7 @@ describe('User', () => {
         email: anEmail('inativo@igreja.com'),
         passwordHash: PasswordHash.of(A_PASSWORD_HASH),
         status: 'DISABLED',
+        mustChangePassword: false,
         failedLoginAttempts: 0,
         lockedUntil: null,
         lastLoginAt: null,
@@ -289,6 +290,62 @@ describe('User', () => {
       user.assignRole(roleId(2));
 
       expect(user.isActiveAdministrator(admin)).toBe(false);
+    });
+  });
+
+  describe('senha temporária e troca obrigatória (ADR 0014)', () => {
+    const NEW_HASH = PasswordHash.of(
+      '$argon2id$v=19$m=19456,t=2,p=1$b3V0cm9zYWx0MTIzNDU2$b3V0cm9oYXNob3V0cm9oYXNob3V0cm9oYXNo',
+    );
+
+    it('um usuário comum nasce SEM troca obrigatória', () => {
+      expect(aUser().mustChangePassword).toBe(false);
+    });
+
+    it('registrado com senha temporária, nasce com a troca obrigatória', () => {
+      const user = User.register({
+        id: userId(7),
+        organizationId: orgId(),
+        email: anEmail('nova@igreja.com'),
+        passwordHash: PasswordHash.of(A_PASSWORD_HASH),
+        mustChangePassword: true,
+      });
+
+      expect(user.mustChangePassword).toBe(true);
+    });
+
+    it('escolher a própria senha troca o hash e encerra a obrigação', () => {
+      const user = aUser();
+      user.issueTemporaryPassword(NEW_HASH);
+
+      user.choosePassword(PasswordHash.of(A_PASSWORD_HASH));
+
+      expect(user.mustChangePassword).toBe(false);
+      expect(user.passwordHash.equals(PasswordHash.of(A_PASSWORD_HASH))).toBe(
+        true,
+      );
+    });
+
+    it('emitir senha temporária troca o hash, liga a obrigação e destrava a conta', () => {
+      const user = aUser();
+      failTimes(user, LOGIN_LOCK.maxAttempts, NOW);
+      expect(user.isLockedAt(NOW)).toBe(true);
+
+      user.issueTemporaryPassword(NEW_HASH);
+
+      expect(user.mustChangePassword).toBe(true);
+      expect(user.passwordHash.equals(NEW_HASH)).toBe(true);
+      expect(user.failedLoginAttempts).toBe(0);
+      expect(user.isLockedAt(NOW)).toBe(false);
+    });
+
+    it('o re-hash silencioso do login NÃO mexe na obrigação de trocar', () => {
+      const user = aUser();
+      user.issueTemporaryPassword(PasswordHash.of(A_PASSWORD_HASH));
+
+      user.changePasswordHash(NEW_HASH);
+
+      expect(user.mustChangePassword).toBe(true);
     });
   });
 

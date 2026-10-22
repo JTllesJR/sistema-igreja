@@ -1,16 +1,12 @@
 import type { AuditLog } from '../../../shared/application/audit-log.js';
 import type { RequestContext } from '../../../shared/application/request-context.js';
 import { CongregationId } from '../../../shared/domain/identifiers.js';
-import {
-  AdministratorScopeError,
-  CongregationUnavailableError,
-  RoleNotFoundError,
-} from '../domain/errors.js';
 import { RoleId, UserId } from '../domain/ids.js';
 import type { RoleRepository } from '../domain/role.repository.js';
 import type { UserRepository } from '../domain/user.repository.js';
 import { loadUserOfOrganization } from './load-user.js';
 import type { OrganizationDirectory } from './organization-directory.js';
+import { resolveAssignableRole } from './resolve-assignable-role.js';
 import { updateUser } from './update-user.js';
 import { type UserSummaryView, toUserSummaryView } from './views.js';
 
@@ -51,23 +47,13 @@ export class AssignRoleUseCase {
         ? null
         : CongregationId.of(command.congregationId);
 
-    const role = (await this.roles.findByIds([roleId])).find(
-      (found) => found.organizationId === context.organizationId,
+    await resolveAssignableRole(
+      this.roles,
+      this.organizations,
+      context,
+      roleId,
+      congregationId,
     );
-    if (!role) throw new RoleNotFoundError();
-
-    if (congregationId !== null) {
-      const administrator = await this.roles.findAdministrator(
-        context.organizationId,
-      );
-      if (administrator?.id === role.id) throw new AdministratorScopeError();
-
-      const active = await this.organizations.isCongregationActive(
-        context.organizationId,
-        congregationId,
-      );
-      if (!active) throw new CongregationUnavailableError();
-    }
 
     const updated = await updateUser(this.users, UserId.of(target.id), (user) =>
       user.assignRole(roleId, congregationId),

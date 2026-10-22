@@ -63,7 +63,7 @@ Toda ação administrativa grava na trilha **depois** de salvar, como em `member
 
 1. **Papéis padrão e `GET /roles`** — **implementado** (veja "Como a etapa 1 ficou").
 2. Usuários e atribuições, com a regra do último Administrador — **implementado** (veja "Como a etapa 2 ficou").
-3. Senha temporária e troca obrigatória.
+3. Senha temporária e troca obrigatória — **implementado** (veja "Como a etapa 3 ficou").
 4. Telas na web.
 
 ## Fora desta decisão (adiado)
@@ -108,3 +108,31 @@ Convite por link, editor de papéis, catálogo de permissões, papel Tesoureiro 
   sobreviveram à primeira rodada foram fechados com testes novos, e restam 0 vivos. Equivalente conhecido: o filtro por
   `organizationId` dentro da contagem em memória, porque cada igreja tem o seu próprio papel Administrador (id diferente).
 - **Limite conhecido:** desativar a si mesmo é permitido (só o último administrador é protegido).
+
+## Como a etapa 3 ficou (implementado)
+
+- **Rotas** (`access:manage-users` na igreja toda): `POST /users` (201) e `POST /users/:id/reset-password` (200). Ambas devolvem
+  `{ user, temporaryPassword }` com `Cache-Control: no-store`; a senha só existe nessa resposta, no armazenamento fica o hash.
+- **Senha temporária:** `RandomTemporaryPasswordGenerator` (porta `TemporaryPasswordGenerator`), 16 símbolos sorteados com
+  `crypto.randomInt` (sem o viés do `%`) de um alfabeto de 57, sem `0 O 1 l I`, em quatro grupos (`Abcd-Efgh-Jkmn-Pqrs`).
+  Cerca de 93 bits; é uma senha que vale até o primeiro acesso e ainda passa pelo argon2id e pelo bloqueio de tentativas.
+- **Coluna `must_change_password`** (migration `20261021230000_user_must_change_password`, `NOT NULL DEFAULT false`, sem
+  deriva com o schema). No domínio, três caminhos distintos para a senha: `changePasswordHash` (re-hash silencioso do
+  login, não mexe na obrigação), `choosePassword` (a pessoa escolheu: encerra) e `issueTemporaryPassword` (administrador:
+  liga a obrigação e também destrava a conta).
+- **O guard faz valer a troca no servidor.** A `AccessPolicy` carrega `mustChangePassword` (lido do banco a cada requisição,
+  como o resto da política, e não do token). Com a troca pendente, toda rota responde 403 `identity.password_change_required`,
+  exceto as marcadas com `@AllowWhenPasswordChangePending()`: `/auth/me` e `/auth/change-password`. Refresh e logout já são
+  públicos. A checagem vem **antes** da de permissão, para o cliente receber o motivo certo. É 403 e não 401 de propósito:
+  a pessoa está autenticada, e um 401 faria o cliente achar que a sessão acabou.
+- **Trocar a senha** exige a nova diferente da atual (senão a troca obrigatória não trocaria nada) e libera o MESMO token
+  de acesso na hora. O `GET /auth/me` e a resposta do login ganharam `mustChangePassword` (contrato `currentUserSchema`).
+- **Reset:** gera outra senha temporária, derruba todas as sessões e destrava a conta, mas não reativa quem está desativado.
+- **Refatoração:** as regras de "dar este papel neste escopo" (papel da igreja, Administrador só na igreja toda, congregação
+  ativa) viraram `resolveAssignableRole`, usada por atribuir papel e por criar usuário.
+- **Auditoria:** `user.created` e `user.password_reset`, só com ids; nem a senha nem o e-mail entram na trilha.
+- **Verificado:** mutação manual com 44 mutantes e 1 equivalente (o `organizationId` do primeiro papel da igreja é sempre o
+  da própria igreja); 3 sobreviventes da primeira rodada viraram testes (e-mail repetido não gasta hash, `:id` inválido no
+  reset e a destrava da conta).
+- **Limite conhecido:** o Administrador pode redefinir a própria senha por aqui (fica sem sessão e com uma temporária);
+  para trocar a própria senha o caminho certo é `/auth/change-password`.

@@ -50,7 +50,13 @@ describe('loginResponseSchema', () => {
   it('exige data de expiração em ISO 8601', () => {
     const base = {
       accessToken: 't',
-      user: { id: '1', organizationId: '2', email: 'a@b.com', roles: [] },
+      user: {
+        id: '1',
+        organizationId: '2',
+        email: 'a@b.com',
+        mustChangePassword: false,
+        roles: [],
+      },
     };
     expect(
       loginResponseSchema.safeParse({

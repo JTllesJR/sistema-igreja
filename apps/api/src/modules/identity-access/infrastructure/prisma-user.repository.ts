@@ -56,6 +56,7 @@ export class PrismaUserRepository implements UserRepository {
             email: user.email.value,
             passwordHash: user.passwordHash.value,
             status: user.status,
+            mustChangePassword: user.mustChangePassword,
             failedLoginAttempts: user.failedLoginAttempts,
             lockedUntil: user.lockedUntil,
             lastLoginAt: user.lastLoginAt,
@@ -122,6 +123,7 @@ async function write(tx: Prisma.TransactionClient, user: User): Promise<void> {
     data: {
       passwordHash: user.passwordHash.value,
       status: user.status,
+      mustChangePassword: user.mustChangePassword,
       failedLoginAttempts: user.failedLoginAttempts,
       lockedUntil: user.lockedUntil,
       lastLoginAt: user.lastLoginAt,
@@ -194,6 +196,7 @@ function toDomain(row: UserRow): User {
     email: Email.create(row.email),
     passwordHash: PasswordHash.of(row.passwordHash),
     status: row.status,
+    mustChangePassword: row.mustChangePassword,
     failedLoginAttempts: row.failedLoginAttempts,
     lockedUntil: row.lockedUntil,
     lastLoginAt: row.lastLoginAt,

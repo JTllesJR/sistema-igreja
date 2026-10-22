@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  createUserRequestSchema,
   roleAssignmentRequestSchema,
   roleSchema,
+  temporaryPasswordResponseSchema,
   userSummarySchema,
 } from './access.js';
 
@@ -103,5 +105,43 @@ describe('roleAssignmentRequestSchema', () => {
     ['congregationId inválido', { roleId, congregationId: 'abc' }],
   ])('rejeita %s', (_caso, body) => {
     expect(roleAssignmentRequestSchema.safeParse(body).success).toBe(false);
+  });
+});
+
+describe('createUserRequestSchema', () => {
+  const roleId = '0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5c';
+
+  it('aceita e-mail, papel e escopo (null = igreja toda)', () => {
+    expect(
+      createUserRequestSchema.safeParse({
+        email: 'maria@igreja.com',
+        roleId,
+        congregationId: null,
+      }).success,
+    ).toBe(true);
+  });
+
+  it.each([
+    ['e-mail ausente', { roleId, congregationId: null }],
+    ['e-mail vazio', { email: '', roleId, congregationId: null }],
+    ['e-mail enorme', { email: 'a'.repeat(300), roleId, congregationId: null }],
+    ['papel inválido', { email: 'a@b.com', roleId: 'x', congregationId: null }],
+    ['escopo ausente', { email: 'a@b.com', roleId }],
+  ])('rejeita %s', (_caso, body) => {
+    expect(createUserRequestSchema.safeParse(body).success).toBe(false);
+  });
+});
+
+describe('temporaryPasswordResponseSchema', () => {
+  it('traz o usuário e a senha temporária', () => {
+    expect(
+      temporaryPasswordResponseSchema.safeParse({
+        user: validUser,
+        temporaryPassword: 'Abcd-Efgh-Jkmn-Pqrs',
+      }).success,
+    ).toBe(true);
+    expect(
+      temporaryPasswordResponseSchema.safeParse({ user: validUser }).success,
+    ).toBe(false);
   });
 });

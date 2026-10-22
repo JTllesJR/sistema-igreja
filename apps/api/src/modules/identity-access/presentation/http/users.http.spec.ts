@@ -1,4 +1,8 @@
-import { type UserSummary, userSummarySchema } from '@igreja/contracts';
+import {
+  temporaryPasswordResponseSchema,
+  type UserSummary,
+  userSummarySchema,
+} from '@igreja/contracts';
 import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
@@ -393,4 +397,291 @@ describe('POST /users/:id/disable e /enable', () => {
       expect(forbidden.status).toBe(403);
     },
   );
+});
+
+/** Cria um usuário pela API e devolve a resposta (já com a senha temporária). */
+async function createUser(
+  app: HttpTestApp,
+  auth: { Authorization: string },
+  body: { email: string; roleId: string; congregationId: string | null },
+) {
+  return request(app.server).post('/users').set(auth).send(body);
+}
+
+async function loginWith(app: HttpTestApp, email: string, password: string) {
+  return request(app.server).post('/auth/login').send({ email, password });
+}
+
+/** O cookie de renovação (`refresh_token=...`) que a resposta de login entregou. */
+function refreshCookieOf(response: request.Response): string {
+  return ([response.headers['set-cookie']].flat() as string[])
+    .join('; ')
+    .split(';')[0] as string;
+}
+
+describe('POST /users (criar com senha temporária, ADR 0014)', () => {
+  it('cria o usuário (201), devolve a senha temporária uma vez e proíbe cache da resposta', async () => {
+    const { app, auth, roles } = await asAdmin();
+
+    const response = await createUser(app, auth, {
+      email: 'Maria@Igreja.com',
+      roleId: roles['Secretário'],
+      congregationId: null,
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.headers['cache-control']).toBe('no-store');
+    const body = temporaryPasswordResponseSchema.parse(response.body);
+    expect(body.user.email).toBe('maria@igreja.com');
+    expect(body.user.roles[0]?.roleName).toBe('Secretário');
+    expect(body.temporaryPassword).toMatch(/^\S{4}-\S{4}-\S{4}-\S{4}$/);
+  });
+
+  it('a senha temporária entra, o login avisa da troca e a API só atende /auth/* até trocar', async () => {
+    const { app, auth, roles } = await asAdmin();
+    const created = await createUser(app, auth, {
+      email: 'nova@igreja.com',
+      roleId: roles['Administrador'],
+      congregationId: null,
+    });
+    const temp = created.body.temporaryPassword as string;
+
+    const login = await loginWith(app, 'nova@igreja.com', temp);
+    expect(login.status).toBe(200);
+    expect(login.body.user.mustChangePassword).toBe(true);
+    const pending = {
+      Authorization: `Bearer ${login.body.accessToken as string}`,
+    };
+
+    // Mesmo sendo Administrador, nada de negócio até trocar a senha.
+    for (const path of ['/roles', '/users']) {
+      const blocked = await request(app.server).get(path).set(pending);
+      expect(blocked.status).toBe(403);
+      expect(blocked.body).toMatchObject({
+        code: 'identity.password_change_required',
+      });
+    }
+    const me = await request(app.server).get('/auth/me').set(pending);
+    expect(me.status).toBe(200);
+    expect(me.body.mustChangePassword).toBe(true);
+  });
+
+  it('trocar a própria senha libera o MESMO token na hora', async () => {
+    const { app, auth, roles } = await asAdmin();
+    const created = await createUser(app, auth, {
+      email: 'nova@igreja.com',
+      roleId: roles['Administrador'],
+      congregationId: null,
+    });
+    const login = await loginWith(
+      app,
+      'nova@igreja.com',
+      created.body.temporaryPassword as string,
+    );
+    const pending = {
+      Authorization: `Bearer ${login.body.accessToken as string}`,
+    };
+
+    const changed = await request(app.server)
+      .post('/auth/change-password')
+      .set(pending)
+      .send({
+        currentPassword: created.body.temporaryPassword,
+        newPassword: 'minha-senha-nova-bem-forte-1',
+      });
+
+    expect(changed.status).toBe(204);
+    expect((await request(app.server).get('/roles').set(pending)).status).toBe(
+      200,
+    );
+    const me = await request(app.server).get('/auth/me').set(pending);
+    expect(me.body.mustChangePassword).toBe(false);
+  });
+
+  it('com a troca pendente, renovar a sessão e sair continuam funcionando', async () => {
+    const { app, auth, roles } = await asAdmin();
+    const created = await createUser(app, auth, {
+      email: 'nova@igreja.com',
+      roleId: roles['Secretário'],
+      congregationId: null,
+    });
+    const login = await loginWith(
+      app,
+      'nova@igreja.com',
+      created.body.temporaryPassword as string,
+    );
+    const cookie = refreshCookieOf(login);
+
+    const refreshed = await request(app.server)
+      .post('/auth/refresh')
+      .set('Cookie', cookie);
+    const loggedOut = await request(app.server)
+      .post('/auth/logout')
+      .set('Cookie', refreshCookieOf(refreshed));
+
+    expect(refreshed.status).toBe(200);
+    expect(loggedOut.status).toBe(204);
+  });
+
+  it('a pendência vem ANTES da checagem de permissão: o código é o da troca, não o de permissão negada', async () => {
+    const { app, auth, roles } = await asAdmin();
+    const created = await createUser(app, auth, {
+      email: 'nova@igreja.com',
+      roleId: roles['Secretário'],
+      congregationId: null,
+    });
+    const login = await loginWith(
+      app,
+      'nova@igreja.com',
+      created.body.temporaryPassword as string,
+    );
+
+    const response = await request(app.server)
+      .get('/users')
+      .set({ Authorization: `Bearer ${login.body.accessToken as string}` });
+
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({
+      code: 'identity.password_change_required',
+    });
+  });
+
+  it('e-mail já cadastrado é 409; entrada malformada é 400; regra de atribuição é 422', async () => {
+    const { app, auth, roles } = await asAdmin();
+    const ok = { roleId: roles['Secretário'], congregationId: null };
+
+    const duplicate = await createUser(app, auth, {
+      email: TEST_ADMIN_EMAIL,
+      ...ok,
+    });
+    const malformed = await request(app.server)
+      .post('/users')
+      .set(auth)
+      .send({ email: 'x@y.com' });
+    const adminByCongregation = await createUser(app, auth, {
+      email: 'a@igreja.com',
+      roleId: roles['Administrador'],
+      congregationId: CONGREGATION,
+    });
+    const invalidEmail = await createUser(app, auth, {
+      email: 'isto-nao-e-email',
+      ...ok,
+    });
+
+    expect(duplicate.status).toBe(409);
+    expect(duplicate.body).toMatchObject({
+      code: 'identity.email_already_registered',
+    });
+    expect(malformed.status).toBe(400);
+    expect(adminByCongregation.status).toBe(422);
+    expect(invalidEmail.status).toBe(422);
+  });
+
+  it('exige login e access:manage-users na igreja toda', async () => {
+    const { app, roles } = await asAdmin();
+    const secretary = await app.addUser(6, { permissions: ['members:read'] });
+    const secretaryAuth = await authFor(app, secretary.email);
+    const body = {
+      email: 'a@igreja.com',
+      roleId: roles['Secretário'],
+      congregationId: null,
+    };
+
+    const anonymous = await request(app.server).post('/users').send(body);
+    const forbidden = await request(app.server)
+      .post('/users')
+      .set(secretaryAuth)
+      .send(body);
+
+    expect(anonymous.status).toBe(401);
+    expect(forbidden.status).toBe(403);
+  });
+
+  it('audita a criação sem senha e sem e-mail', async () => {
+    const { app, auth, roles } = await asAdmin();
+
+    const response = await createUser(app, auth, {
+      email: 'nova@igreja.com',
+      roleId: roles['Secretário'],
+      congregationId: null,
+    });
+
+    expect(app.audit.entries.map((e) => e.action)).toContain('user.created');
+    const trail = JSON.stringify(app.audit.entries);
+    expect(trail).not.toContain(response.body.temporaryPassword as string);
+    expect(trail).not.toContain('nova@igreja.com');
+  });
+});
+
+describe('POST /users/:id/reset-password', () => {
+  it('gera outra senha temporária, derruba as sessões e volta a exigir a troca', async () => {
+    const { app, auth } = await asAdmin();
+    const target = await app.addUser(4);
+    const old = await loginWith(app, target.email, TEST_PASSWORD);
+    expect(old.status).toBe(200);
+
+    const reset = await request(app.server)
+      .post(`/users/${target.id}/reset-password`)
+      .set(auth);
+
+    expect(reset.status).toBe(200);
+    expect(reset.headers['cache-control']).toBe('no-store');
+    const body = temporaryPasswordResponseSchema.parse(reset.body);
+    expect((await loginWith(app, target.email, TEST_PASSWORD)).status).toBe(
+      401,
+    );
+    const fresh = await loginWith(app, target.email, body.temporaryPassword);
+    expect(fresh.status).toBe(200);
+    expect(fresh.body.user.mustChangePassword).toBe(true);
+    // A renovação da sessão antiga morreu junto com as sessões.
+    expect(
+      (
+        await request(app.server)
+          .post('/auth/refresh')
+          .set('Cookie', refreshCookieOf(old))
+      ).status,
+    ).toBe(401);
+    expect(app.audit.entries.map((e) => e.action)).toContain(
+      'user.password_reset',
+    );
+  });
+
+  it('id fora do formato é 400', async () => {
+    const { app, auth } = await asAdmin();
+
+    const response = await request(app.server)
+      .post('/users/nao-e-uuid/reset-password')
+      .set(auth);
+
+    expect(response.status).toBe(400);
+  });
+
+  it('usuário de outra igreja é 404; sem permissão é 403; sem login é 401', async () => {
+    const { app, auth } = await asAdmin();
+    const foreign = await app.addUser(5, {
+      organizationId: OrganizationId.of(uuidFor(2)),
+    });
+    const target = await app.addUser(4);
+    const plain = await app.addUser(6, { permissions: ['members:read'] });
+    const plainAuth = await authFor(app, plain.email);
+
+    expect(
+      (
+        await request(app.server)
+          .post(`/users/${foreign.id}/reset-password`)
+          .set(auth)
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await request(app.server)
+          .post(`/users/${target.id}/reset-password`)
+          .set(plainAuth)
+      ).status,
+    ).toBe(403);
+    expect(
+      (await request(app.server).post(`/users/${target.id}/reset-password`))
+        .status,
+    ).toBe(401);
+  });
 });

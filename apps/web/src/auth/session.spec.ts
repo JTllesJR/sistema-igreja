@@ -10,6 +10,7 @@ import { SessionManager, msUntilRenewal, type Timers } from './session';
 const user: CurrentUser = {
   id: 'u1',
   organizationId: 'o1',
+  mustChangePassword: false,
   email: 'maria@igreja.com',
   roles: [],
 };

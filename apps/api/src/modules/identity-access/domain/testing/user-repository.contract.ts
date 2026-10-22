@@ -28,6 +28,7 @@ function snapshot(user: User) {
     email: user.email.value,
     passwordHash: user.passwordHash.value,
     status: user.status,
+    mustChangePassword: user.mustChangePassword,
     failedLoginAttempts: user.failedLoginAttempts,
     lockedUntil: user.lockedUntil?.toISOString() ?? null,
     lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
@@ -139,6 +140,34 @@ export function describeUserRepositoryContract(
       expect(last.failedLoginAttempts).toBe(0);
       expect(last.lockedUntil).toBeNull();
       expect(last.lastLoginAt).toEqual(after(NOW, 20 * 60_000));
+    });
+
+    it('grava e devolve a troca obrigatória de senha, ligada e desligada', async () => {
+      const user = User.register({
+        id: userId(1),
+        organizationId: orgId(1),
+        email: anEmail('nova@igreja.com'),
+        passwordHash: PasswordHash.of(A_PASSWORD_HASH),
+        mustChangePassword: true,
+      });
+      await repository.add(user);
+      expect((await repository.findById(userId(1)))?.mustChangePassword).toBe(
+        true,
+      );
+
+      const loaded = (await repository.findById(userId(1))) as User;
+      loaded.choosePassword(PasswordHash.of(A_PASSWORD_HASH));
+      await repository.save(loaded);
+      expect((await repository.findById(userId(1)))?.mustChangePassword).toBe(
+        false,
+      );
+
+      const again = (await repository.findById(userId(1))) as User;
+      again.issueTemporaryPassword(PasswordHash.of(A_PASSWORD_HASH));
+      await repository.save(again);
+      expect((await repository.findById(userId(1)))?.mustChangePassword).toBe(
+        true,
+      );
     });
 
     it('save com versão desatualizada falha com conflito e não sobrescreve', async () => {

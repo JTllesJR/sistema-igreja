@@ -70,6 +70,7 @@ export interface CurrentUserView {
   id: string;
   organizationId: string;
   email: string;
+  mustChangePassword: boolean;
   roles: AssignedRoleView[];
 }
 
@@ -95,6 +96,7 @@ export function toCurrentUserView(
     id: user.id,
     organizationId: user.organizationId,
     email: user.email.value,
+    mustChangePassword: user.mustChangePassword,
     roles: user.assignments.flatMap((assignment) => {
       const role = byId.get(assignment.roleId);
       return role

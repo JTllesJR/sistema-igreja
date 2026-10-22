@@ -40,3 +40,23 @@ export const roleAssignmentRequestSchema = z.object({
   congregationId: z.uuid().nullable(),
 });
 export type RoleAssignmentRequest = z.infer<typeof roleAssignmentRequestSchema>;
+
+/** Criar um usuário: o e-mail, o primeiro papel e o escopo (`congregationId: null` = igreja toda). */
+export const createUserRequestSchema = z.object({
+  email: z.string().min(1).max(254),
+  roleId: z.uuid(),
+  congregationId: z.uuid().nullable(),
+});
+export type CreateUserRequest = z.infer<typeof createUserRequestSchema>;
+
+/**
+ * Resposta de criar usuário e de redefinir senha. A senha temporária aparece UMA ÚNICA vez, aqui: o servidor guarda
+ * só o hash. A pessoa será obrigada a trocá-la no primeiro acesso.
+ */
+export const temporaryPasswordResponseSchema = z.object({
+  user: userSummarySchema,
+  temporaryPassword: z.string(),
+});
+export type TemporaryPasswordResponse = z.infer<
+  typeof temporaryPasswordResponseSchema
+>;

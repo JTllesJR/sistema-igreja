@@ -10,7 +10,11 @@ import {
   UserNotFoundError,
 } from '../domain/errors.js';
 import { MINUTE, NOW } from '../domain/testing/fixtures.js';
-import { ADMIN_PASSWORD, anAuthBed } from './testing/test-bed.js';
+import {
+  ADMIN_PASSWORD,
+  USER_PASSWORD,
+  anAuthBed,
+} from './testing/test-bed.js';
 
 const NEW_PASSWORD = 'uma-senha-nova-e-forte-9';
 
@@ -27,6 +31,37 @@ describe('ChangeOwnPasswordUseCase (UC-18)', () => {
     await expect(bed.login(ADMIN_PASSWORD)).rejects.toBeInstanceOf(
       InvalidCredentialsError,
     );
+  });
+
+  it('a nova senha tem de ser diferente da atual', async () => {
+    const bed = await anAuthBed();
+
+    const error = await bed.changePassword
+      .execute(bed.adminContext, {
+        currentPassword: ADMIN_PASSWORD,
+        newPassword: ADMIN_PASSWORD,
+      })
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ValidationError);
+    expect((error as ValidationError).field).toBe('newPassword');
+    await expect(bed.login(ADMIN_PASSWORD)).resolves.toBeDefined();
+  });
+
+  it('encerra a troca obrigatória de quem entrou com senha temporária', async () => {
+    const bed = await anAuthBed();
+    const user = await bed.addUser('nova@igreja.com', {
+      mustChangePassword: true,
+    });
+    const context = bed.contextOf(user.id);
+    expect((await bed.users.findById(user.id))?.mustChangePassword).toBe(true);
+
+    await bed.changePassword.execute(context, {
+      currentPassword: USER_PASSWORD,
+      newPassword: NEW_PASSWORD,
+    });
+
+    expect((await bed.users.findById(user.id))?.mustChangePassword).toBe(false);
   });
 
   it('senha atual errada: rejeita, não troca e conta como tentativa falha', async () => {
