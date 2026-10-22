@@ -376,8 +376,13 @@ export function describeMemberRepositoryContract(
         ).toEqual(['Ana Souza', 'Maria Souza']);
       });
 
-      it('os caracteres curinga do LIKE (% e _) são texto comum', async () => {
+      it('os caracteres especiais do LIKE (% _ e \\) são texto comum', async () => {
         await seed();
+
+        // A barra invertida é o escape do LIKE: sem tratá-la, `\a` viraria "um a" e casaria com quase todo mundo.
+        expect(
+          (await repository.search(org, { ...everything, term: '\\a' })).total,
+        ).toBe(0);
 
         expect(
           (await repository.search(org, { ...everything, term: '%' })).total,

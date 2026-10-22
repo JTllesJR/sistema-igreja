@@ -120,10 +120,11 @@ export class PrismaMemberRepository implements MemberRepository {
         ? {}
         : { congregationId: { in: [...criteria.congregationIds] } }),
       ...(criteria.status === null ? {} : { status: criteria.status }),
-      // `contains` escapa % e _ : o termo é sempre texto, nunca padrão.
+      // O `contains` do Prisma NÃO escapa os curingas do LIKE (verificado pelo teste de contrato: "%" casava com
+      // todos). Escapamos aqui para o termo ser sempre texto, nunca padrão.
       ...(criteria.term === null
         ? {}
-        : { nameKey: { contains: criteria.term } }),
+        : { nameKey: { contains: escapeLikePattern(criteria.term) } }),
     };
 
     const [rows, total] = await this.prisma.$transaction([
@@ -227,4 +228,9 @@ function toEvent(row: EventRow): MemberHistoryEvent {
     toStatus: row.toStatus,
     recordedAt: row.recordedAt,
   };
+}
+
+/** Antepõe `\` a `\`, `%` e `_`: no LIKE do PostgreSQL, a barra invertida é o escape padrão. */
+function escapeLikePattern(term: string): string {
+  return term.replace(/[\\%_]/g, '\\$&');
 }
