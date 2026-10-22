@@ -7,10 +7,10 @@ import {
 } from '../domain/errors.js';
 import { RoleId, UserId } from '../domain/ids.js';
 import { PlainPassword } from '../domain/plain-password.js';
-import { Role } from '../domain/role.js';
 import type { RoleRepository } from '../domain/role.repository.js';
 import { User } from '../domain/user.js';
 import type { UserRepository } from '../domain/user.repository.js';
+import { ensureDefaultRoles } from './default-roles.js';
 import type { OrganizationDirectory } from './organization-directory.js';
 import type { PasswordHasher } from './password-hasher.js';
 
@@ -29,7 +29,8 @@ export interface CreateAdministratorResult {
  * Cria um administrador da igreja (parte do UC-03 que cabe ao operador). Executado pela linha de comando,
  * por isso não recebe `RequestContext`: ainda não há ninguém autenticado para criar o primeiro usuário.
  *
- * O papel de sistema "Administrador" da igreja é criado aqui, de forma idempotente, se ainda não existir.
+ * Os papéis padrão da igreja (Administrador, Dirigente, Secretário; ADR 0014) são criados aqui, de forma
+ * idempotente, se ainda não existirem.
  */
 export class CreateAdministratorUseCase {
   constructor(
@@ -54,7 +55,11 @@ export class CreateAdministratorUseCase {
     if (await this.users.findByEmail(email))
       throw new EmailAlreadyRegisteredError();
 
-    const role = await this.ensureAdministratorRole(organizationId);
+    const { administrator: role } = await ensureDefaultRoles(
+      this.roles,
+      this.ids,
+      organizationId,
+    );
 
     const user = User.register({
       id: UserId.of(this.ids.next()),
@@ -66,19 +71,5 @@ export class CreateAdministratorUseCase {
     await this.users.add(user);
 
     return { userId: user.id, roleId: role.id };
-  }
-
-  private async ensureAdministratorRole(
-    organizationId: OrganizationId,
-  ): Promise<Role> {
-    const existing = await this.roles.findAdministrator(organizationId);
-    if (existing) return existing;
-
-    const role = Role.administrator({
-      id: RoleId.of(this.ids.next()),
-      organizationId,
-    });
-    await this.roles.add(role);
-    return role;
   }
 }

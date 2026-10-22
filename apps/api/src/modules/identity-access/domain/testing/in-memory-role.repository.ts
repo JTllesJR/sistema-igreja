@@ -27,6 +27,14 @@ export class InMemoryRoleRepository implements RoleRepository {
     return Promise.resolve(found ?? null);
   }
 
+  listByOrganization(organizationId: OrganizationId): Promise<Role[]> {
+    return Promise.resolve(
+      [...this.#store.values()].filter(
+        (role) => role.organizationId === organizationId,
+      ),
+    );
+  }
+
   add(role: Role): Promise<void> {
     const nameTaken = [...this.#store.values()].some(
       (existing) =>

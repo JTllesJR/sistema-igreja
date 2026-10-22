@@ -13,5 +13,6 @@ import type { Role } from './role.js';
 export interface RoleRepository {
   findByIds(ids: readonly RoleId[]): Promise<Role[]>;
   findAdministrator(organizationId: OrganizationId): Promise<Role | null>;
+  listByOrganization(organizationId: OrganizationId): Promise<Role[]>;
   add(role: Role): Promise<void>;
 }

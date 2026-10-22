@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ValidationError } from '../../../shared/domain/domain-error.js';
 import { thrownBy } from '../../../shared/testing/thrown-by.js';
+import {
+  MEMBERS_ANONYMIZE,
+  MEMBERS_READ,
+  MEMBERS_WRITE,
+} from '../../members/members.permissions.js';
+import { ORGANIZATION_READ } from '../../organization/organization.permissions.js';
 import { Permission } from './permission.js';
 import { Role } from './role.js';
 import { RoleName } from './role-name.js';
@@ -65,6 +71,61 @@ describe('Role', () => {
 
     it('não é papel de sistema', () => {
       expect(treasurer.isSystem).toBe(false);
+    });
+  });
+
+  describe('papéis padrão (ADR 0014)', () => {
+    const input = { id: roleId(7), organizationId: orgId() };
+    const permissionsOf = (role: Role) =>
+      role.permissions.map((p) => p.value).sort();
+
+    it('Secretário: cadastra e consulta membros e vê a igreja, nada além disso', () => {
+      const secretary = Role.secretary(input);
+
+      expect(secretary.name.value).toBe('Secretário');
+      expect(secretary.isSystem).toBe(true);
+      expect(permissionsOf(secretary)).toEqual([
+        'members:read',
+        'members:write',
+        'organization:read',
+      ]);
+      expect(secretary.grants(Permission.of('members:anonymize'))).toBe(false);
+      expect(secretary.grants(Permission.of('organization:manage'))).toBe(
+        false,
+      );
+    });
+
+    it('Dirigente: tudo do Secretário e mais a anonimização de membros (sem gerir a igreja)', () => {
+      const leader = Role.leader(input);
+
+      expect(leader.name.value).toBe('Dirigente');
+      expect(leader.isSystem).toBe(true);
+      expect(permissionsOf(leader)).toEqual([
+        'members:anonymize',
+        'members:read',
+        'members:write',
+        'organization:read',
+      ]);
+      expect(leader.grants(Permission.of('organization:manage'))).toBe(false);
+    });
+
+    it('os textos das permissões batem com as constantes dos módulos dono delas', () => {
+      // Único lugar em que o identity-access olha as constantes de outros módulos: o domain usa texto para não
+      // importar o módulo inteiro (ciclo + Nest no domain). Se alguém renomear uma permissão, este teste falha.
+      const granted = new Set(
+        [Role.secretary(input), Role.leader(input)].flatMap((role) =>
+          role.permissions.map((p) => p.value),
+        ),
+      );
+
+      expect(granted).toEqual(
+        new Set([
+          MEMBERS_READ,
+          MEMBERS_WRITE,
+          MEMBERS_ANONYMIZE,
+          ORGANIZATION_READ,
+        ]),
+      );
     });
   });
 });

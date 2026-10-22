@@ -27,6 +27,7 @@ casos de uso, modelo ER, sequências, atividades e estados, distinguindo impleme
 | [0011](adr/0011-camada-http.md) | Camada HTTP: validação, autenticação, erros e endurecimento | aceita |
 | [0012](adr/0012-web-react-vite-tailwind.md) | Web: React, Vite e Tailwind | aceita |
 | [0013](adr/0013-modulo-members-e-auditoria.md) | Módulo `members` e a trilha de auditoria | aceita |
+| [0014](adr/0014-usuarios-papeis-padrao-e-senha-temporaria.md) | Usuários, papéis padrão e senha temporária (UC-02/03 enxuto) | aceita |
 
 ## Como usar os ADRs
 Toda decisão estrutural nova vira um ADR curto (contexto, decisão, alternativas, consequências). Se uma decisão mudar,
@@ -78,6 +79,10 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
   **trilha de auditoria** é somente-anexação (gatilho no banco), registra leituras ANTES de devolver (falha fechada) e
   nunca guarda dado pessoal. Testado com repositórios em memória (inclusive duas igrejas e a falha da trilha) e com
   mutação manual; **a migration, o repositório Prisma e o gatilho só serão exercitados no CI** (sem Docker nesta máquina).
+
+- 🔄 **Usuários e papéis, versão enxuta** ([ADR 0014](adr/0014-usuarios-papeis-padrao-e-senha-temporaria.md)): etapa 1 pronta
+  (papéis padrão Administrador/Dirigente/Secretário e `GET /roles`). Faltam (2) usuários e atribuições com a regra do último
+  Administrador, (3) senha temporária e troca obrigatória e (4) as telas.
 
 ## Próximos passos
 Em fatias verticais, para que o primeiro resultado visual chegue cedo (cada módulo novo entrega backend e tela):

@@ -11,6 +11,23 @@ export interface AssignedRoleView {
   congregationId: string | null;
 }
 
+/** Um papel da igreja, para a tela de usuários escolher. Permissões em ordem alfabética. */
+export interface RoleView {
+  id: string;
+  name: string;
+  isSystem: boolean;
+  permissions: string[];
+}
+
+export function toRoleView(role: Role): RoleView {
+  return {
+    id: role.id,
+    name: role.name.value,
+    isSystem: role.isSystem,
+    permissions: role.permissions.map((p) => p.value).sort(),
+  };
+}
+
 /** Quem é o usuário logado. Nunca inclui hash de senha nem dados de segurança. */
 export interface CurrentUserView {
   id: string;

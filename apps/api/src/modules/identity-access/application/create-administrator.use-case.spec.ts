@@ -48,6 +48,24 @@ describe('CreateAdministratorUseCase (UC-03, parte do operador)', () => {
     expect(role?.permissions.map((p) => p.value)).toEqual(['*']);
   });
 
+  it('deixa a igreja com os papéis padrão (Dirigente e Secretário), sem duplicá-los num segundo administrador', async () => {
+    const bed = await anAuthBed();
+    const names = async () =>
+      (await bed.roles.listByOrganization(ORGANIZATION))
+        .map((r) => r.name.value)
+        .sort();
+
+    expect(await names()).toEqual(['Administrador', 'Dirigente', 'Secretário']);
+
+    await bed.createAdministrator.execute({
+      organizationId: ORGANIZATION,
+      email: 'segundo@igreja.com',
+      password: 'outra-senha-bem-segura',
+    });
+
+    expect(await names()).toEqual(['Administrador', 'Dirigente', 'Secretário']);
+  });
+
   it('reutiliza o papel Administrador existente ao criar um segundo administrador da mesma igreja', async () => {
     const bed = await anAuthBed();
 

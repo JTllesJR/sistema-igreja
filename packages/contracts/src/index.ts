@@ -1,3 +1,4 @@
+export * from './access.js';
 export * from './auth.js';
 export * from './health.js';
 export * from './members.js';

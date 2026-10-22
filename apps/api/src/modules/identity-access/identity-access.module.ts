@@ -19,6 +19,7 @@ import { ChangeOwnPasswordUseCase } from './application/change-own-password.use-
 import { CreateAdministratorUseCase } from './application/create-administrator.use-case.js';
 import { GetAccessPolicyUseCase } from './application/get-access-policy.use-case.js';
 import { GetCurrentUserUseCase } from './application/get-current-user.use-case.js';
+import { ListRolesUseCase } from './application/list-roles.use-case.js';
 import { LogoutUseCase } from './application/logout.use-case.js';
 import type { OrganizationDirectory } from './application/organization-directory.js';
 import type { PasswordHasher } from './application/password-hasher.js';
@@ -40,6 +41,7 @@ import { PrismaUserRepository } from './infrastructure/prisma-user.repository.js
 import { Sha256RefreshTokenCodec } from './infrastructure/sha256-refresh-token-codec.js';
 import { AuthController } from './presentation/http/auth.controller.js';
 import { AuthGuard } from './presentation/http/auth.guard.js';
+import { RolesController } from './presentation/http/roles.controller.js';
 import {
   ACCESS_TOKEN_SIGNER,
   ACCESS_TOKEN_VERIFIER,
@@ -60,7 +62,7 @@ const DAY_MS = 24 * 60 * 60_000;
 // ligada à sua implementação e as configurações vêm do ambiente já validado.
 @Module({
   imports: [DatabaseModule, OrganizationModule],
-  controllers: [AuthController],
+  controllers: [AuthController, RolesController],
   providers: [
     // Guard global que nega por padrão (ADR 0011): vale para TODAS as rotas de TODOS os módulos.
     { provide: APP_GUARD, useClass: AuthGuard },
@@ -230,6 +232,12 @@ const DAY_MS = 24 * 60 * 60_000;
       useFactory: (users: UserRepository, roles: RoleRepository) =>
         new GetAccessPolicyUseCase(users, roles),
       inject: [USER_REPOSITORY, ROLE_REPOSITORY],
+    },
+    {
+      provide: ListRolesUseCase,
+      useFactory: (roles: RoleRepository, ids: IdGenerator) =>
+        new ListRolesUseCase(roles, ids),
+      inject: [ROLE_REPOSITORY, ID_GENERATOR],
     },
     {
       provide: ChangeOwnPasswordUseCase,

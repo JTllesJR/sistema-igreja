@@ -85,6 +85,31 @@ export function describeRoleRepositoryContract(
       await expect(repository.findAdministrator(orgId(2))).resolves.toBeNull();
     });
 
+    it('listByOrganization devolve todos os papéis DA organização, com permissões, e nenhum de outra', async () => {
+      const admin = Role.administrator({
+        id: roleId(1),
+        organizationId: orgId(1),
+      });
+      await repository.add(admin);
+      await repository.add(treasurer(2, 1));
+      await repository.add(treasurer(3, 2));
+
+      const found = await repository.listByOrganization(orgId(1));
+
+      expect(
+        found.map(snapshot).sort((a, b) => a.id.localeCompare(b.id)),
+      ).toEqual([snapshot(admin), snapshot(treasurer(2, 1))]);
+      await expect(
+        repository.listByOrganization(orgId(2)),
+      ).resolves.toHaveLength(1);
+    });
+
+    it('listByOrganization de uma organização sem papéis devolve lista vazia', async () => {
+      await expect(repository.listByOrganization(orgId(1))).resolves.toEqual(
+        [],
+      );
+    });
+
     it('add de um nome já usado na mesma organização é rejeitado; em outra organização é aceito', async () => {
       await repository.add(treasurer(2, 1));
 

@@ -33,6 +33,14 @@ export class PrismaRoleRepository implements RoleRepository {
     return row ? toDomain(row) : null;
   }
 
+  async listByOrganization(organizationId: OrganizationId): Promise<Role[]> {
+    const rows = await this.prisma.role.findMany({
+      where: { organizationId },
+      include: { permissions: true },
+    });
+    return rows.map(toDomain);
+  }
+
   async add(role: Role): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       try {
