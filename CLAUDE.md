@@ -10,6 +10,23 @@ O requisito original é o PRD em PDF; as decisões e modelos estão em `docs/` (
 - Prefira passos pequenos e verificáveis. Não declare algo pronto sem ter rodado (lint, tipos, testes, build).
 - Documentação e comentários em português; identificadores de código em inglês (ver `docs/glossario.md`).
 
+### Plugin ponytail (se estiver instalado)
+
+O plugin `ponytail` (instalado no escopo do usuário, só na CLI) injeta regras de "menor mudança possível" no início da
+sessão. Elas valem aqui, **subordinadas** às regras deste arquivo; em conflito, este arquivo vence:
+
+- **Vale:** reaproveitar o que já existe, usar a biblioteca padrão e as dependências já instaladas, não criar abstração,
+  opção ou configuração que ninguém pediu, e fechar a resposta com uma ou duas linhas sobre o que foi pulado e os riscos.
+- **Não vale cortar:** a arquitetura em camadas e as regras de "Regras que não se negociam" (ADR 0001, 0003, 0005, 0006,
+  0013), o teste de contrato de todo repositório, a mutação manual, as ADRs e a explicação do porquê. "Simples" aqui
+  significa menos código, não menos entendimento: a resposta continua explicando as escolhas e as alternativas.
+- Atalho consciente deixa comentário `shortcut: <limite>, <quando melhorar>` (o prefixo `shortcut:` fica em inglês porque
+  o `/ponytail-debt` o procura; o resto do texto, em português). Dependência nova continua exigindo o ADR 0008.
+- Nível `full` é o padrão. Para sessões de estudo, `/ponytail lite` (só aponta a opção menor) ou `/ponytail off`
+  (ou "normal mode") desligam a pressão por brevidade; `/ponytail-review` e `/ponytail-audit` servem para revisão.
+- Segurança do plugin: manter vazios `webhookUrl` e `webhookToken` (nada sai da máquina). O plugin lê os transcripts das
+  sessões para o placar de custo em `~/.config/ponytail/`, fora do repositório; não versionar nada dali.
+
 ## Comandos (a partir da raiz)
 
 - `pnpm dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm test:integration` · `pnpm build` · `pnpm format`
