@@ -33,6 +33,7 @@ casos de uso, modelo ER, sequências, atividades e estados, distinguindo impleme
 | [0017](adr/0017-consulta-a-trilha-de-auditoria.md) | Consulta à trilha de auditoria (UC-04): `audit:read`, cursor e a consulta também auditada | aceita |
 | [0018](adr/0018-painel-consolidado-composto-no-cliente.md) | Painel consolidado (UC-16): contagem de membros no `members`, composição no cliente | aceita |
 | [0019](adr/0019-editor-de-papeis-e-catalogo-de-permissoes.md) | Editor de papéis (UC-02) e catálogo de permissões montado na raiz | aceita |
+| [0020](adr/0020-diretorio-minimo-de-usuarios.md) | Diretório mínimo de usuários: ids viram e-mails nas telas do financeiro e da trilha | aceita |
 
 ## Como usar os ADRs
 Toda decisão estrutural nova vira um ADR curto (contexto, decisão, alternativas, consequências). Se uma decisão mudar,
@@ -119,6 +120,10 @@ não se apaga o ADR antigo: cria-se um novo marcando o anterior como *substituí
   personalizados (`POST`, `PATCH` e `DELETE /roles`). Papel personalizado nunca tem `*` nem `access:manage-users`; papel
   padrão não muda; papel atribuído não se exclui (o banco garante, sem migration nova). Tudo auditado. Validado no PostgreSQL
   local, com 19 mutantes mortos.
+- ✅ **Diretório mínimo de usuários, backend** ([ADR 0020](adr/0020-diretorio-minimo-de-usuarios.md)): `GET /users/directory?ids=…` troca
+  os ids de `requestedBy`, `decidedBy` e `actorId` por e-mail e situação, **só dos ids pedidos** (até 50) e **só da igreja do
+  token**, para a tela da sede, os lançamentos e a trilha mostrarem **quem**. Basta ter alguma permissão que já mostra ids de
+  usuário (`finance:read`, `finance:approve`, `audit:read` ou `access:manage-users`); não é uma lista de usuários.
 
 ## Front-end: as telas atuais são só uma AMOSTRA
 Decisão do dono do projeto (2026-10-22): **o backend de todos os módulos vem primeiro**, e o front-end será uma fase
