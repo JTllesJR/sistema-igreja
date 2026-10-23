@@ -34,6 +34,7 @@ casos de uso, modelo ER, sequências, atividades e estados, distinguindo impleme
 | [0018](adr/0018-painel-consolidado-composto-no-cliente.md) | Painel consolidado (UC-16): contagem de membros no `members`, composição no cliente | aceita |
 | [0019](adr/0019-editor-de-papeis-e-catalogo-de-permissoes.md) | Editor de papéis (UC-02) e catálogo de permissões montado na raiz | aceita |
 | [0020](adr/0020-diretorio-minimo-de-usuarios.md) | Diretório mínimo de usuários: ids viram e-mails nas telas do financeiro e da trilha | aceita |
+| [0021](adr/0021-fase-de-front-end.md) | Fase de front-end: ordem, fundação e padrões (WCAG 2.2 AA, componentes à mão) | aceita |
 
 ## Como usar os ADRs
 Toda decisão estrutural nova vira um ADR curto (contexto, decisão, alternativas, consequências). Se uma decisão mudar,
@@ -137,7 +138,9 @@ Backend primeiro, em fatias verticais grossas e sem abrir mão da segurança (ca
    trilha e do livro-razão e a trava de saldo com o PostgreSQL real.
 2. Backend que falta: convite por link (o resto do UC-03, adiado no ADR 0014) e documentos e foto dos membros (UC-08,
    com armazenamento privado, exige decidir onde guardar os arquivos).
-3. **Fase de front-end** para todos os módulos (veja acima), já com o OpenAPI como base para gerar o cliente tipado.
+3. **Fase de front-end** para todos os módulos, **planejada**: [ADR 0021](adr/0021-fase-de-front-end.md) e [`plano-front-end.md`](plano-front-end.md)
+   (mapa de telas por papel e sete fatias: fundação, Finanças do Tesoureiro, Finanças da sede, início por papel, Membros,
+   Administração e acabamento). Primeira entrega: a fundação e as telas de entrada refeitas.
 
 Em paralelo:
 - Validar com a igreja as perguntas ao final de [casos-de-uso-mvp.md](casos-de-uso-mvp.md).
