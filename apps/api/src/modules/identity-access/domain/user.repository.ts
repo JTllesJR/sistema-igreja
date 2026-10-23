@@ -13,6 +13,8 @@ import type { User } from './user.js';
  *    falha com `ConcurrencyConflictError` se outra gravação ocorreu e com `UserNotFoundError` se o usuário não existe.
  *    A cada `save` bem-sucedido a versão avança em 1.
  *  - `listByOrganization` devolve só os usuários DAQUELA organização, com as atribuições.
+ *  - `findManyByIds` devolve só os usuários pedidos que existem NAQUELA organização (id desconhecido ou de outra igreja é
+ *    ignorado, sem erro). Lista vazia devolve lista vazia.
  *  - `saveGuardingLastAdministrator` é um `save` que, na MESMA transação e serializado por igreja, recusa com
  *    `LastAdministratorError` (sem gravar nada) se, depois da gravação, a igreja ficaria sem nenhum administrador
  *    ativo (`User.isActiveAdministrator`). A serialização é o que impede que dois administradores se removam ao
@@ -22,6 +24,10 @@ export interface UserRepository {
   findById(id: UserId): Promise<User | null>;
   findByEmail(email: Email): Promise<User | null>;
   listByOrganization(organizationId: OrganizationId): Promise<User[]>;
+  findManyByIds(
+    organizationId: OrganizationId,
+    ids: readonly UserId[],
+  ): Promise<User[]>;
   add(user: User): Promise<void>;
   save(user: User): Promise<void>;
   saveGuardingLastAdministrator(

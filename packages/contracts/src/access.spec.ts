@@ -3,7 +3,9 @@ import {
   createUserRequestSchema,
   roleAssignmentRequestSchema,
   roleSchema,
+  MAX_USER_DIRECTORY_IDS,
   temporaryPasswordResponseSchema,
+  userDirectoryQuerySchema,
   userSummarySchema,
 } from './access.js';
 
@@ -143,5 +145,40 @@ describe('temporaryPasswordResponseSchema', () => {
     expect(
       temporaryPasswordResponseSchema.safeParse({ user: validUser }).success,
     ).toBe(false);
+  });
+});
+
+describe('userDirectoryQuerySchema (ADR 0020)', () => {
+  const id = (n: number) =>
+    `0198a1b2-c3d4-7e5f-8a9b-${String(n).padStart(12, '0')}`;
+
+  it('transforma o texto "a,b" na lista de ids (aparando espaços)', () => {
+    expect(
+      userDirectoryQuerySchema.parse({ ids: `${id(1)}, ${id(2)}` }).ids,
+    ).toEqual([id(1), id(2)]);
+  });
+
+  it('recusa vazio, id fora do formato e mais ids do que o teto', () => {
+    const many = Array.from({ length: MAX_USER_DIRECTORY_IDS + 1 }, (_, n) =>
+      id(n),
+    ).join(',');
+
+    for (const ids of ['', 'não-é-uuid', `${id(1)},xyz`, many]) {
+      expect(
+        userDirectoryQuerySchema.safeParse({ ids }).success,
+        ids.slice(0, 30),
+      ).toBe(false);
+    }
+    expect(userDirectoryQuerySchema.safeParse({}).success).toBe(false);
+  });
+
+  it('aceita exatamente o teto', () => {
+    const exact = Array.from({ length: MAX_USER_DIRECTORY_IDS }, (_, n) =>
+      id(n),
+    ).join(',');
+
+    expect(userDirectoryQuerySchema.safeParse({ ids: exact }).success).toBe(
+      true,
+    );
   });
 });

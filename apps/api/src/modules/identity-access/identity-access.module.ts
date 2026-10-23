@@ -34,6 +34,7 @@ import {
 } from './application/role-editor.use-cases.js';
 import { ListUsersUseCase } from './application/list-users.use-case.js';
 import { ResetPasswordUseCase } from './application/reset-password.use-case.js';
+import { ResolveUserDirectoryUseCase } from './application/resolve-user-directory.use-case.js';
 import { RevokeRoleUseCase } from './application/revoke-role.use-case.js';
 import type { TemporaryPasswordGenerator } from './application/temporary-password-generator.js';
 import { LogoutUseCase } from './application/logout.use-case.js';
@@ -296,6 +297,12 @@ const DAY_MS = 24 * 60 * 60_000;
       useFactory: (users: UserRepository, roles: RoleRepository) =>
         new ListUsersUseCase(users, roles),
       inject: [USER_REPOSITORY, ROLE_REPOSITORY],
+    },
+    {
+      provide: ResolveUserDirectoryUseCase,
+      useFactory: (users: UserRepository) =>
+        new ResolveUserDirectoryUseCase(users),
+      inject: [USER_REPOSITORY],
     },
     {
       provide: AssignRoleUseCase,

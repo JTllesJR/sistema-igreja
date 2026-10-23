@@ -40,6 +40,18 @@ export class InMemoryUserRepository implements UserRepository {
     );
   }
 
+  findManyByIds(
+    organizationId: OrganizationId,
+    ids: readonly UserId[],
+  ): Promise<User[]> {
+    const wanted = new Set<string>(ids);
+    return Promise.resolve(
+      [...this.#store.values()]
+        .filter((u) => u.organizationId === organizationId && wanted.has(u.id))
+        .map((u) => copyOf(u, u.version)),
+    );
+  }
+
   /** Sem `await` entre conferir e gravar, o JavaScript já serializa: a operação é atômica por construção. */
   saveGuardingLastAdministrator(
     user: User,

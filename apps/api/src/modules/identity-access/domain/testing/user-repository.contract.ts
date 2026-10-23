@@ -244,6 +244,45 @@ export function describeUserRepositoryContract(
       });
     });
 
+    describe('findManyByIds', () => {
+      it('devolve só os pedidos que existem NESTA organização, ignorando desconhecidos e os de outra igreja', async () => {
+        await repository.add(aUser(1));
+        await repository.add(aUser(2));
+        await repository.add(
+          User.register({
+            id: userId(3),
+            organizationId: orgId(2),
+            email: anEmail('outra-igreja@igreja.com'),
+            passwordHash: PasswordHash.of(A_PASSWORD_HASH),
+          }),
+        );
+
+        const found = await repository.findManyByIds(orgId(1), [
+          userId(1),
+          userId(3),
+          userId(404),
+        ]);
+
+        expect(found.map((u) => u.id)).toEqual([userId(1)]);
+        await expect(
+          repository.findManyByIds(orgId(2), [userId(1), userId(3)]),
+        ).resolves.toHaveLength(1);
+      });
+
+      it('lista vazia devolve vazio, e o resultado traz e-mail e situação', async () => {
+        const user = aUser(1);
+        user.disable();
+        await repository.add(user);
+
+        await expect(repository.findManyByIds(orgId(1), [])).resolves.toEqual(
+          [],
+        );
+        const [found] = await repository.findManyByIds(orgId(1), [userId(1)]);
+        expect(found?.email.value).toBe(user.email.value);
+        expect(found?.status).toBe('DISABLED');
+      });
+    });
+
     it('save grava a revogação de uma atribuição e a desativação do usuário', async () => {
       const user = aUser(1);
       user.assignRole(roleId(1));

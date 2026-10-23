@@ -57,6 +57,31 @@ export const userSummarySchema = z.object({
 });
 export type UserSummary = z.infer<typeof userSummarySchema>;
 
+/** O máximo de ids por consulta ao diretório de usuários. */
+export const MAX_USER_DIRECTORY_IDS = 50;
+
+/** `ids` separados por vírgula na URL (`?ids=a,b,c`). Fora do formato (ou acima do limite), 400. */
+export const userDirectoryQuerySchema = z.object({
+  ids: z
+    .string()
+    .max(2_000)
+    .transform((raw) => raw.split(',').map((id) => id.trim()))
+    .pipe(z.array(z.uuid()).min(1).max(MAX_USER_DIRECTORY_IDS)),
+});
+export type UserDirectoryQuery = z.infer<typeof userDirectoryQuerySchema>;
+
+/**
+ * Quem é este id, para as telas do financeiro e da trilha (ADR 0020). Só o essencial: sem papéis, sem datas, sem dados de
+ * bloqueio.
+ */
+export const userDirectoryEntrySchema = z.object({
+  id: z.uuid(),
+  email: z.string(),
+  /** `false` = conta desativada (a pessoa existiu, mas não entra mais). */
+  active: z.boolean(),
+});
+export type UserDirectoryEntry = z.infer<typeof userDirectoryEntrySchema>;
+
 /** Atribuir ou revogar um papel. `congregationId: null` = igreja toda. */
 export const roleAssignmentRequestSchema = z.object({
   roleId: z.uuid(),

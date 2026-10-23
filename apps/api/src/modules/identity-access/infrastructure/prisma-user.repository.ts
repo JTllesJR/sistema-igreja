@@ -87,6 +87,19 @@ export class PrismaUserRepository implements UserRepository {
     return rows.map(toDomain);
   }
 
+  async findManyByIds(
+    organizationId: OrganizationId,
+    ids: readonly UserId[],
+  ): Promise<User[]> {
+    if (ids.length === 0) return [];
+    // A igreja está na própria consulta: id de outra igreja não acha nada.
+    const rows = await this.prisma.userAccount.findMany({
+      where: { organizationId, id: { in: [...ids] } },
+      include: { assignments: true },
+    });
+    return rows.map(toDomain);
+  }
+
   async save(user: User): Promise<void> {
     await this.prisma.$transaction((tx) => write(tx, user));
   }

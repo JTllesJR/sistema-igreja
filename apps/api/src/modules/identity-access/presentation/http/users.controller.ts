@@ -7,15 +7,21 @@ import {
   Inject,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
   type CreateUserRequest,
   createUserRequestSchema,
   type RoleAssignmentRequest,
   roleAssignmentRequestSchema,
   type TemporaryPasswordResponse,
+  type UserDirectoryEntry,
+  type UserDirectoryQuery,
   type UserSummary,
   temporaryPasswordResponseSchema,
+  userDirectoryEntrySchema,
+  userDirectoryQuerySchema,
   userSummarySchema,
 } from '@igreja/contracts';
 import { z } from 'zod';
@@ -32,6 +38,10 @@ import { DisableUserUseCase } from '../../application/disable-user.use-case.js';
 import { EnableUserUseCase } from '../../application/enable-user.use-case.js';
 import { ListUsersUseCase } from '../../application/list-users.use-case.js';
 import { ResetPasswordUseCase } from '../../application/reset-password.use-case.js';
+import { ResolveUserDirectoryUseCase } from '../../application/resolve-user-directory.use-case.js';
+import type { AccessPolicy } from '../../domain/access-policy.js';
+import { CurrentPolicy } from './authenticated-request.js';
+import { userDirectoryAccessFrom } from './user-directory-access.factory.js';
 import { RevokeRoleUseCase } from '../../application/revoke-role.use-case.js';
 import { ApiDoc } from '../../../../platform/openapi/api-doc.decorator.js';
 
@@ -56,7 +66,35 @@ export class UsersController {
     @Inject(EnableUserUseCase) private readonly enable: EnableUserUseCase,
     @Inject(CreateUserUseCase) private readonly create: CreateUserUseCase,
     @Inject(ResetPasswordUseCase) private readonly reset: ResetPasswordUseCase,
+    @Inject(ResolveUserDirectoryUseCase)
+    private readonly directory: ResolveUserDirectoryUseCase,
   ) {}
+
+  // SEM `@RequirePermission` de propósito (ADR 0020): basta estar logado, e o caso de uso confere se a pessoa tem ALGUMA das
+  // permissões que mostram ids de usuário (financeiro, aprovações, trilha, administração). Uma permissão só não serve: o guard
+  // exige exatamente uma, e este diretório atende a vários papéis.
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @ApiDoc({
+    summary: 'Troca ids de usuário por e-mails (só os ids pedidos).',
+    description:
+      'Para as telas do financeiro e da trilha mostrarem QUEM pediu, aprovou ou fez algo. Não é uma lista de usuários: ' +
+      'só os ids informados (até 50), só da sua igreja; id desconhecido ou de outra igreja não aparece. Exige alguma de: ' +
+      '`finance:read`, `finance:approve`, `audit:read` ou `access:manage-users`.',
+    response: z.array(userDirectoryEntrySchema),
+  })
+  @Get('directory')
+  resolveDirectory(
+    @CurrentContext() context: RequestContext,
+    @CurrentPolicy() policy: AccessPolicy,
+    @Query(new ZodValidationPipe(userDirectoryQuerySchema))
+    query: UserDirectoryQuery,
+  ): Promise<UserDirectoryEntry[]> {
+    return this.directory.execute(
+      context,
+      userDirectoryAccessFrom(policy),
+      query,
+    );
+  }
 
   @RequirePermission(ACCESS_MANAGE_USERS, MANAGE)
   @ApiDoc({

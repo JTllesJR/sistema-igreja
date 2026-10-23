@@ -134,6 +134,7 @@ describe('AuthenticateUseCase (UC-01, entrar)', () => {
         findById: (id) => bed.users.findById(id),
         findByEmail: (email) => bed.users.findByEmail(email),
         listByOrganization: (id) => bed.users.listByOrganization(id),
+        findManyByIds: (org, ids) => bed.users.findManyByIds(org, ids),
         saveGuardingLastAdministrator: (user, roleId) =>
           bed.users.saveGuardingLastAdministrator(user, roleId),
         add: (user) => bed.users.add(user),
