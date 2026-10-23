@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lançamentos (Tesoureiro, computador)</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></symbol>
+<symbol id="list" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></symbol>
+<symbol id="check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></symbol>
+<symbol id="users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14.2c2.7.2 4.5 2.2 4.5 5"/></symbol>
+<symbol id="building" viewBox="0 0 24 24"><path d="M4 21V4h10v17"/><path d="M14 9h6v12"/><path d="M8 8h2"/><path d="M8 12h2"/><path d="M8 16h2"/><path d="M2 21h20"/></symbol>
+<symbol id="bank" viewBox="0 0 24 24"><path d="M3 9l9-5 9 5"/><path d="M5 9v9"/><path d="M9 9v9"/><path d="M15 9v9"/><path d="M19 9v9"/><path d="M3 20h18"/></symbol>
+<symbol id="shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></symbol>
+<symbol id="menu" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></symbol>
+<symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.2-4.2"/></symbol>
+<symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+<symbol id="chev-r" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+<symbol id="chev-d" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+<symbol id="x" viewBox="0 0 24 24"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></symbol>
+<symbol id="info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></symbol>
+<symbol id="check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+<symbol id="lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></symbol>
+<symbol id="arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></symbol>
+</defs></svg>
+<div class="sample">Desenho de exemplo (dados fictícios). Não é o sistema em funcionamento.</div>
+<div class="app">
+<aside class="side">
+  <div class="brand"><strong>Sistema de Igreja</strong><span>Congregação Norte</span></div>
+  <nav class="nav" aria-label="Principal">
+<a href="#"><svg class="i" aria-hidden="true"><use href="#home"/></svg><span>Início</span></a>
+<a href="#" aria-current="page"><svg class="i" aria-hidden="true"><use href="#list"/></svg><span>Lançamentos</span></a>
+<a href="#"><svg class="i" aria-hidden="true"><use href="#bank"/></svg><span>Contas e categorias</span></a>
+  </nav>
+  <div class="who"><strong>ana.tesouraria@exemplo.org</strong><div class="role">Tesoureira · Congregação Norte</div><a href="#">Sair</a></div>
+</aside>
+<main class="main"><div class="inner">
+
+<div class="pagehead">
+  <div><h1>Lançamentos</h1><p class="sub">Congregação Norte · de 01/10/2026 a 23/10/2026</p></div>
+  <div class="actions">
+    <a class="btn secondary" href="#">Pedir repasse</a>
+    <a class="btn secondary" href="#">Pedir saída</a>
+    <a class="btn" href="#"><svg class="i" aria-hidden="true"><use href="#plus"/></svg> Nova entrada</a>
+  </div>
+</div>
+<div class="summary">
+  <section class="card" aria-label="Contas">
+    <h2>Contas</h2>
+    <div class="accounts">
+      <div><div style="font-weight:500">Caixa da tesouraria</div><div class="sub">Dinheiro em espécie</div><div class="acc">R$ 3.480,35</div></div>
+      <div><div style="font-weight:500">Conta bancária</div><div class="sub">Banco</div><div class="acc">R$ 9.000,00</div></div>
+    </div>
+    <p class="sub" style="margin-top:8px">O saldo só conta o que está confirmado.</p>
+  </section>
+  <section class="notice warn" role="status">
+    <svg class="i" aria-hidden="true"><use href="#info"/></svg>
+    <div><strong>3 pedidos aguardam a sede</strong><div>R$ 1.762,70 em saídas e repasses. Quem pediu não pode aprovar o próprio pedido.</div></div>
+  </section>
+</div>
+<section class="card" aria-label="Filtros">
+  <div class="toolbar">
+    <div class="field"><label>Situação</label><div class="input">Todas <span class="end"><svg class="i" aria-hidden="true"><use href="#chev-d"/></svg></span></div></div>
+    <div class="field"><label>Conta</label><div class="input">Todas <span class="end"><svg class="i" aria-hidden="true"><use href="#chev-d"/></svg></span></div></div>
+    <div class="field"><label>Categoria</label><div class="input">Todas <span class="end"><svg class="i" aria-hidden="true"><use href="#chev-d"/></svg></span></div></div>
+    <div class="field"><label>De</label><div class="input">01/10/2026</div></div>
+    <div class="field"><label>Até</label><div class="input">23/10/2026</div></div>
+  </div>
+</section>
+<section class="card flush" aria-label="Lançamentos">
+  <table>
+    <thead><tr><th>Data</th><th>O que foi</th><th>Pedido por</th><th>Situação</th><th class="num">Valor</th><th><span class="sr">Ações</span></th></tr></thead>
+    <tbody><tr>
+<td class="soft" style="white-space:nowrap">22/10</td>
+<td><div style="font-weight:500">Dízimo do culto de domingo</div><div class="sub">Dízimo · Caixa da tesouraria</div></td>
+<td><div>ana.tesouraria</div></td>
+<td><span class="badge done">Confirmado</span></td>
+<td class="num"><span class="amount in"><span class="sr">Entrada </span>+ R$ 1.850,00</span></td>
+<td class="rowact"><a href="#">Estornar</a></td>
+</tr><tr>
+<td class="soft" style="white-space:nowrap">22/10</td>
+<td><div style="font-weight:500">Conta de luz de outubro</div><div class="sub">Água, luz e telefone · Conta bancária</div></td>
+<td><div>ana.tesouraria</div></td>
+<td><span class="badge wait">Aguardando a sede</span></td>
+<td class="num"><span class="amount"><span class="sr">Saída </span>− R$ 412,70</span></td>
+<td class="rowact"><a href="#">Cancelar</a></td>
+</tr><tr>
+<td class="soft" style="white-space:nowrap">21/10</td>
+<td><div style="font-weight:500">Repasse para a sede</div><div class="sub"><span class="badge info">Repasse</span> Caixa da tesouraria → Sede</div></td>
+<td><div>ana.tesouraria</div></td>
+<td><span class="badge wait">Aguardando a sede</span></td>
+<td class="num"><span class="amount"><span class="sr">Saída </span>− R$ 1.200,00</span></td>
+<td class="rowact"><a href="#">Cancelar</a></td>
+</tr><tr>
+<td class="soft" style="white-space:nowrap">20/10</td>
+<td><div style="font-weight:500">Dízimo de Maria da Silva</div><div class="sub">Dízimo · Caixa da tesouraria · membro vinculado</div></td>
+<td><div>ana.tesouraria</div></td>
+<td><span class="badge done">Confirmado</span></td>
+<td class="num"><span class="amount in"><span class="sr">Entrada </span>+ R$ 320,00</span></td>
+<td class="rowact"><a href="#">Estornar</a></td>
+</tr><tr>
+<td class="soft" style="white-space:nowrap">19/10</td>
+<td><div style="font-weight:500">Reforma do telhado do salão</div><div class="sub">Manutenção e reformas · Conta bancária</div><div class="sub" style="color:var(--alert-ink)">Motivo da recusa: pedir de novo com a nota fiscal anexada.</div></td>
+<td><div>ana.tesouraria</div></td>
+<td><span class="badge alert">Recusado</span></td>
+<td class="num"><span class="amount"><span class="sr">Saída </span>− R$ 2.300,00</span></td>
+<td class="rowact"></td>
+</tr><tr>
+<td class="soft" style="white-space:nowrap">18/10</td>
+<td><div style="font-weight:500">Estorno de entrada lançada em duplicidade</div><div class="sub"><span class="badge info">Estorno</span> Oferta · Caixa da tesouraria</div></td>
+<td><div>ana.tesouraria</div></td>
+<td><span class="badge wait">Aguardando a sede</span></td>
+<td class="num"><span class="amount"><span class="sr">Saída </span>− R$ 150,00</span></td>
+<td class="rowact"><a href="#">Cancelar</a></td>
+</tr><tr>
+<td class="soft" style="white-space:nowrap">15/10</td>
+<td><div style="font-weight:500">Material de limpeza</div><div class="sub">Material de consumo · Caixa da tesouraria</div></td>
+<td><div>ana.tesouraria</div></td>
+<td><span class="badge done">Confirmado</span></td>
+<td class="num"><span class="amount"><span class="sr">Saída </span>− R$ 186,40</span></td>
+<td class="rowact"></td>
+</tr><tr>
+<td class="soft" style="white-space:nowrap">12/10</td>
+<td><div style="font-weight:500">Saldo inicial do caixa</div><div class="sub"><span class="badge info">Saldo inicial</span> Caixa da tesouraria</div></td>
+<td><div>ana.tesouraria</div></td>
+<td><span class="badge done">Confirmado</span></td>
+<td class="num"><span class="amount in"><span class="sr">Entrada </span>+ R$ 3.000,00</span></td>
+<td class="rowact"></td>
+</tr></tbody>
+  </table>
+  <div class="pager"><span>1 a 8 de 8 lançamentos</span><span class="actions"><a class="btn secondary small" href="#" style="opacity:.6">Anterior</a><a class="btn secondary small" href="#" style="opacity:.6">Próxima</a></span></div>
+</section>
+</div></main>
+</div>
+</body>
+</html>
